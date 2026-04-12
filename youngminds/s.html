@@ -41,8 +41,8 @@ a{text-decoration:none;color:inherit}
 .l-hint{font-size:12px;color:var(--muted);margin-top:12px;text-align:center}
 
 /* MOBILE OVERLAY */
-.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:89;backdrop-filter:blur(2px)}
-.sb-overlay.open{display:block}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:89;backdrop-filter:blur(2px);pointer-events:none}
+.sb-overlay.open{display:block;pointer-events:auto}
 
 /* APP SHELL */
 .app{display:flex;height:100vh;overflow:hidden}
@@ -308,8 +308,6 @@ canvas{max-height:220px}
   :root{--sb:200px}
   .sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%);z-index:90;transition:transform .25s ease}
   .sidebar.open{transform:translateX(0)}
-  .sb-overlay{display:block}
-  .sb-overlay.open{display:block}
   .main{width:100%;min-width:0}
   .topbar{position:relative;height:48px;padding:0 12px}
   .tb-ham{display:block;padding:2px 4px}
