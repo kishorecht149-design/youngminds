@@ -39,7 +39,7 @@ app.use("/static", express.static(rootDir));
 /* ══════════════════════════════════════════
    HEALTH CHECK
 ══════════════════════════════════════════ */
-app.get("/", (req, res) => res.send("YoungMinds Server ✅ — Running fine"));
+app.get("/", (req, res) => res.sendFile(path.join(rootDir, "p.html")));
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
