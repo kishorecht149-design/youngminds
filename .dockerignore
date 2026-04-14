@@ -1,0 +1,4 @@
+.git
+.DS_Store
+youngminds/backend/.env
+youngminds/backend/node_modules
