@@ -68,9 +68,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;display:flex;ali
 .pm-stat-l{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
 
 .hero-features{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:80px;opacity:0;animation:up .7s .4s ease forwards}
-.feature-card{background:linear-gradient(135deg,rgba(255,215,0,0.05),rgba(255,215,0,0.02));border:1px solid var(--border2);border-radius:14px;padding:28px 20px;text-align:center;transition:all .3s;cursor:pointer}
-.feature-card:hover{border-color:var(--accent);background:rgba(255,215,0,0.08);transform:translateY(-4px);box-shadow:0 8px 24px rgba(255,215,0,0.15)}
-.fc-icon{font-size:32px;margin-bottom:12px;line-height:1}
+.feature-card{background:linear-gradient(135deg,rgba(255,215,0,0.045),rgba(255,255,255,0.015));border:1px solid var(--border2);border-radius:14px;padding:24px 20px;text-align:left;transition:all .3s;cursor:pointer}
+.feature-card:hover{border-color:rgba(255,215,0,0.45);background:rgba(255,215,0,0.05);transform:translateY(-4px);box-shadow:0 8px 24px rgba(255,215,0,0.1)}
+.fc-icon{display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:28px;padding:0 10px;margin-bottom:16px;border:1px solid rgba(255,215,0,0.2);border-radius:999px;background:rgba(255,215,0,0.06);font-size:11px;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:800}
 .fc-title{font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text);letter-spacing:-0.3px}
 .fc-desc{font-size:13px;color:var(--muted);line-height:1.6}
 
@@ -294,22 +294,22 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   </div>
   <div class="hero-features">
     <div class="feature-card">
-      <div class="fc-icon">🚀</div>
+      <div class="fc-icon">Speed</div>
       <div class="fc-title">Lightning Fast</div>
       <div class="fc-desc">Deploy and iterate in minutes, not days</div>
     </div>
     <div class="feature-card">
-      <div class="fc-icon">💼</div>
+      <div class="fc-icon">Team</div>
       <div class="fc-title">Professional Team</div>
       <div class="fc-desc">Skilled experts ready to bring your vision to life</div>
     </div>
     <div class="feature-card">
-      <div class="fc-icon">✨</div>
+      <div class="fc-icon">Trust</div>
       <div class="fc-title">Quality Guaranteed</div>
       <div class="fc-desc">100% satisfaction or we keep improving until you're happy</div>
     </div>
     <div class="feature-card">
-      <div class="fc-icon">💰</div>
+      <div class="fc-icon">Value</div>
       <div class="fc-title">Affordable Pricing</div>
       <div class="fc-desc">Premium quality at 50% less than traditional agencies</div>
     </div>
