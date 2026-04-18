@@ -252,12 +252,13 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .hero-mark{top:126px;right:10px;width:88px;opacity:.14}
   .hero-mark::before{display:none}
   .faq-sec{padding:0 20px 50px}
-  nav{padding:0 16px;height:60px;display:flex;flex-direction:row;align-items:center;justify-content:space-between}
+  nav{padding:12px 16px;height:auto;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
   .nav-logo{font-size:14px}
   .nav-logo-mark{width:28px;height:28px;border-radius:8px}
-  .nav-logo-text{display:none} /* Hide text on very small screens to save space */
-  .nav-right{width:auto;justify-content:flex-end;gap:6px}
-  .nav-login,.nav-signup{padding:7px 10px;font-size:11px}
+  .nav-logo-text{display:none} 
+  .nav-right{width:100%;justify-content:flex-start;gap:6px;flex-wrap:wrap}
+  .nav-login{padding:6px 10px;font-size:11px}
+  .nav-signup{padding:7px 12px;font-size:11px}
   .hero-h1{font-size:clamp(32px,8vw,48px);letter-spacing:-1.5px}
   .hero-sub{font-size:15px;line-height:1.6}
   .hero-ctas{flex-direction:column;align-items:stretch;gap:10px}
