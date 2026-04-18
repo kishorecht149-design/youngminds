@@ -21,6 +21,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .nav-logo{font-size:16px;font-weight:800;letter-spacing:-0.5px;display:flex;align-items:center;gap:12px}
 .nav-logo-mark{width:34px;height:34px;border-radius:10px;object-fit:cover;display:block;box-shadow:0 8px 18px rgba(0,0,0,0.28);flex-shrink:0}
 .nav-logo-text{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-toggle{display:none;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--text);font-size:18px;font-weight:700}
+.nav-panel{display:flex;align-items:center;gap:12px;flex:1;justify-content:space-between}
 .nav-links{display:flex}
 .nav-links a{font-size:13px;color:var(--muted);padding:8px 16px;border-radius:8px;transition:all .2s;position:relative}
 .nav-links a::after{content:'';position:absolute;bottom:0;left:16px;right:16px;height:2px;background:var(--accent);transform:scaleX(0);transition:transform .3s;border-radius:2px}
@@ -243,17 +245,21 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
 }
 
 @media(max-width:480px){
-  .hero,.sec,.forms-sec{padding:80px 20px 50px}
+  body.nav-open{overflow:hidden}
+  .hero,.sec,.forms-sec{padding:112px 20px 50px}
   .faq-sec{padding:0 20px 50px}
-  nav{padding:12px 16px;height:auto;display:flex;flex-direction:column;align-items:stretch;gap:10px}
+  nav{padding:12px 16px;height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .nav-logo{font-size:14px}
   .nav-logo-mark{width:28px;height:28px;border-radius:8px}
-  .nav-logo-text{display:none}
-  .nav-links{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .nav-links a{display:flex;align-items:center;justify-content:center;min-width:0;padding:8px 10px;font-size:11px;background:rgba(255,255,255,0.02);border:1px solid var(--border);text-align:center}
+  .nav-logo-text{display:block;font-size:14px}
+  .nav-toggle{display:flex;flex-shrink:0}
+  .nav-panel{position:absolute;top:calc(100% + 10px);left:16px;right:16px;display:none;flex-direction:column;align-items:stretch;gap:12px;padding:14px;border:1px solid var(--border2);border-radius:16px;background:rgba(10,10,12,0.96);box-shadow:0 24px 48px rgba(0,0,0,0.45);backdrop-filter:blur(18px)}
+  .nav-panel.open{display:flex}
+  .nav-links{display:grid;width:100%;grid-template-columns:1fr;gap:8px}
+  .nav-links a{display:flex;align-items:center;justify-content:center;min-width:0;padding:10px 12px;font-size:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);text-align:center}
   .nav-links a::after{display:none}
-  .nav-right{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .nav-login,.nav-signup{min-width:0;width:100%;padding:9px 10px;font-size:11px}
+  .nav-right{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .nav-login,.nav-signup{min-width:0;width:100%;padding:10px 12px;font-size:12px}
   .hero-h1{font-size:clamp(32px,8vw,48px);letter-spacing:-1.5px}
   .hero-sub{font-size:15px;line-height:1.6}
   .hero-badge{max-width:100%;white-space:normal;line-height:1.45}
@@ -292,16 +298,19 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
 
 <nav>
   <div class="nav-logo"><img class="nav-logo-mark" src="assets/logo-ym.jpg" alt="YoungMinds logo"><span class="nav-logo-text">YoungMinds</span></div>
-  <div class="nav-links">
-    <a href="#services">Services</a>
-    <a href="#process">Process</a>
-    <a href="#forms">Join / Hire</a>
-  </div>
-  <div class="nav-right">
-    <button class="nav-login" type="button" onclick="window.location.href='/member/'">Member portal</button>
-    <button class="nav-login" type="button" onclick="window.location.href='/admin/'">Admin</button>
-    <button class="nav-login" type="button" onclick="openFormsTab('join')">Join the team</button>
-    <button class="nav-signup" type="button" onclick="openFormsTab('client')">Hire us</button>
+  <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="toggleMobileNav()">☰</button>
+  <div class="nav-panel" id="navPanel">
+    <div class="nav-links">
+      <a href="#services" onclick="closeMobileNav()">Services</a>
+      <a href="#process" onclick="closeMobileNav()">Process</a>
+      <a href="#forms" onclick="closeMobileNav()">Join / Hire</a>
+    </div>
+    <div class="nav-right">
+      <button class="nav-login" type="button" onclick="closeMobileNav();window.location.href='/member/'">Member portal</button>
+      <button class="nav-login" type="button" onclick="closeMobileNav();window.location.href='/admin/'">Admin</button>
+      <button class="nav-login" type="button" onclick="closeMobileNav();openFormsTab('join')">Join the team</button>
+      <button class="nav-signup" type="button" onclick="closeMobileNav();openFormsTab('client')">Hire us</button>
+    </div>
   </div>
 </nav>
 
@@ -571,6 +580,19 @@ document.querySelectorAll('a[href^="#"]').forEach(link=>{
   });
 });
 
+function toggleMobileNav(){
+  const panel=document.getElementById('navPanel');
+  if(!panel)return;
+  panel.classList.toggle('open');
+  document.body.classList.toggle('nav-open',panel.classList.contains('open'));
+}
+function closeMobileNav(){
+  const panel=document.getElementById('navPanel');
+  if(!panel)return;
+  panel.classList.remove('open');
+  document.body.classList.remove('nav-open');
+}
+
 function switchF(t){['join','client'].forEach(x=>{document.getElementById('ftab-'+x).classList.toggle('active',x===t);document.getElementById('fs-'+x).classList.toggle('active',x===t)})}
 function scrollToSection(id){
   const target=document.getElementById(id);
@@ -581,6 +603,7 @@ function scrollToSection(id){
   window.scrollTo({top:Math.max(top,0),behavior:'smooth'});
 }
 function openFormsTab(tab){
+  closeMobileNav();
   switchF(tab);
   scrollToSection('forms');
 }
