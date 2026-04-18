@@ -181,6 +181,35 @@ const applicationSchema = new mongoose.Schema({
 
 const Application = mongoose.model("Application", applicationSchema);
 
+/* ══════════════════════════════════════════
+   SCHEMA: BOARD OF MEMBERS
+══════════════════════════════════════════ */
+const boardMemberSchema = new mongoose.Schema({
+  name:        { type: String, required: true },
+  designation: { type: String, default: "" },
+  skills:      { type: [String], default: [] },
+  bio:         { type: String, default: "" },
+  photo:       { type: String, default: "" },
+  order:       { type: Number, default: 0 },
+  active:      { type: Boolean, default: true }
+}, { timestamps: true });
+
+const BoardMember = mongoose.model("BoardMember", boardMemberSchema);
+
+function normalizeBoardSkills(raw) {
+  const values = Array.isArray(raw) ? raw : String(raw || "").split(/[,\n]/);
+  return values
+    .map(item => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function sanitizeBoardMember(doc) {
+  const obj = doc.toObject ? doc.toObject() : { ...doc };
+  obj.skills = normalizeBoardSkills(obj.skills);
+  return obj;
+}
+
 // Allowed next-status transitions for applications
 const APP_TRANSITIONS = {
   new:       ["reviewing", "rejected"],
@@ -310,6 +339,77 @@ app.put("/api/applications/:id", async (req, res) => {
 app.delete("/api/applications/:id", async (req, res) => {
   try {
     await Application.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ══════════════════════════════════════════
+   BOARD OF MEMBERS
+══════════════════════════════════════════ */
+app.get("/api/board-members", async (req, res) => {
+  try {
+    const list = await BoardMember.find({ active: true }).sort({ order: 1, createdAt: 1 });
+    res.json(list.map(sanitizeBoardMember));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/board-members/admin", async (req, res) => {
+  try {
+    const list = await BoardMember.find().sort({ order: 1, createdAt: 1 });
+    res.json(list.map(sanitizeBoardMember));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/board-members", async (req, res) => {
+  try {
+    if (!req.body.name) return res.status(400).json({ error: "name is required" });
+    const doc = await BoardMember.create({
+      name: String(req.body.name || "").trim(),
+      designation: String(req.body.designation || "").trim(),
+      skills: normalizeBoardSkills(req.body.skills),
+      bio: String(req.body.bio || "").trim(),
+      photo: String(req.body.photo || "").trim(),
+      order: Number.isFinite(Number(req.body.order)) ? Number(req.body.order) : 0,
+      active: req.body.active !== undefined ? !!req.body.active : true
+    });
+    res.status(201).json(sanitizeBoardMember(doc));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put("/api/board-members/:id", async (req, res) => {
+  try {
+    const updates = {};
+    if (req.body.name !== undefined) updates.name = String(req.body.name || "").trim();
+    if (req.body.designation !== undefined) updates.designation = String(req.body.designation || "").trim();
+    if (req.body.skills !== undefined) updates.skills = normalizeBoardSkills(req.body.skills);
+    if (req.body.bio !== undefined) updates.bio = String(req.body.bio || "").trim();
+    if (req.body.photo !== undefined) updates.photo = String(req.body.photo || "").trim();
+    if (req.body.order !== undefined) updates.order = Number.isFinite(Number(req.body.order)) ? Number(req.body.order) : 0;
+    if (req.body.active !== undefined) updates.active = !!req.body.active;
+
+    const doc = await BoardMember.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+    if (!doc) return res.status(404).json({ error: "Board member not found" });
+    res.json(sanitizeBoardMember(doc));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/board-members/:id", async (req, res) => {
+  try {
+    await BoardMember.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -89,6 +89,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .stat-n em{color:var(--accent);font-style:normal;font-size:36px}
 .stat-l{font-size:13px;color:var(--muted);margin-top:8px;font-weight:500}
 
+.board-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:34px}
+.board-card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.18)}
+.board-photo{aspect-ratio:4/5;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,255,255,0.03));position:relative;overflow:hidden}
+.board-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.board-photo-fallback{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;font-weight:900;letter-spacing:-1px;color:rgba(255,215,0,0.9);background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,255,255,0.02))}
+.board-body{padding:18px}
+.board-name{font-size:18px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px}
+.board-role{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.board-bio{font-size:13px;line-height:1.7;color:var(--muted);margin-bottom:14px}
+.board-skills{display:flex;flex-wrap:wrap;gap:8px}
+.board-skill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.18);font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.04em}
+.board-empty{margin-top:34px;padding:26px;border:1px dashed var(--border2);border-radius:18px;background:linear-gradient(135deg,rgba(255,215,0,0.03),rgba(255,255,255,0.01));text-align:center}
+.board-empty-title{font-size:18px;font-weight:800;letter-spacing:-0.4px;margin-bottom:8px}
+.board-empty-sub{font-size:14px;color:var(--muted);line-height:1.7}
+
 .sec{padding:100px 80px;position:relative}
 .eyebrow{font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;opacity:0.8}
 .sec-h2{font-size:clamp(32px,4vw,52px);font-weight:900;letter-spacing:-1.2px;line-height:1.1;margin-bottom:18px;background:linear-gradient(135deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -274,6 +289,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .hero-features{grid-template-columns:1fr}
   .preview-main{padding:20px}
   .pm-stats{flex-direction:column;gap:14px}
+  .board-grid{grid-template-columns:1fr}
   .svc-row,.proc-cell,.feature-card,.faq-wrap,.hero-preview,.forms-sec,.sec,.strip,.stats-row,footer{min-width:0;max-width:100%}
   .ftabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.ftab{padding:10px 8px;font-size:11px;text-align:center}
   .frow{gap:10px}.fg{margin-bottom:10px}.fg input,.fg textarea{padding:12px;font-size:14px}
@@ -361,6 +377,15 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   <div class="stat-cell"><div class="stat-n">50<em>%</em></div><div class="stat-l">Cost savings vs agencies</div></div>
   <div class="stat-cell"><div class="stat-n">100<em>%</em></div><div class="stat-l">Student powered</div></div>
 </div>
+
+<section class="sec" id="board" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="reveal">
+    <div class="eyebrow">Board of Members</div>
+    <h2 class="sec-h2">Meet the people behind <em>YoungMinds.</em></h2>
+    <p class="sec-p">A closer look at the members shaping projects, delivery, and creative work inside the team.</p>
+    <div id="boardMembers"></div>
+  </div>
+</section>
 
 <section class="sec" id="services" style="background:var(--bg)">
   <div class="svc-head reveal">
@@ -591,6 +616,10 @@ function closeMobileNav(){
   document.body.classList.remove('nav-open');
 }
 
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+
 function switchF(t){['join','client'].forEach(x=>{document.getElementById('ftab-'+x).classList.toggle('active',x===t);document.getElementById('fs-'+x).classList.toggle('active',x===t)})}
 function scrollToSection(id){
   const target=document.getElementById(id);
@@ -609,6 +638,41 @@ function selSk(p,n){for(let i=1;i<=n;i++){const el=document.getElementById(p+'-'
 // ── API BASE ──
 const API = window.location.origin;
 const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
+
+function renderBoardMembers(entries){
+  const host=document.getElementById('boardMembers');
+  if(!host)return;
+  if(!entries.length){
+    host.innerHTML=`<div class="board-empty"><div class="board-empty-title">Board will be updated soon.</div><div class="board-empty-sub">We are curating the public member board right now. Check back shortly to meet the team.</div></div>`;
+    return;
+  }
+  host.innerHTML=`<div class="board-grid">${entries.map(member=>{
+    const skills=(Array.isArray(member.skills)?member.skills:[]).slice(0,6);
+    const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
+    return `<article class="board-card">
+      <div class="board-photo">
+        ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
+        <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
+      </div>
+      <div class="board-body">
+        <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
+        <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
+        <div class="board-bio">${escapeHtml(member.bio||'Working across projects, delivery, and execution inside YoungMinds.')}</div>
+        <div class="board-skills">${skills.length?skills.map(skill=>`<span class="board-skill">${escapeHtml(skill)}</span>`).join(''):`<span class="board-skill">YoungMinds</span>`}</div>
+      </div>
+    </article>`;
+  }).join('')}</div>`;
+}
+
+async function loadBoardMembers(){
+  try{
+    const response=await fetch(`${API}/api/board-members`);
+    const data=response.ok?await response.json():[];
+    renderBoardMembers(Array.isArray(data)?data:[]);
+  }catch{
+    renderBoardMembers([]);
+  }
+}
 
 // JOIN
 let jS=1;
@@ -746,6 +810,7 @@ function updStp(sp,fp,cur,tot){
 }
 updStp('jstp','jfill',1,3);
 updStp('cstp','cfill',1,3);
+loadBoardMembers();
 
 function toggleAiPanel(id){
   const panel=document.getElementById(id);

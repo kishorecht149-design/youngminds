@@ -213,6 +213,27 @@ a{text-decoration:none;color:inherit}
 .mc-skill{font-size:11px;color:var(--muted3);margin-bottom:8px}
 .mc-status{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 
+/* ── BOARD MANAGER ── */
+.board-admin-layout{display:grid;grid-template-columns:1.05fr 1.35fr;gap:14px}
+.board-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px}
+.board-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.board-admin-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.board-admin-sub{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:4px}
+.board-admin-list{display:grid;gap:12px}
+.board-admin-item{display:grid;grid-template-columns:68px 1fr auto;gap:12px;align-items:flex-start;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px}
+.board-admin-thumb{width:68px;height:68px;border-radius:12px;object-fit:cover;background:var(--accent2);display:grid;place-items:center;font-size:20px;font-weight:900;color:var(--accent);flex-shrink:0}
+.board-admin-name{font-size:14px;font-weight:800;letter-spacing:-.2px;margin-bottom:3px}
+.board-admin-role{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.board-admin-bio{font-size:12px;color:var(--muted3);line-height:1.6;margin-bottom:10px}
+.board-admin-skills{display:flex;flex-wrap:wrap;gap:6px}
+.board-admin-skill{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;background:var(--accent2);border:1px solid rgba(232,197,71,.18);font-size:10px;font-weight:700;color:var(--accent)}
+.board-admin-actions{display:flex;flex-direction:column;gap:8px}
+.board-admin-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)}
+.board-admin-check input{accent-color:var(--accent)}
+.board-status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.board-status-pill.live{background:var(--green2);border:1px solid rgba(62,207,142,.2);color:var(--green)}
+.board-status-pill.draft{background:var(--bg4);border:1px solid var(--border2);color:var(--muted3)}
+
 /* ── GROUP PILL ── */
 .group-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--purple2);border:1px solid rgba(167,139,250,.2);color:var(--purple);padding:4px 10px;border-radius:100px}
 .group-pill .rm{cursor:pointer;color:var(--muted3);transition:color .15s;font-size:14px;line-height:1}
@@ -300,7 +321,7 @@ canvas#revChart{max-height:220px}
 .ai-foot{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
 
 @media(max-width:960px){
-  .comm-grid,.chat-shell{grid-template-columns:1fr}
+  .comm-grid,.chat-shell,.board-admin-layout{grid-template-columns:1fr}
   .ov-sections,.rev-grid{grid-template-columns:1fr}
 }
 
@@ -386,6 +407,9 @@ canvas#revChart{max-height:220px}
       </div>
       <div class="sb-item" id="nav-chat" onclick="nav('chat')">
         <div class="sb-il"><span class="sb-icon">💬</span><span class="sb-label">Chats</span></div>
+      </div>
+      <div class="sb-item" id="nav-board" onclick="nav('board')">
+        <div class="sb-il"><span class="sb-icon">◫</span><span class="sb-label">Board of Members</span></div>
       </div>
       <div class="sb-sec">Hiring</div>
       <div class="sb-item" id="nav-app-new" onclick="nav('app-new')">
@@ -578,6 +602,11 @@ canvas#revChart{max-height:220px}
         <div id="admin-chat-content"></div>
       </div>
 
+      <!-- BOARD OF MEMBERS -->
+      <div class="view" id="view-board">
+        <div id="board-admin-content"></div>
+      </div>
+
       <!-- HIRING VIEWS -->
       <div class="view" id="view-app-new"></div>
       <div class="view" id="view-app-reviewing"></div>
@@ -728,24 +757,29 @@ function doLogout(){
 let apps=[], prjs=[], currentRecord=null;
 let groups = JSON.parse(localStorage.getItem('ym_groups')||'[]'); // UI-only groups (localStorage is fine)
 let payments = []; // Loaded from MongoDB via /api/payments
+let boardEntries = [];
+let currentBoardEditId = null;
 let revChart = null;
 
 async function loadAll(){
   setLoading(true);
   let ok=true;
   try{
-    const [ra,rp,rpay]=await Promise.all([
+    const [ra,rp,rpay,rb]=await Promise.all([
       fetch(API+'/api/applications').catch(()=>{ok=false;return null;}),
       fetch(API+'/api/projects').catch(()=>{ok=false;return null;}),
-      fetch(API+'/api/payments').catch(()=>null)
+      fetch(API+'/api/payments').catch(()=>null),
+      fetch(API+'/api/board-members/admin').catch(()=>null)
     ]);
     apps=(ra&&ra.ok)?await ra.json():[];
     prjs=(rp&&rp.ok)?await rp.json():[];
     payments=(rpay&&rpay.ok)?await rpay.json():[];
+    boardEntries=(rb&&rb.ok)?await rb.json():[];
     apps.forEach(r=>{r.id=r._id||r.id;r.type='application';});
     prjs.forEach(r=>{r.id=r._id||r.id;r.type='project';});
+    boardEntries.forEach(r=>{r.id=r._id||r.id;});
   }catch(e){
-    ok=false;apps=[];prjs=[];payments=[];
+    ok=false;apps=[];prjs=[];payments=[];boardEntries=[];
   }
   setLoading(false);
   setStatus(ok);
@@ -787,7 +821,7 @@ function updateAllCounts(){
 
 /* ── NAV ── */
 const NAV_TITLE={
-  overview:'Overview',revenue:'Revenue & Payments',
+  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',
   'app-new':'Hiring — New','app-reviewing':'Hiring — Reviewing','app-accepted':'Hiring — Accepted',
   'app-hired':'Hiring — Members','app-rejected':'Hiring — Rejected',
   'prj-new':'Projects — New','prj-reviewing':'Projects — Reviewing','prj-accepted':'Projects — Accepted',
@@ -816,6 +850,7 @@ function closeSidebar(){
 
 /* ── RENDER ALL ── */
 function renderAllViews(){
+  renderBoardManager();
   APP_STS.forEach(s=>renderView('app',s));
   PRJ_STS.forEach(s=>renderView('prj',s));
 }
@@ -1906,6 +1941,160 @@ function getAchievementRecords(rec){
   return [];
 }
 
+function boardEditEntry(){
+  return boardEntries.find(item => String(item.id || item._id) === String(currentBoardEditId)) || null;
+}
+
+function boardPhotoMarkup(entry){
+  const name = entry?.name || "YoungMinds";
+  if (entry?.photo) {
+    return `<img src="${escapeHtml(entry.photo)}" alt="${escapeHtml(name)}" class="board-admin-thumb" style="object-fit:cover" onerror="this.outerHTML='<div class=&quot;board-admin-thumb&quot;>${escapeHtml(name.charAt(0).toUpperCase() || "Y")}</div>'">`;
+  }
+  return `<div class="board-admin-thumb">${escapeHtml(name.charAt(0).toUpperCase() || "Y")}</div>`;
+}
+
+function renderBoardManager(){
+  const el = document.getElementById("board-admin-content");
+  if (!el) return;
+  const current = boardEditEntry();
+  if (currentBoardEditId && !current) currentBoardEditId = null;
+  const formEntry = current || { name:"", designation:"", skills:[], photo:"", bio:"", order:boardEntries.length, active:true };
+  const liveCount = boardEntries.filter(item => item.active !== false).length;
+
+  el.innerHTML = `
+    <div class="view-hdr">
+      <span class="view-hdr-title">Board of Members</span>
+      <span class="view-hdr-count">${boardEntries.length} entr${boardEntries.length === 1 ? "y" : "ies"} · <span style="color:var(--green)">${liveCount} live</span></span>
+    </div>
+    <div class="board-admin-layout">
+      <div class="board-admin-card">
+        <div class="board-admin-head">
+          <div>
+            <div class="board-admin-title">${current ? "Edit member card" : "Add member card"}</div>
+            <div class="board-admin-sub">This controls the public Board of Members section on the YoungMinds homepage.</div>
+          </div>
+          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">New</button>` : ``}
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Name</label><input id="board-name" type="text" placeholder="Member name" value="${escapeHtml(formEntry.name || "")}"></div>
+          <div class="form-field"><label>Designation</label><input id="board-designation" type="text" placeholder="Founder, Designer, Web Developer..." value="${escapeHtml(formEntry.designation || "")}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Photo URL</label><input id="board-photo" type="text" placeholder="https://..." value="${escapeHtml(formEntry.photo || "")}"></div>
+          <div class="form-field"><label>Display Order</label><input id="board-order" type="number" min="0" step="1" value="${Number.isFinite(Number(formEntry.order)) ? Number(formEntry.order) : 0}"></div>
+        </div>
+        <div class="form-row full">
+          <div class="form-field"><label>Skills</label><input id="board-skills" type="text" placeholder="Web Development, UI Design, Content" value="${escapeHtml(Array.isArray(formEntry.skills) ? formEntry.skills.join(", ") : "")}"></div>
+        </div>
+        <div class="form-row full">
+          <div class="form-field"><label>Short Intro</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
+        </div>
+        <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+          <button class="btn-sm primary" type="button" onclick="saveBoardMember()">${current ? "Update member" : "Add member"}</button>
+          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">Cancel</button>` : ``}
+        </div>
+      </div>
+      <div class="board-admin-card">
+        <div class="board-admin-head">
+          <div>
+            <div class="board-admin-title">Published list</div>
+            <div class="board-admin-sub">Reorder or switch entries to draft anytime. Empty list will show “Board will be updated soon” publicly.</div>
+          </div>
+        </div>
+        ${boardEntries.length === 0 ? `
+          <div class="empty" style="padding:32px 18px">
+            <div class="empty-icon">◫</div>
+            <div class="empty-title">No board members yet</div>
+            <div class="empty-sub">Add your first member card from the form on the left.</div>
+          </div>
+        ` : `
+          <div class="board-admin-list">
+            ${boardEntries.map(entry => `
+              <div class="board-admin-item">
+                ${boardPhotoMarkup(entry)}
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                    <div class="board-admin-name">${escapeHtml(entry.name || "YoungMinds Member")}</div>
+                    <span class="board-status-pill ${entry.active !== false ? "live" : "draft"}">${entry.active !== false ? "Live" : "Draft"}</span>
+                  </div>
+                  <div class="board-admin-role">${escapeHtml(entry.designation || "Team Member")}</div>
+                  <div class="board-admin-bio">${escapeHtml(entry.bio || "No intro added yet.")}</div>
+                  <div class="board-admin-skills">
+                    ${(Array.isArray(entry.skills) && entry.skills.length ? entry.skills : ["YoungMinds"]).slice(0,6).map(skill => `<span class="board-admin-skill">${escapeHtml(skill)}</span>`).join("")}
+                  </div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:10px">Order: <strong style="color:var(--text)">${Number.isFinite(Number(entry.order)) ? Number(entry.order) : 0}</strong></div>
+                </div>
+                <div class="board-admin-actions">
+                  <button class="btn-sm" type="button" onclick="editBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Edit</button>
+                  <button class="btn-sm" type="button" onclick="deleteBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Delete</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+function editBoardMember(id){
+  currentBoardEditId = id;
+  renderBoardManager();
+}
+
+function cancelBoardEdit(){
+  currentBoardEditId = null;
+  renderBoardManager();
+}
+
+async function saveBoardMember(){
+  const payload = {
+    name: document.getElementById("board-name")?.value.trim(),
+    designation: document.getElementById("board-designation")?.value.trim(),
+    photo: document.getElementById("board-photo")?.value.trim(),
+    skills: document.getElementById("board-skills")?.value.trim(),
+    bio: document.getElementById("board-bio")?.value.trim(),
+    order: Number(document.getElementById("board-order")?.value || 0),
+    active: !!document.getElementById("board-active")?.checked
+  };
+  if (!payload.name) {
+    showToast("Member name is required");
+    return;
+  }
+  const id = currentBoardEditId;
+  const url = id ? `${API}/api/board-members/${id}` : `${API}/api/board-members`;
+  const method = id ? "PUT" : "POST";
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("save failed");
+    currentBoardEditId = null;
+    await loadAll();
+    nav("board");
+    showToast(id ? "Board member updated" : "Board member added");
+  } catch {
+    showToast("Could not save board member");
+  }
+}
+
+async function deleteBoardMember(id){
+  if (!confirm("Delete this board member card?")) return;
+  try {
+    const response = await fetch(`${API}/api/board-members/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error("delete failed");
+    if (String(currentBoardEditId) === String(id)) currentBoardEditId = null;
+    await loadAll();
+    nav("board");
+    showToast("Board member deleted");
+  } catch {
+    showToast("Could not delete board member");
+  }
+}
+
 function avatarMarkup(member, extraClass = ""){
   const name = member?.name || "YoungMinds";
   const cls = `avatar${extraClass ? ` ${extraClass}` : ""}`;
@@ -1939,12 +2128,13 @@ loadAll = async function(){
   setLoading(true);
   let ok = true;
   try {
-    const [applicationsRes, projectsRes, paymentsRes, noticesRes, resetRes] = await Promise.all([
+    const [applicationsRes, projectsRes, paymentsRes, noticesRes, resetRes, boardRes] = await Promise.all([
       fetch(`${API}/api/applications`).catch(() => { ok = false; return null; }),
       fetch(`${API}/api/projects`).catch(() => { ok = false; return null; }),
       fetch(`${API}/api/payments`).catch(() => null),
       fetch(`${API}/api/notifications`).catch(() => null),
-      fetch(`${API}/api/auth/reset-requests`).catch(() => null)
+      fetch(`${API}/api/auth/reset-requests`).catch(() => null),
+      fetch(`${API}/api/board-members/admin`).catch(() => null)
     ]);
 
     apps = (applicationsRes && applicationsRes.ok) ? await applicationsRes.json() : [];
@@ -1952,8 +2142,10 @@ loadAll = async function(){
     payments = (paymentsRes && paymentsRes.ok) ? await paymentsRes.json() : [];
     adminNotifications = (noticesRes && noticesRes.ok) ? await noticesRes.json() : [];
     resetRequests = (resetRes && resetRes.ok) ? await resetRes.json() : [];
+    boardEntries = (boardRes && boardRes.ok) ? await boardRes.json() : [];
     apps.forEach(item => { item.id = item._id || item.id; item.type = "application"; });
     prjs.forEach(item => { item.id = item._id || item.id; item.type = "project"; });
+    boardEntries.forEach(item => { item.id = item._id || item.id; });
     await loadAdminChatRooms();
   } catch {
     ok = false;
@@ -1962,6 +2154,7 @@ loadAll = async function(){
     payments = [];
     adminNotifications = [];
     resetRequests = [];
+    boardEntries = [];
   }
   setLoading(false);
   setStatus(ok);
