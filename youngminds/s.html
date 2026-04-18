@@ -268,6 +268,9 @@ canvas{max-height:220px}
 .chat-msg-name{font-size:11px;font-weight:700;color:var(--text)}
 .chat-msg-time{font-size:10px;color:var(--muted)}
 .chat-msg-body{font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.chat-msg-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.chat-msg-del{background:transparent;border:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;padding:0}
+.chat-msg-del:hover{color:var(--red)}
 .chat-compose{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
 .chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none}
 .chat-input:focus{border-color:var(--border3)}
@@ -331,7 +334,11 @@ canvas{max-height:220px}
   .l-btn{padding:14px;font-size:14px}
   .stat-grid{grid-template-columns:1fr}
   .content{padding:16px 12px}
-  .notif-dropdown{width:calc(100vw - 24px);right:12px;top:calc(100% + 12px)}
+  .tb-left{width:100%;justify-content:space-between}
+  .tb-r{width:100%;justify-content:flex-start;gap:8px}
+  #sync-ts{display:none}
+  .tb-btn{padding:6px 10px}
+  .notif-dropdown{position:fixed;width:auto;left:12px;right:12px;top:86px;max-height:50vh}
   .greeting-text{font-size:16px}
   .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .qa-btn{justify-content:center;padding:12px;font-size:12px}
@@ -344,6 +351,7 @@ canvas{max-height:220px}
   .chat-msg{max-width:100%}
   .ai-panel{right:12px;left:12px;width:auto;max-width:none;bottom:80px}
   .ai-fab{right:16px;bottom:16px}
+  body.chat-view-active .ai-fab{display:none}
 }
 </style>
 </head>
@@ -786,7 +794,22 @@ function nav(page){
   const v=document.getElementById('view-'+page); if(v) v.classList.add('active');
   const ni=document.getElementById('nav-'+page); if(ni) ni.classList.add('active');
   document.getElementById('tb-title').textContent=NAV_TITLE[page]||page;
+  document.body.classList.toggle('chat-view-active', page === 'chat');
   closeSidebar();
+}
+
+async function deleteMemberChatMessage(id){
+  if(!currentMember?.id) return;
+  if(!confirm('Delete this message?')) return;
+  try {
+    const response = await fetch(`${API}/api/chat/${id}?senderId=${encodeURIComponent(currentMember.id)}`, { method: 'DELETE' });
+    if(!response.ok) throw new Error('delete failed');
+    await loadMemberChatMessages();
+    renderChat();
+    showToast('Message deleted');
+  } catch {
+    showToast('Could not delete message');
+  }
 }
 
 function renderAllViews(){
@@ -1737,6 +1760,7 @@ function renderChat(){
                     <span class="chat-msg-time">${timeAgo(item.createdAt)}</span>
                   </div>
                   <div class="chat-msg-body">${escapeHtml(item.message)}</div>
+                  ${String(item.senderId) === String(currentMember.id) ? `<div class="chat-msg-actions"><button class="chat-msg-del" onclick="deleteMemberChatMessage('${escapeHtml(String(item._id || item.id || ''))}')">Delete</button></div>` : ``}
                 </div>
               `).join("")}
         </div>

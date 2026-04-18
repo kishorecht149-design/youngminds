@@ -846,6 +846,24 @@ app.get("/api/chat/:room", async (req, res) => {
   }
 });
 
+app.delete("/api/chat/:id", async (req, res) => {
+  try {
+    const senderId = String(req.body?.senderId || req.query?.senderId || "");
+    if (!senderId) return res.status(400).json({ error: "senderId required" });
+
+    const doc = await Chat.findById(req.params.id);
+    if (!doc) return res.status(404).json({ error: "Message not found" });
+    if (String(doc.senderId) !== senderId) {
+      return res.status(403).json({ error: "You can delete only your own messages" });
+    }
+
+    await Chat.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /* ══════════════════════════════════════════
    AI ASSIST (all frontends — local brain + optional OpenAI)
 ══════════════════════════════════════════ */

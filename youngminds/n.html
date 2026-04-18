@@ -282,6 +282,9 @@ canvas#revChart{max-height:220px}
 .chat-msg-name{font-size:11px;font-weight:700}
 .chat-msg-time{font-size:10px;color:var(--muted)}
 .chat-msg-body{font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.chat-msg-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.chat-msg-del{background:transparent;border:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;padding:0}
+.chat-msg-del:hover{color:var(--red)}
 .chat-compose{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
 .chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none}
 .chat-input:focus{border-color:var(--border3)}
@@ -2203,6 +2206,19 @@ async function switchAdminChat(room){
   renderAdminChat();
 }
 
+async function deleteAdminChatMessage(id){
+  if (!confirm("Delete this message?")) return;
+  try {
+    const response = await fetch(`${API}/api/chat/${id}?senderId=admin`, { method: "DELETE" });
+    if (!response.ok) throw new Error("delete failed");
+    await loadAdminChatMessages();
+    renderAdminChat();
+    showToast("Message deleted");
+  } catch {
+    showToast("Could not delete message");
+  }
+}
+
 async function sendAdminChat(){
   const input = document.getElementById("admin-chat-input");
   const message = input?.value.trim();
@@ -2258,6 +2274,7 @@ function renderAdminChat(){
                   <span class="chat-msg-time">${fmtDate(item.createdAt)}</span>
                 </div>
                 <div class="chat-msg-body">${escapeHtml(item.message)}</div>
+                ${item.senderId === "admin" ? `<div class="chat-msg-actions"><button class="chat-msg-del" onclick="deleteAdminChatMessage('${escapeHtml(String(item._id || item.id || ""))}')">Delete</button></div>` : ``}
               </div>
             `).join("")}
         </div>
