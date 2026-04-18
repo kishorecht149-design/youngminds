@@ -89,10 +89,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .stat-n em{color:var(--accent);font-style:normal;font-size:36px}
 .stat-l{font-size:13px;color:var(--muted);margin-top:8px;font-weight:500}
 
-.board-carousel{position:relative;max-width:360px;margin-top:34px}
-.board-window{overflow:hidden;border-radius:18px}
-.board-track{display:flex;transition:transform .55s ease}
-.board-slide{min-width:100%;padding-right:2px}
+.board-carousel{position:relative;margin-top:34px}
+.board-window{overflow:hidden}
+.board-track{display:flex;gap:18px;transition:transform .65s ease;will-change:transform}
+.board-slide{flex:0 0 clamp(228px,22vw,280px)}
 .board-card{width:100%;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.18)}
 .board-photo{aspect-ratio:4/5;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,255,255,0.03));position:relative;overflow:hidden}
 .board-photo img{width:100%;height:100%;object-fit:cover;display:block}
@@ -106,9 +106,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .board-empty{margin-top:34px;padding:26px;border:1px dashed var(--border2);border-radius:18px;background:linear-gradient(135deg,rgba(255,215,0,0.03),rgba(255,255,255,0.01));text-align:center}
 .board-empty-title{font-size:18px;font-weight:800;letter-spacing:-0.4px;margin-bottom:8px}
 .board-empty-sub{font-size:14px;color:var(--muted);line-height:1.7}
-.board-dots{display:flex;align-items:center;gap:8px;margin-top:14px}
-.board-dot{width:8px;height:8px;border-radius:999px;border:none;background:rgba(255,255,255,0.18);padding:0;transition:all .2s}
-.board-dot.active{width:24px;background:var(--accent)}
+.board-rail{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:14px}
+.board-progress{flex:1;height:2px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden}
+.board-progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),#fff1a6);border-radius:999px;transition:width .35s ease}
+.board-count{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted3);white-space:nowrap}
 
 .sec{padding:100px 80px;position:relative}
 .eyebrow{font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;opacity:0.8}
@@ -295,7 +296,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .hero-features{grid-template-columns:1fr}
   .preview-main{padding:20px}
   .pm-stats{flex-direction:column;gap:14px}
-  .board-carousel{max-width:none}
+  .board-slide{flex-basis:min(78vw,280px)}
   .svc-row,.proc-cell,.feature-card,.faq-wrap,.hero-preview,.forms-sec,.sec,.strip,.stats-row,footer{min-width:0;max-width:100%}
   .ftabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.ftab{padding:10px 8px;font-size:11px;text-align:center}
   .frow{gap:10px}.fg{margin-bottom:10px}.fg input,.fg textarea{padding:12px;font-size:14px}
@@ -646,6 +647,7 @@ const API = window.location.origin;
 const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
 let boardCarouselIndex = 0;
 let boardCarouselTimer = null;
+let boardCarouselCount = 0;
 
 function stopBoardCarousel(){
   if(boardCarouselTimer){
@@ -654,18 +656,44 @@ function stopBoardCarousel(){
   }
 }
 
-function goBoardSlide(index,total){
+function boardMetrics(){
   const track=document.getElementById('boardTrack');
-  if(!track||!total)return;
-  boardCarouselIndex=((index%total)+total)%total;
-  track.style.transform=`translateX(-${boardCarouselIndex*100}%)`;
-  document.querySelectorAll('.board-dot').forEach((dot,i)=>dot.classList.toggle('active',i===boardCarouselIndex));
+  const slide=track?.querySelector('.board-slide');
+  if(!track||!slide)return null;
+  const styles=getComputedStyle(track);
+  const gap=parseFloat(styles.gap||styles.columnGap||0);
+  return { track, step: slide.getBoundingClientRect().width + gap };
 }
 
-function startBoardCarousel(total){
+function updateBoardProgress(){
+  const fill=document.getElementById('boardProgressFill');
+  const count=document.getElementById('boardCount');
+  if(fill && boardCarouselCount){
+    fill.style.width=`${((boardCarouselIndex % boardCarouselCount)+1)/boardCarouselCount*100}%`;
+  }
+  if(count && boardCarouselCount){
+    count.textContent=`${String((boardCarouselIndex % boardCarouselCount)+1).padStart(2,'0')} / ${String(boardCarouselCount).padStart(2,'0')}`;
+  }
+}
+
+function goBoardSlide(index,animate=true){
+  const metrics=boardMetrics();
+  if(!metrics||!boardCarouselCount)return;
+  boardCarouselIndex=index;
+  metrics.track.style.transition=animate?'transform .65s ease':'none';
+  metrics.track.style.transform=`translateX(-${metrics.step*boardCarouselIndex}px)`;
+  updateBoardProgress();
+}
+
+function startBoardCarousel(){
   stopBoardCarousel();
-  if(total<=1)return;
-  boardCarouselTimer=setInterval(()=>goBoardSlide(boardCarouselIndex+1,total),3200);
+  if(boardCarouselCount<=1)return;
+  boardCarouselTimer=setInterval(()=>{
+    goBoardSlide(boardCarouselIndex+1,true);
+    if(boardCarouselIndex===boardCarouselCount){
+      window.setTimeout(()=>goBoardSlide(0,false),700);
+    }
+  },3200);
 }
 
 function renderBoardMembers(entries){
@@ -677,9 +705,11 @@ function renderBoardMembers(entries){
     return;
   }
   boardCarouselIndex=0;
-  host.innerHTML=`<div class="board-carousel" onmouseenter="stopBoardCarousel()" onmouseleave="startBoardCarousel(${entries.length})" ontouchstart="stopBoardCarousel()">
+  boardCarouselCount=entries.length;
+  const renderedEntries=entries.length>1?[...entries, entries[0]]:entries;
+  host.innerHTML=`<div class="board-carousel" onmouseenter="stopBoardCarousel()" onmouseleave="startBoardCarousel()" ontouchstart="stopBoardCarousel()" ontouchend="startBoardCarousel()">
     <div class="board-window">
-      <div class="board-track" id="boardTrack">${entries.map(member=>{
+      <div class="board-track" id="boardTrack">${renderedEntries.map(member=>{
     const skills=(Array.isArray(member.skills)?member.skills:[]).slice(0,6);
     const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
     return `<div class="board-slide"><article class="board-card">
@@ -696,11 +726,13 @@ function renderBoardMembers(entries){
     </article></div>`;
   }).join('')}</div>
     </div>
-    ${entries.length>1?`<div class="board-dots">${entries.map((_,i)=>`<button class="board-dot ${i===0?'active':''}" type="button" onclick="goBoardSlide(${i},${entries.length})" aria-label="View board member ${i+1}"></button>`).join('')}</div>`:''}
+    ${entries.length>1?`<div class="board-rail"><div class="board-progress"><div class="board-progress-fill" id="boardProgressFill"></div></div><div class="board-count" id="boardCount">01 / ${String(entries.length).padStart(2,'0')}</div></div>`:''}
   </div>`;
-  goBoardSlide(0,entries.length);
-  startBoardCarousel(entries.length);
+  goBoardSlide(0,false);
+  startBoardCarousel();
 }
+
+window.addEventListener('resize',()=>{ if(boardCarouselCount) goBoardSlide(boardCarouselIndex===boardCarouselCount?0:boardCarouselIndex,false); });
 
 async function loadBoardMembers(){
   try{
