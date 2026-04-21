@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graphic Design Agency India | YoungMinds Agency</title>
+<meta name="description" content="YoungMinds Agency creates logos, launch creatives, brand systems, and everyday design assets for growing brands.">
+<meta property="og:title" content="Graphic Design Agency India | YoungMinds Agency">
+<meta property="og:description" content="YoungMinds Agency creates logos, launch creatives, brand systems, and everyday design assets for growing brands.">
+<meta property="og:image" content="/assets/logo-ym.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/service-page.css">
+</head>
+<body>
+  <div class="topbar">
+    <a class="brand" href="/"><img src="/assets/logo-ym.jpg" alt="YoungMinds logo"><span>YoungMinds Agency</span></a>
+    <div class="top-actions">
+      <a class="btn btn-ghost" href="/#services">All Services</a>
+      <a class="btn btn-primary" href="/#forms">Hire Us</a>
+    </div>
+  </div>
+  <main class="page"><div id="service-root"></div></main>
+  <button class="btn btn-primary quote-fab" type="button" onclick="toggleQuoteModal(true)">Get a Quote</button>
+  <div class="modal-wrap" id="quoteModal" onclick="if(event.target===this)toggleQuoteModal(false)">
+    <div class="modal">
+      <div class="modal-title">Quick Quote</div>
+      <div class="modal-copy">A lighter version of the hire form for fast WhatsApp follow-up.</div>
+      <div class="field"><label>Name</label><input id="lead-name" type="text" placeholder="Your name"></div>
+      <div class="field"><label>WhatsApp</label><input id="lead-phone" type="tel" placeholder="+91 90000 00000"></div>
+      <div class="field"><label>Service</label><input id="service-field" type="text" readonly></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" onclick="toggleQuoteModal(false)">Cancel</button>
+        <button class="btn btn-primary" type="button" onclick="submitQuickLead()">Send</button>
+      </div>
+      <div class="status" id="quote-status">We usually reply on WhatsApp within 24 hours.</div>
+    </div>
+  </div>
+  <script>window.SERVICE_SLUG="graphic-design";</script>
+  <script src="/assets/service-page.js"></script>
+</body>
+</html>
