@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express  = require("express");
+const fs       = require("fs");
 const path     = require("path");
 const mongoose = require("mongoose");
 const cors     = require("cors");
@@ -11,6 +12,8 @@ const { getAiAssistReply, getPasswordCoachReply } = require("./ai-assist");
 const app = express();
 const REMEMBER_ME_TTL_SECONDS = 60 * 60 * 24 * 30;
 const ADMIN_ACCOUNT_KEY = "primary";
+const MAX_SUBMISSION_FILE_BYTES = 50 * 1024 * 1024;
+const realtimeClients = new Set();
 
 /* ══════════════════════════════════════════
    CORS
@@ -26,17 +29,21 @@ app.use(cors(corsOptions));
 /* ══════════════════════════════════════════
    BODY PARSERS
 ══════════════════════════════════════════ */
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "80mb" }));
+app.use(express.urlencoded({ extended: true, limit: "80mb" }));
 
 /* ══════════════════════════════════════════
    SERVE FRONTEND FILES
 ══════════════════════════════════════════ */
 const rootDir = path.join(__dirname, "..");
+const uploadsDir = path.join(rootDir, "uploads");
+const submissionUploadsDir = path.join(uploadsDir, "project-submissions");
 app.get("/admin",  (req, res) => res.sendFile(path.join(rootDir, "n.html")));
 app.get("/member", (req, res) => res.sendFile(path.join(rootDir, "s.html")));
+app.get("/portal/projects", (req, res) => res.sendFile(path.join(rootDir, "s.html")));
 app.get("/hire",   (req, res) => res.sendFile(path.join(rootDir, "p.html")));
 app.use("/static", express.static(rootDir));
+app.use("/uploads", express.static(uploadsDir));
 
 /* ══════════════════════════════════════════
    HEALTH CHECK
@@ -104,14 +111,71 @@ function getTokenTtlSeconds(remember) {
 function readBearerToken(req) {
   const header = String(req.get("Authorization") || "");
   const [scheme, token] = header.split(/\s+/);
-  if (!/^Bearer$/i.test(scheme || "") || !token) return null;
-  return token;
+  if (/^Bearer$/i.test(scheme || "") && token) {
+    return token;
+  }
+  if (typeof req.query?.token === "string" && req.query.token.trim()) {
+    return req.query.token.trim();
+  }
+  return null;
 }
 function getDefaultAdminUsername() {
   return normalizeAdminUsername(process.env.ADMIN_USERNAME || "admin") || "admin";
 }
 function getDefaultAdminPasswordHash() {
   return hashPassword(process.env.ADMIN_PASSWORD || "youngminds2026");
+}
+function sanitizeFilename(input) {
+  return String(input || "file")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120) || "file";
+}
+function normalizeProjectDeliveryStage(raw, fallback = "inprogress") {
+  const stage = String(raw || fallback).trim().toLowerCase();
+  return ["inprogress", "review", "delivered"].includes(stage) ? stage : fallback;
+}
+function parseDataUrl(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:([^;,]+);base64,(.+)$/);
+  if (!match) return null;
+  return {
+    mimeType: match[1],
+    buffer: Buffer.from(match[2], "base64")
+  };
+}
+async function ensureSubmissionUploadDir() {
+  await fs.promises.mkdir(submissionUploadsDir, { recursive: true });
+}
+async function saveSubmissionFile(file) {
+  const parsed = parseDataUrl(file?.dataUrl);
+  if (!parsed) throw new Error("Invalid file payload");
+  if (!file?.name) throw new Error("File name is required");
+  if (parsed.buffer.length > MAX_SUBMISSION_FILE_BYTES) {
+    throw new Error("File exceeds 50MB limit");
+  }
+
+  await ensureSubmissionUploadDir();
+  const ext = path.extname(String(file.name || "")).slice(0, 15);
+  const base = sanitizeFilename(path.basename(String(file.name || "submission"), ext));
+  const fileName = `${Date.now()}-${crypto.randomUUID()}-${base}${ext}`;
+  const absPath = path.join(submissionUploadsDir, fileName);
+  await fs.promises.writeFile(absPath, parsed.buffer);
+  return {
+    fileName: file.name,
+    mimeType: file.type || parsed.mimeType || "application/octet-stream",
+    fileSize: parsed.buffer.length,
+    filePath: `/uploads/project-submissions/${fileName}`
+  };
+}
+function emitRealtimeEvent(type, payload, audience = {}) {
+  const body = `event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`;
+  for (const client of realtimeClients) {
+    const roleMatch = !audience.roles || audience.roles.includes(client.role);
+    const memberMatch = !audience.memberIds || audience.memberIds.includes(client.memberId);
+    if (roleMatch && memberMatch) {
+      client.res.write(body);
+    }
+  }
 }
 function toWhatsAppE164(raw, defaultCountryCode = "91") {
   const digits = normalizePhone(raw || "");
@@ -264,6 +328,15 @@ async function getAdminSessionFromToken(req) {
   return { payload, admin };
 }
 
+async function requireAdminSession(req, res) {
+  const session = await getAdminSessionFromToken(req);
+  if (!session) {
+    res.status(401).json({ error: "Admin session expired" });
+    return null;
+  }
+  return session;
+}
+
 async function getMemberSessionFromToken(req) {
   const payload = verifyAuthToken(readBearerToken(req));
   if (!payload || payload.role !== "member" || !payload.sub) {
@@ -277,6 +350,41 @@ async function getMemberSessionFromToken(req) {
 
   return { payload, member };
 }
+
+app.get("/api/events", async (req, res) => {
+  try {
+    const adminSession = await getAdminSessionFromToken(req);
+    const memberSession = adminSession ? null : await getMemberSessionFromToken(req);
+    if (!adminSession && !memberSession) {
+      return res.status(401).json({ error: "Session required" });
+    }
+
+    const client = {
+      id: crypto.randomUUID(),
+      res,
+      role: adminSession ? "admin" : "member",
+      memberId: memberSession ? String(memberSession.member._id) : null
+    };
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders?.();
+    res.write(`event: ready\ndata: ${JSON.stringify({ ok: true, role: client.role })}\n\n`);
+
+    realtimeClients.add(client);
+    const keepAlive = setInterval(() => {
+      res.write("event: ping\ndata: {}\n\n");
+    }, 25000);
+
+    req.on("close", () => {
+      clearInterval(keepAlive);
+      realtimeClients.delete(client);
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 function normalizeBoardSkills(raw) {
   const values = Array.isArray(raw) ? raw : String(raw || "").split(/[,\n]/);
@@ -778,6 +886,8 @@ const PRJ_TRANSITIONS = {
 const projectSchema = new mongoose.Schema({
   type:              { type: String, default: "project" },
   name:              String,
+  title:             String,
+  clientName:        String,
   business:          String,
   phone:             String,
   email:             String,
@@ -794,6 +904,12 @@ const projectSchema = new mongoose.Schema({
   paymentAdvance:    Number,
   paymentFinal:      Number,
   paymentStatus:     { type: String, default: "pending" },
+  deadlineAt:        Date,
+  progressPercent:   { type: Number, default: 0 },
+  briefPdfUrl:       String,
+  briefPdfName:      String,
+  deliveryStage:     { type: String, default: "inprogress" },
+  lastSubmissionAt:  Date,
   timestamp:         { type: Date, default: Date.now }
 }, { strict: false, timestamps: false });
 
@@ -847,7 +963,9 @@ app.put("/api/projects/:id", async (req, res) => {
     }
 
     const allowed = ["status","notes","paymentAdvance","paymentFinal","paymentStatus",
-                     "assignedMemberIds","assignedGroupId"];
+                     "assignedMemberIds","assignedGroupId","deadlineAt","progressPercent",
+                     "briefPdfUrl","briefPdfName","deliveryStage","lastSubmissionAt",
+                     "title","clientName"];
     const updates = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
 
@@ -1066,6 +1184,282 @@ app.delete("/api/notifications/:id", async (req, res) => {
   try {
     await Notification.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ══════════════════════════════════════════
+   SCHEMA: PROJECT SUBMISSION
+══════════════════════════════════════════ */
+const projectSubmissionSchema = new mongoose.Schema({
+  projectId:      { type: String, required: true, index: true },
+  memberId:       { type: String, required: true, index: true },
+  memberName:     String,
+  projectTitle:   String,
+  type:           { type: String, enum: ["file", "link"], required: true },
+  linkUrl:        String,
+  fileName:       String,
+  filePath:       String,
+  fileSize:       Number,
+  mimeType:       String,
+  note:           String,
+  adminFeedback:  String,
+  createdAt:      { type: Date, default: Date.now }
+}, { timestamps: false });
+
+const ProjectSubmission = mongoose.model("ProjectSubmission", projectSubmissionSchema);
+
+function getProjectDisplayTitle(project) {
+  return project?.title || project?.name || "Untitled Project";
+}
+
+function getProjectClientName(project) {
+  return project?.clientName || project?.business || project?.name || "";
+}
+
+function getProjectBriefUrl(project) {
+  return project?.briefPdfUrl || project?.briefUrl || project?.briefPdf || "";
+}
+
+async function requireAssignedMemberProject(req, res) {
+  const session = await getMemberSessionFromToken(req);
+  if (!session) {
+    res.status(401).json({ error: "Member session expired" });
+    return null;
+  }
+
+  const project = await Project.findById(req.params.id);
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return null;
+  }
+
+  const memberId = String(session.member._id);
+  const assigned = Array.isArray(project.assignedMemberIds) && project.assignedMemberIds.map(String).includes(memberId);
+  if (!assigned) {
+    res.status(403).json({ error: "You do not have access to this project" });
+    return null;
+  }
+
+  return { session, project, memberId };
+}
+
+app.get("/api/member/projects", async (req, res) => {
+  try {
+    const session = await getMemberSessionFromToken(req);
+    if (!session) {
+      return res.status(401).json({ error: "Member session expired" });
+    }
+
+    const memberId = String(session.member._id);
+    const projects = await Project.find({ assignedMemberIds: memberId }).sort({ timestamp: -1 });
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/member/project-submissions", async (req, res) => {
+  try {
+    const session = await getMemberSessionFromToken(req);
+    if (!session) {
+      return res.status(401).json({ error: "Member session expired" });
+    }
+
+    const memberId = String(session.member._id);
+    const projects = await Project.find({ assignedMemberIds: memberId }).select("_id");
+    const allowedProjectIds = projects.map(project => String(project._id));
+    const submissions = await ProjectSubmission.find({
+      memberId,
+      projectId: { $in: allowedProjectIds }
+    }).sort({ createdAt: -1 });
+    res.json(submissions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/projects/:id/submissions", async (req, res) => {
+  try {
+    const adminSession = await requireAdminSession(req, res);
+    if (!adminSession) return;
+    const project = await Project.findById(req.params.id).select("_id");
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    const submissions = await ProjectSubmission.find({ projectId: String(project._id) }).sort({ createdAt: -1 });
+    res.json(submissions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch("/api/project-submissions/:id/feedback", async (req, res) => {
+  try {
+    const adminSession = await requireAdminSession(req, res);
+    if (!adminSession) return;
+
+    const adminFeedback = String(req.body?.adminFeedback || "").trim().slice(0, 4000);
+    const submission = await ProjectSubmission.findByIdAndUpdate(
+      req.params.id,
+      { $set: { adminFeedback } },
+      { new: true, runValidators: false }
+    );
+    if (!submission) {
+      return res.status(404).json({ error: "Submission not found" });
+    }
+
+    if (submission.memberId) {
+      await Notification.create({
+        title: "Project feedback added",
+        message: `Admin added feedback on your ${submission.projectTitle || "project"} submission.`,
+        type: "direct",
+        targetId: String(submission.memberId),
+        targetName: submission.memberName || ""
+      });
+      emitRealtimeEvent("project-feedback", {
+        submissionId: String(submission._id),
+        projectId: submission.projectId,
+        projectTitle: submission.projectTitle || "",
+        adminFeedback
+      }, { roles: ["member"], memberIds: [String(submission.memberId)] });
+    }
+
+    res.json(submission);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/member/projects/:id/stage", async (req, res) => {
+  try {
+    const auth = await requireAssignedMemberProject(req, res);
+    if (!auth) return;
+
+    const nextStage = normalizeProjectDeliveryStage(req.body?.stage);
+    const updates = {
+      deliveryStage: nextStage
+    };
+
+    if (nextStage === "delivered") {
+      updates.status = "completed";
+    } else if (auth.project.status === "assigned") {
+      updates.status = "inprogress";
+    }
+
+    const updated = await Project.findByIdAndUpdate(
+      auth.project._id,
+      { $set: updates },
+      { new: true, runValidators: false }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/member/projects/:id/status", async (req, res) => {
+  try {
+    const auth = await requireAssignedMemberProject(req, res);
+    if (!auth) return;
+
+    const nextStatus = String(req.body?.status || "").trim().toLowerCase();
+    const allowed = PRJ_TRANSITIONS[auth.project.status] || [];
+    if (!allowed.includes(nextStatus)) {
+      return res.status(400).json({
+        error: `Cannot transition from '${auth.project.status}' to '${nextStatus}'. Allowed: ${allowed.join(", ") || "none"}`
+      });
+    }
+
+    const updated = await Project.findByIdAndUpdate(
+      auth.project._id,
+      {
+        $set: {
+          status: nextStatus,
+          deliveryStage: nextStatus === "completed" ? "delivered" : normalizeProjectDeliveryStage(auth.project.deliveryStage, "inprogress")
+        }
+      },
+      { new: true, runValidators: false }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/member/projects/:id/submissions", async (req, res) => {
+  try {
+    const auth = await requireAssignedMemberProject(req, res);
+    if (!auth) return;
+
+    const mode = String(req.body?.mode || "").trim().toLowerCase();
+    const note = String(req.body?.note || "").trim().slice(0, 4000);
+    if (!["file", "link"].includes(mode)) {
+      return res.status(400).json({ error: "mode must be file or link" });
+    }
+
+    const submissionData = {
+      projectId: String(auth.project._id),
+      memberId: auth.memberId,
+      memberName: auth.session.member.name || "",
+      projectTitle: getProjectDisplayTitle(auth.project),
+      type: mode,
+      note
+    };
+
+    if (mode === "link") {
+      const linkUrl = String(req.body?.linkUrl || "").trim();
+      if (!/^https?:\/\//i.test(linkUrl)) {
+        return res.status(400).json({ error: "Enter a valid http(s) link" });
+      }
+      submissionData.linkUrl = linkUrl.slice(0, 2000);
+    } else {
+      const savedFile = await saveSubmissionFile(req.body?.file || {});
+      Object.assign(submissionData, savedFile);
+    }
+
+    const submission = await ProjectSubmission.create(submissionData);
+
+    const projectUpdates = {
+      deliveryStage: "review",
+      lastSubmissionAt: new Date()
+    };
+    if (auth.project.status === "assigned") {
+      projectUpdates.status = "inprogress";
+    }
+
+    const updatedProject = await Project.findByIdAndUpdate(
+      auth.project._id,
+      { $set: projectUpdates },
+      { new: true, runValidators: false }
+    );
+
+    await Notification.create({
+      title: "Deliverable submitted",
+      message: `${auth.session.member.name || "A member"} submitted a ${mode} deliverable for ${getProjectDisplayTitle(auth.project)}.`,
+      type: "direct",
+      targetId: "admin",
+      targetName: "Admin"
+    });
+
+    emitRealtimeEvent("project-submission", {
+      projectId: String(auth.project._id),
+      projectTitle: getProjectDisplayTitle(auth.project),
+      clientName: getProjectClientName(auth.project),
+      memberId: auth.memberId,
+      memberName: auth.session.member.name || "",
+      mode,
+      createdAt: submission.createdAt
+    }, { roles: ["admin"] });
+
+    res.status(201).json({
+      success: true,
+      submission,
+      project: updatedProject
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

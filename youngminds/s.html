@@ -139,6 +139,46 @@ a{text-decoration:none;color:inherit}
 .proj-card-body{font-size:13px;color:var(--muted3);line-height:1.6;margin-bottom:12px}
 .proj-card-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
+/* PROJECT BOARD */
+.project-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.project-board-card{background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.project-board-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.project-board-title{font-size:18px;font-weight:800;letter-spacing:-.03em;line-height:1.2}
+.project-board-client{font-size:12px;color:var(--muted3);margin-top:4px}
+.service-badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:var(--accent2);border:1px solid rgba(232,197,71,.18);font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.deadline-stack{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.deadline-count{font-size:12px;font-weight:700;padding:7px 10px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+.deadline-count.safe{background:rgba(62,207,142,.1);border-color:rgba(62,207,142,.15);color:var(--green)}
+.deadline-count.warn{background:rgba(251,146,60,.1);border-color:rgba(251,146,60,.18);color:var(--orange)}
+.deadline-count.danger{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.18);color:var(--red)}
+.project-stage-select{width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-weight:600;padding:10px 12px;outline:none}
+.project-stage-select:focus{border-color:var(--border3)}
+.project-progress-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted3);margin-bottom:6px}
+.project-progress-track{height:8px;background:var(--bg5);border-radius:999px;overflow:hidden}
+.project-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#f2dc82);border-radius:999px}
+.project-actions{display:flex;gap:8px;flex-wrap:wrap}
+.project-actions .btn{flex:1 1 140px}
+.project-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.project-tab{background:transparent;border:1px solid var(--border2);color:var(--muted3);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer}
+.project-tab.active{background:var(--bg4);border-color:var(--accent);color:var(--text)}
+.project-overview-copy{font-size:13px;color:var(--muted3);line-height:1.65}
+.submission-list{display:flex;flex-direction:column;gap:10px}
+.submission-item{background:var(--bg4);border:1px solid var(--border);border-radius:12px;padding:12px}
+.submission-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.submission-title{font-size:13px;font-weight:700}
+.submission-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.submission-note{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:8px;white-space:pre-wrap}
+.submission-feedback{margin-top:10px;padding:10px 12px;background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.14);border-radius:10px}
+.submission-feedback-label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:4px}
+.submit-mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.submit-mode-btn{flex:1;background:var(--bg4);border:1px solid var(--border2);color:var(--muted3);border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.submit-mode-btn.active{border-color:var(--accent);color:var(--text);background:var(--accent3)}
+.dropzone{border:1px dashed var(--border3);border-radius:14px;padding:18px;text-align:center;background:linear-gradient(180deg,var(--bg3),var(--bg4));cursor:pointer;transition:border-color .15s,background .15s}
+.dropzone.dragover{border-color:var(--accent);background:var(--accent3)}
+.dropzone-title{font-size:13px;font-weight:700}
+.dropzone-sub{font-size:12px;color:var(--muted3);margin-top:6px;line-height:1.6}
+.dropzone-file{margin-top:10px;font-size:12px;color:var(--text);word-break:break-word}
+
 /* DEADLINE PILL */
 .deadline-pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:100px;background:rgba(251,146,60,.1);color:var(--orange);border:1px solid rgba(251,146,60,.2)}
 .deadline-pill.safe{background:rgba(62,207,142,.08);color:var(--green);border-color:rgba(62,207,142,.15)}
@@ -328,6 +368,8 @@ canvas{max-height:220px}
   .greeting-text{font-size:20px}
   .greeting-time{text-align:left;width:100%;border-top:1px solid var(--border);padding-top:10px}
   .tbl-head,.trow{min-width:600px}
+  .project-grid{grid-template-columns:1fr}
+  .project-board-top{flex-direction:column}
 }
 
 @media(max-width:480px){
@@ -346,6 +388,12 @@ canvas{max-height:220px}
   .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .qa-btn{justify-content:center;padding:12px;font-size:12px}
   .card-header,.proj-card-header,.profile-hero{flex-direction:column;align-items:flex-start}
+  .project-actions .btn,.submit-mode-btn{flex:1 1 100%}
+  .deadline-stack{align-items:flex-start}
+  .project-tabs{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .project-tab{width:100%;text-align:center}
+  .submission-head{flex-direction:column;align-items:flex-start}
+  .dropzone{padding:16px 14px}
   .modal-overlay{padding:0}
   .modal{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0}
   .modal-header,.modal-footer{padding:16px}
@@ -1545,6 +1593,10 @@ let memberChatRooms = [];
 let activeMemberChatRoom = "team";
 let memberChatMessages = [];
 let activeMemberView = "dash";
+let projectSubmissions = [];
+let projectBoardTabs = {};
+let projectSubmitDraft = { projectId: null, mode: "file", file: null };
+let memberEventSource = null;
 
 NAV_TITLE.chat = "Chats";
 
@@ -1850,6 +1902,9 @@ doLogout = function(){
   myPayouts = [];
   memberRequests = [];
   myTasks = {};
+  projectSubmissions = [];
+  projectBoardTabs = {};
+  projectSubmitDraft = { projectId: null, mode: "file", file: null };
   notifications = [];
   serverNotifications = [];
   localNotifications = [];
@@ -1871,14 +1926,23 @@ loadData = async function(){
   if (!currentMember) return;
   let ok = true;
   try {
-    const [projectsRes, payoutsRes, membersRes] = await Promise.all([
-      fetch(`${API}/api/projects`).catch(() => { ok = false; return null; }),
+    const [projectsRes, submissionsRes, payoutsRes, membersRes] = await Promise.all([
+      fetch(`${API}/api/member/projects`, { headers: memberAuthHeaders() }).catch(() => { ok = false; return null; }),
+      fetch(`${API}/api/member/project-submissions`, { headers: memberAuthHeaders() }).catch(() => null),
       fetch(`${API}/api/payments/member/${currentMember.id}`).catch(() => null),
       fetch(`${API}/api/applications`).catch(() => null)
     ]);
 
+    if (projectsRes && projectsRes.status === 401) {
+      showToast("Session expired. Please sign in again.");
+      doLogout();
+      return;
+    }
+
     allProjects = (projectsRes && projectsRes.ok) ? await projectsRes.json() : [];
     allProjects.forEach(project => { project.id = project._id || project.id; });
+    projectSubmissions = (submissionsRes && submissionsRes.ok) ? await submissionsRes.json() : [];
+    projectSubmissions.forEach(item => { item.id = item._id || item.id; });
 
     myPayouts = (payoutsRes && payoutsRes.ok) ? await payoutsRes.json() : [];
 
@@ -2553,6 +2617,452 @@ async function sendMemberAi(){
   appendAiBubble("memberAiBody", "assistant", reply || memberAiReply(text));
 }
 
+function getProjectTitle(project){
+  return project?.title || project?.name || "Untitled Project";
+}
+
+function getProjectClientName(project){
+  return project?.clientName || project?.business || project?.email || "Client name pending";
+}
+
+function getProjectService(project){
+  return project?.service || project?.source || "Service";
+}
+
+function getProjectBriefUrl(project){
+  return project?.briefPdfUrl || project?.briefUrl || project?.briefPdf || "";
+}
+
+function getProjectDeliveryStage(project){
+  if (project?.deliveryStage) return project.deliveryStage;
+  if (project?.status === "completed") return "delivered";
+  return "inprogress";
+}
+
+function parseProjectDeadline(project){
+  const raw = project?.deadlineAt || project?.deadline || project?.dueDate || project?.timeline;
+  if (!raw) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getDeadlineCountdown(project){
+  const deadline = parseProjectDeadline(project);
+  if (!deadline) {
+    return { label: "Timeline TBD", className: "warn", msRemaining: Infinity };
+  }
+  const msRemaining = deadline.getTime() - Date.now();
+  if (msRemaining <= 0) {
+    return { label: "Deadline passed", className: "danger", msRemaining };
+  }
+  const totalHours = Math.floor(msRemaining / (1000 * 60 * 60));
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const className = msRemaining < 48 * 60 * 60 * 1000 ? "danger" : msRemaining <= 7 * 24 * 60 * 60 * 1000 ? "warn" : "safe";
+  if (days > 0) {
+    return { label: `${days}d ${hours}h left`, className, msRemaining };
+  }
+  return { label: `${Math.max(totalHours, 0)}h left`, className, msRemaining };
+}
+
+function getProjectProgress(project){
+  const numeric = Number(project?.progressPercent);
+  if (Number.isFinite(numeric)) {
+    return Math.max(0, Math.min(100, Math.round(numeric)));
+  }
+  const projTasks = myTasks?.[project?.id] || [];
+  if (!projTasks.length) return 0;
+  const done = projTasks.filter(task => task.done).length;
+  return Math.round((done / projTasks.length) * 100);
+}
+
+function getProjectSubmissions(projectId){
+  return projectSubmissions
+    .filter(item => String(item.projectId) === String(projectId))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+function formatSubmissionType(item){
+  if (item.type === "file") return "File upload";
+  if (item.type === "link") return "Shared link";
+  return item.type || "Submission";
+}
+
+function setProjectBoardTab(projectId, tab){
+  projectBoardTabs[String(projectId)] = tab;
+  renderProjects();
+}
+
+async function updateProjectDeliveryStage(projectId, stage){
+  try {
+    const response = await fetch(`${API}/api/member/projects/${projectId}/stage`, {
+      method: "POST",
+      headers: memberAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ stage })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(data.error || "Could not update stage");
+      renderProjects();
+      return;
+    }
+    const updated = { ...data, id: data._id || data.id };
+    allProjects = allProjects.map(project => String(project.id) === String(updated.id) ? updated : project);
+    myAssignedProjects = myAssignedProjects.map(project => String(project.id) === String(updated.id) ? updated : project);
+    renderProjects();
+  } catch {
+    showToast("Could not update stage");
+    renderProjects();
+  }
+}
+
+setProjStatus = async function(projId, status){
+  try {
+    const response = await fetch(`${API}/api/member/projects/${projId}/status`, {
+      method: "POST",
+      headers: memberAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ status })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(data.error || "Error updating project");
+      return;
+    }
+    const updated = { ...data, id: data._id || data.id };
+    allProjects = allProjects.map(project => String(project.id) === String(updated.id) ? updated : project);
+    myAssignedProjects = myAssignedProjects.map(project => String(project.id) === String(updated.id) ? updated : project);
+    memberRequests = myAssignedProjects.filter(project => project.status === "assigned");
+    _prevReqCount = memberRequests.length;
+    renderAllViews();
+  } catch {
+    showToast("Error updating project");
+  }
+}
+
+function openProjectBrief(projectId){
+  const project = allProjects.find(item => String(item.id) === String(projectId));
+  const url = getProjectBriefUrl(project);
+  if (!url) {
+    showToast("Brief PDF is not available yet");
+    return;
+  }
+  window.open(url, "_blank", "noopener");
+}
+
+function renderDeliverableFields(){
+  const filePanel = document.getElementById("deliverable-file-panel");
+  const linkPanel = document.getElementById("deliverable-link-panel");
+  const fileBtn = document.getElementById("deliverable-mode-file");
+  const linkBtn = document.getElementById("deliverable-mode-link");
+  const isFile = projectSubmitDraft.mode === "file";
+  if (filePanel) filePanel.style.display = isFile ? "block" : "none";
+  if (linkPanel) linkPanel.style.display = isFile ? "none" : "block";
+  if (fileBtn) fileBtn.classList.toggle("active", isFile);
+  if (linkBtn) linkBtn.classList.toggle("active", !isFile);
+  refreshDeliverableFileState();
+}
+
+function setDeliverableMode(mode){
+  projectSubmitDraft.mode = mode === "link" ? "link" : "file";
+  renderDeliverableFields();
+}
+
+function refreshDeliverableFileState(){
+  const label = document.getElementById("deliverable-file-name");
+  if (!label) return;
+  if (!projectSubmitDraft.file) {
+    label.textContent = "No file selected yet.";
+    return;
+  }
+  label.textContent = `${projectSubmitDraft.file.name} • ${Math.round(projectSubmitDraft.file.size / 1024)} KB`;
+}
+
+function clearDeliverableFile(){
+  projectSubmitDraft.file = null;
+  const input = document.getElementById("deliverable-file-input");
+  if (input) input.value = "";
+  refreshDeliverableFileState();
+}
+
+function openDeliverablePicker(){
+  document.getElementById("deliverable-file-input")?.click();
+}
+
+function handleDeliverableDragOver(event){
+  event.preventDefault();
+  event.currentTarget.classList.add("dragover");
+}
+
+function handleDeliverableDragLeave(event){
+  event.currentTarget.classList.remove("dragover");
+}
+
+async function readDeliverableFile(file){
+  if (!file) return;
+  if (file.size > 50 * 1024 * 1024) {
+    showToast("File must be 50MB or smaller");
+    return;
+  }
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  projectSubmitDraft.file = {
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    size: file.size,
+    dataUrl
+  };
+  refreshDeliverableFileState();
+}
+
+function handleDeliverableFileChange(event){
+  const file = event.target.files?.[0];
+  readDeliverableFile(file).catch(() => showToast("Could not read file"));
+}
+
+function handleDeliverableDrop(event){
+  event.preventDefault();
+  event.currentTarget.classList.remove("dragover");
+  const file = event.dataTransfer?.files?.[0];
+  readDeliverableFile(file).catch(() => showToast("Could not read file"));
+}
+
+function openDeliverableModal(projectId){
+  const project = allProjects.find(item => String(item.id) === String(projectId));
+  if (!project) return;
+  projectSubmitDraft = { projectId: String(projectId), mode: "file", file: null };
+  document.getElementById("modalTitle").textContent = `Submit Deliverable — ${getProjectTitle(project)}`;
+  document.getElementById("modalBody").innerHTML = `
+    <div class="submit-mode">
+      <button type="button" class="submit-mode-btn active" id="deliverable-mode-file" onclick="setDeliverableMode('file')">Upload file</button>
+      <button type="button" class="submit-mode-btn" id="deliverable-mode-link" onclick="setDeliverableMode('link')">Paste link</button>
+    </div>
+    <div id="deliverable-file-panel">
+      <input type="file" id="deliverable-file-input" style="display:none" onchange="handleDeliverableFileChange(event)">
+      <div class="dropzone" id="deliverable-dropzone" onclick="openDeliverablePicker()" ondragover="handleDeliverableDragOver(event)" ondragleave="handleDeliverableDragLeave(event)" ondrop="handleDeliverableDrop(event)">
+        <div class="dropzone-title">Drag and drop a file here</div>
+        <div class="dropzone-sub">Max 50MB. You can also click to browse from your device.</div>
+        <div class="dropzone-file" id="deliverable-file-name">No file selected yet.</div>
+      </div>
+      <div class="mini-actions">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="openDeliverablePicker()">Choose file</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="clearDeliverableFile()">Clear</button>
+      </div>
+    </div>
+    <div id="deliverable-link-panel" style="display:none">
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Deliverable Link</label>
+          <input type="url" id="deliverable-link" placeholder="https://drive.google.com/... or Figma/GitHub link">
+        </div>
+      </div>
+    </div>
+    <div class="form-row full" style="margin-top:12px">
+      <div class="form-field">
+        <label>Note</label>
+        <textarea id="deliverable-note" rows="4" placeholder="Anything admin or client should know about this submission..."></textarea>
+      </div>
+    </div>
+  `;
+  document.getElementById("modalFooter").innerHTML = `
+    <button type="button" class="btn btn-ghost" onclick="closeMainModal()">Cancel</button>
+    <button type="button" class="btn btn-primary" onclick="submitDeliverable()">Submit</button>
+  `;
+  document.getElementById("mainModal").classList.add("open");
+  renderDeliverableFields();
+}
+
+async function submitDeliverable(){
+  const projectId = projectSubmitDraft.projectId;
+  if (!projectId) return;
+  const note = document.getElementById("deliverable-note")?.value.trim() || "";
+  const body = {
+    mode: projectSubmitDraft.mode,
+    note
+  };
+
+  if (projectSubmitDraft.mode === "file") {
+    if (!projectSubmitDraft.file) {
+      showToast("Choose a file before submitting");
+      return;
+    }
+    body.file = projectSubmitDraft.file;
+  } else {
+    const linkUrl = document.getElementById("deliverable-link")?.value.trim();
+    if (!linkUrl) {
+      showToast("Paste a deliverable link before submitting");
+      return;
+    }
+    body.linkUrl = linkUrl;
+  }
+
+  try {
+    const response = await fetch(`${API}/api/member/projects/${projectId}/submissions`, {
+      method: "POST",
+      headers: memberAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(body)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(data.error || "Could not submit deliverable");
+      return;
+    }
+
+    if (data.submission) {
+      const savedSubmission = { ...data.submission, id: data.submission._id || data.submission.id };
+      projectSubmissions = [savedSubmission, ...projectSubmissions.filter(item => String(item._id || item.id) !== String(savedSubmission.id))];
+    }
+    if (data.project) {
+      const updatedProject = { ...data.project, id: data.project._id || data.project.id };
+      allProjects = allProjects.map(project => String(project.id) === String(updatedProject.id) ? updatedProject : project);
+      myAssignedProjects = myAssignedProjects.map(project => String(project.id) === String(updatedProject.id) ? updatedProject : project);
+    }
+
+    projectBoardTabs[String(projectId)] = "history";
+    closeMainModal();
+    showToast("Deliverable submitted");
+    pushNotification("Deliverable sent", "Admin has been notified and the project moved to review.", "projects");
+    renderAllViews();
+  } catch {
+    showToast("Could not submit deliverable");
+  }
+}
+
+function renderProjectOverview(project){
+  const brief = getProjectBriefUrl(project);
+  const latestSubmission = getProjectSubmissions(project.id)[0];
+  const stageLabel = getProjectDeliveryStage(project) === "review" ? "Review ready" : getProjectDeliveryStage(project) === "delivered" ? "Delivered" : "In progress";
+  return `
+    <div class="project-overview-copy">
+      ${escapeHtml(project.description || "No project brief summary added yet.")}
+    </div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="lbl">Current Stage</div>
+        <div class="val">${escapeHtml(stageLabel)}</div>
+      </div>
+      <div class="info-item">
+        <div class="lbl">Brief PDF</div>
+        <div class="val">${brief ? `<a href="${escapeHtml(brief)}" target="_blank" rel="noopener">Open brief</a>` : "Not available yet"}</div>
+      </div>
+      <div class="info-item">
+        <div class="lbl">Last Submission</div>
+        <div class="val">${latestSubmission ? escapeHtml(new Date(latestSubmission.createdAt).toLocaleString("en-IN")) : "Nothing submitted yet"}</div>
+      </div>
+      <div class="info-item">
+        <div class="lbl">Delivery Note</div>
+        <div class="val">${escapeHtml(project.notes || "No delivery notes yet")}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderProjectHistory(project){
+  const submissions = getProjectSubmissions(project.id);
+  if (!submissions.length) {
+    return `<div class="empty" style="padding:24px 8px"><div class="empty-icon">📦</div><div class="empty-title">No submissions yet</div><div class="empty-sub">Your file uploads and links will appear here after you submit a deliverable.</div></div>`;
+  }
+  return `
+    <div class="submission-list">
+      ${submissions.map(item => `
+        <div class="submission-item">
+          <div class="submission-head">
+            <div>
+              <div class="submission-title">${escapeHtml(formatSubmissionType(item))}</div>
+              <div class="submission-meta">${escapeHtml(new Date(item.createdAt).toLocaleString("en-IN"))}</div>
+            </div>
+            <span class="badge ${item.type === "file" ? "accepted" : "reviewing"}">${escapeHtml(item.type)}</span>
+          </div>
+          <div class="project-overview-copy">
+            ${item.type === "file"
+              ? `<a href="${escapeHtml(item.filePath || "#")}" target="_blank" rel="noopener">${escapeHtml(item.fileName || "Download file")}</a>`
+              : `<a href="${escapeHtml(item.linkUrl || "#")}" target="_blank" rel="noopener">${escapeHtml(item.linkUrl || "Open link")}</a>`
+            }
+          </div>
+          ${item.note ? `<div class="submission-note">${escapeHtml(item.note)}</div>` : ``}
+          ${item.adminFeedback ? `<div class="submission-feedback"><div class="submission-feedback-label">Admin feedback</div><div class="project-overview-copy">${escapeHtml(item.adminFeedback)}</div></div>` : ``}
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderProjectBoardCard(project){
+  const countdown = getDeadlineCountdown(project);
+  const progress = getProjectProgress(project);
+  const activeTab = projectBoardTabs[String(project.id)] || "overview";
+  const stage = getProjectDeliveryStage(project);
+  const canOpenBrief = !!getProjectBriefUrl(project);
+  return `
+    <div class="project-board-card">
+      <div class="project-board-top">
+        <div style="min-width:0">
+          <div class="service-badge">${escapeHtml(getProjectService(project))}</div>
+          <div class="project-board-title" style="margin-top:10px">${escapeHtml(getProjectTitle(project))}</div>
+          <div class="project-board-client">Client: ${escapeHtml(getProjectClientName(project))}</div>
+        </div>
+        <div class="deadline-stack">
+          <div class="deadline-count ${countdown.className}">${escapeHtml(countdown.label)}</div>
+          <span class="badge ${project.status === "completed" ? "completed" : stage === "review" ? "reviewing" : "inprogress"}">${stage === "review" ? "Review Ready" : stage === "delivered" ? "Delivered" : "In Progress"}</span>
+        </div>
+      </div>
+      <div>
+        <div class="project-progress-head"><span>Admin progress</span><strong>${progress}%</strong></div>
+        <div class="project-progress-track"><div class="project-progress-fill" style="width:${progress}%"></div></div>
+      </div>
+      <div class="form-row full" style="margin:0">
+        <div class="form-field">
+          <label>Stage</label>
+          <select class="project-stage-select" onchange="updateProjectDeliveryStage('${project.id}', this.value)">
+            <option value="inprogress" ${stage === "inprogress" ? "selected" : ""}>In Progress</option>
+            <option value="review" ${stage === "review" ? "selected" : ""}>Review Ready</option>
+            <option value="delivered" ${stage === "delivered" ? "selected" : ""}>Delivered</option>
+          </select>
+        </div>
+      </div>
+      <div class="project-actions">
+        <button class="btn btn-ghost" ${canOpenBrief ? `onclick="openProjectBrief('${project.id}')"` : `onclick="showToast('Brief PDF is not available yet')"`}>View Brief</button>
+        <button class="btn btn-primary" onclick="openDeliverableModal('${project.id}')">Submit Deliverable</button>
+      </div>
+      <div class="project-tabs">
+        <button type="button" class="project-tab ${activeTab === "overview" ? "active" : ""}" onclick="setProjectBoardTab('${project.id}', 'overview')">Overview</button>
+        <button type="button" class="project-tab ${activeTab === "history" ? "active" : ""}" onclick="setProjectBoardTab('${project.id}', 'history')">Submission History</button>
+      </div>
+      ${activeTab === "history" ? renderProjectHistory(project) : renderProjectOverview(project)}
+      ${project.status === "assigned" ? `<div class="project-actions"><button class="btn btn-success" onclick="acceptProject('${project.id}')">Accept Assignment</button><button class="btn btn-danger" onclick="rejectProject('${project.id}')">Reject</button></div>` : ``}
+    </div>
+  `;
+}
+
+renderProjects = function(){
+  const el = document.getElementById("projects-content");
+  if (!el) return;
+  if (!myAssignedProjects.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📁</div><div class="empty-title">No projects yet</div><div class="empty-sub">Projects assigned to you will appear here with deliverables and submission history.</div></div>`;
+    return;
+  }
+
+  const projects = [...myAssignedProjects].sort((a, b) => {
+    const stageA = getProjectDeliveryStage(a) === "delivered" ? 1 : 0;
+    const stageB = getProjectDeliveryStage(b) === "delivered" ? 1 : 0;
+    if (stageA !== stageB) return stageA - stageB;
+    return getDeadlineCountdown(a).msRemaining - getDeadlineCountdown(b).msRemaining;
+  });
+
+  el.innerHTML = `
+    <div class="sec-hd">
+      <span class="sec-hd-title">Assigned Projects</span>
+      <span style="font-size:12px;color:var(--muted3)">${projects.length} active board${projects.length > 1 ? "s" : ""}</span>
+    </div>
+    <div class="project-grid">
+      ${projects.map(renderProjectBoardCard).join("")}
+    </div>
+  `;
+}
+
 const MEMBER_SESSION_KEY = "ym_member_session";
 const MEMBER_REMEMBER_KEY = "ym_member_remember";
 const MEMBER_GMAIL_KEY = "ym_member_gmail";
@@ -2565,6 +3075,29 @@ function memberAuthHeaders(extra = {}) {
   const headers = { ...extra };
   if (currentAuthToken) headers.Authorization = `Bearer ${currentAuthToken}`;
   return headers;
+}
+
+function disconnectMemberEvents() {
+  if (memberEventSource) {
+    memberEventSource.close();
+    memberEventSource = null;
+  }
+}
+
+function connectMemberEvents() {
+  disconnectMemberEvents();
+  if (!currentAuthToken || typeof EventSource === "undefined") return;
+  memberEventSource = new EventSource(`${API}/api/events?token=${encodeURIComponent(currentAuthToken)}`);
+  memberEventSource.addEventListener("project-feedback", () => {
+    showToast("Admin added feedback to one of your submissions");
+    loadData();
+  });
+  memberEventSource.onerror = () => {
+    disconnectMemberEvents();
+    setTimeout(() => {
+      if (currentAuthToken) connectMemberEvents();
+    }, 4000);
+  };
 }
 
 function getStoredMemberToken() {
@@ -2603,7 +3136,13 @@ function sanitizeMemberPage(page) {
 
 function getMemberPageFromLocation() {
   const hash = String(window.location.hash || "").replace(/^#/, "");
-  return sanitizeMemberPage(hash.startsWith("member-") ? hash.slice(7) : "dash");
+  if (hash.startsWith("member-")) {
+    return sanitizeMemberPage(hash.slice(7));
+  }
+  if (window.location.pathname === "/portal/projects") {
+    return "projects";
+  }
+  return "dash";
 }
 
 function setMemberHistory(page, mode = "push") {
@@ -2638,6 +3177,7 @@ function showMemberLogin() {
   document.getElementById("loginBtn").textContent = "Sign in →";
   document.getElementById("l-err").style.display = "none";
   document.body.classList.remove("chat-view-active");
+  disconnectMemberEvents();
   closeSidebar();
   closeNotifDropdown();
   history.replaceState({ panel: "member-login" }, "", `${window.location.pathname}${window.location.search}`);
@@ -2649,6 +3189,7 @@ async function finishMemberLogin(member, token, options = {}) {
   if (!options.skipPersist && currentAuthToken) {
     persistMemberSession(currentAuthToken, member?.gmail || member?.email, Boolean(options.remember));
   }
+  connectMemberEvents();
   try { myTasks = JSON.parse(localStorage.getItem(`ym_tasks_${currentMember.id}`) || "{}"); } catch { myTasks = {}; }
   await loadData();
   if (_clockInterval) clearInterval(_clockInterval);

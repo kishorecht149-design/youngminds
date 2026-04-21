@@ -313,6 +313,16 @@ canvas#revChart{max-height:220px}
 .chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none}
 .chat-input:focus{border-color:var(--border3)}
 
+.admin-submission-list{display:flex;flex-direction:column;gap:12px}
+.admin-submission-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px}
+.admin-submission-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.admin-submission-title{font-size:13px;font-weight:800}
+.admin-submission-meta{font-size:11px;color:var(--muted3);margin-top:3px}
+.admin-submission-note{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:8px;white-space:pre-wrap}
+.admin-feedback-box{margin-top:10px}
+.admin-feedback-box textarea{min-height:94px}
+.admin-feedback-actions{display:flex;justify-content:flex-end;margin-top:8px}
+
 /* AI ASSISTANT */
 .ai-fab{position:fixed;right:18px;bottom:18px;z-index:220;background:var(--accent);color:#000;border:none;border-radius:999px;padding:12px 16px;font-size:12px;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.35);cursor:pointer}
 .ai-panel{position:fixed;right:18px;bottom:74px;width:340px;max-width:calc(100vw - 24px);background:var(--bg2);border:1px solid var(--border2);border-radius:14px;z-index:220;display:none;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.45)}
@@ -358,6 +368,7 @@ canvas#revChart{max-height:220px}
   .content{padding:16px 12px}
   .stat-grid{grid-template-columns:1fr}
   .ov-card-header,.pay-hdr,.chat-panel-head,.card-header{flex-direction:column;align-items:flex-start}
+  .admin-submission-head,.admin-feedback-actions{flex-direction:column;align-items:flex-start}
   .modal-overlay{padding:0}
   .modal{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0}
   .modal-header,.modal-footer{padding:16px}
@@ -1943,6 +1954,8 @@ let adminPollInterval = null;
 let currentAdmin = null;
 let currentAdminToken = null;
 let activeAdminView = "overview";
+let adminEventSource = null;
+let currentProjectSubmissions = [];
 
 APP_STS.splice(APP_STS.indexOf("accepted"), 1);
 NAV_TITLE.comm = "Notices & Resets";
@@ -2321,11 +2334,19 @@ openRecord = function(elOrRec){
           <div><div class="dp-label">Budget</div><div class="dp-val">${escapeHtml(rec.budget || "—")}</div></div>
           <div><div class="dp-label">Timeline</div><div class="dp-val">${escapeHtml(rec.timeline || "—")}</div></div>
           <div><div class="dp-label">Payment Status</div><div class="dp-val">${escapeHtml(rec.paymentStatus || "pending")}</div></div>
+          <div><div class="dp-label">Delivery Stage</div><div class="dp-val">${escapeHtml(rec.deliveryStage || "inprogress")}</div></div>
+          <div><div class="dp-label">Progress</div><div class="dp-val">${Number.isFinite(Number(rec.progressPercent)) ? `${Math.max(0, Math.min(100, Math.round(Number(rec.progressPercent))))}%` : "0%"}</div></div>
           <div style="grid-column:1/-1"><div class="dp-label">Description</div><div class="dp-val">${escapeHtml(rec.description || "—")}</div></div>
           <div style="grid-column:1/-1"><div class="dp-label">Notes</div><div class="dp-val">${escapeHtml(rec.notes || "—")}</div></div>
         </div>
       </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Deliverable Submissions</div>
+        <div id="admin-project-submissions"></div>
+      </div>
     `;
+    currentProjectSubmissions = [];
+    loadAdminProjectSubmissions(rec.id);
   }
 
   const phone = formatWhatsAppPhone(rec.phone);
@@ -2802,6 +2823,121 @@ function setAdminHistory(page, mode = "push") {
   else history.pushState(state, "", url);
 }
 
+function disconnectAdminEvents() {
+  if (adminEventSource) {
+    adminEventSource.close();
+    adminEventSource = null;
+  }
+}
+
+function connectAdminEvents() {
+  disconnectAdminEvents();
+  if (!currentAdminToken || typeof EventSource === "undefined") return;
+  adminEventSource = new EventSource(`${API}/api/events?token=${encodeURIComponent(currentAdminToken)}`);
+  adminEventSource.addEventListener("project-submission", event => {
+    try {
+      const data = JSON.parse(event.data || "{}");
+      showToast(`New deliverable: ${(data.projectTitle || "Project")} from ${data.memberName || "member"}`);
+      if (currentRecord?.type === "project" && String(currentRecord.id || currentRecord._id) === String(data.projectId)) {
+        loadAdminProjectSubmissions(data.projectId);
+      }
+      loadAll();
+    } catch {
+      loadAll();
+    }
+  });
+  adminEventSource.onerror = () => {
+    disconnectAdminEvents();
+    setTimeout(() => {
+      if (currentAdminToken) connectAdminEvents();
+    }, 4000);
+  };
+}
+
+function formatSubmissionLabel(item) {
+  return item?.type === "file" ? "File upload" : item?.type === "link" ? "Shared link" : "Submission";
+}
+
+async function loadAdminProjectSubmissions(projectId) {
+  const mount = document.getElementById("admin-project-submissions");
+  if (!mount || !projectId || !currentAdminToken) return;
+  mount.innerHTML = `<div class="empty" style="padding:18px"><div class="empty-icon">📦</div><div class="empty-title">Loading submissions…</div></div>`;
+  try {
+    const response = await fetch(`${API}/api/projects/${projectId}/submissions`, {
+      headers: adminAuthHeaders()
+    });
+    const data = await response.json().catch(() => []);
+    if (!response.ok) throw new Error(data.error || "load_failed");
+    currentProjectSubmissions = Array.isArray(data) ? data.map(item => ({ ...item, id: item._id || item.id })) : [];
+    renderAdminProjectSubmissions();
+  } catch {
+    mount.innerHTML = `<div class="empty" style="padding:18px"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load submissions</div><div class="empty-sub">Try refreshing the panel.</div></div>`;
+  }
+}
+
+function renderAdminProjectSubmissions() {
+  const mount = document.getElementById("admin-project-submissions");
+  if (!mount) return;
+  if (!currentProjectSubmissions.length) {
+    mount.innerHTML = `<div class="empty" style="padding:18px"><div class="empty-icon">📦</div><div class="empty-title">No submissions yet</div><div class="empty-sub">Member deliverables will appear here with notes and feedback fields.</div></div>`;
+    return;
+  }
+
+  mount.innerHTML = `
+    <div class="admin-submission-list">
+      ${currentProjectSubmissions.map(item => `
+        <div class="admin-submission-card">
+          <div class="admin-submission-head">
+            <div>
+              <div class="admin-submission-title">${escapeHtml(formatSubmissionLabel(item))}</div>
+              <div class="admin-submission-meta">${escapeHtml(item.memberName || "Member")} · ${escapeHtml(new Date(item.createdAt).toLocaleString("en-IN"))}</div>
+            </div>
+            <span class="badge ${item.type === "file" ? "assigned" : "reviewing"}">${escapeHtml(item.type || "submission")}</span>
+          </div>
+          <div class="dp-val">
+            ${item.type === "file"
+              ? `<a href="${escapeHtml(item.filePath || "#")}" target="_blank" rel="noopener">${escapeHtml(item.fileName || "Download file")}</a>`
+              : `<a href="${escapeHtml(item.linkUrl || "#")}" target="_blank" rel="noopener">${escapeHtml(item.linkUrl || "Open link")}</a>`
+            }
+          </div>
+          ${item.note ? `<div class="admin-submission-note">${escapeHtml(item.note)}</div>` : ``}
+          <div class="admin-feedback-box">
+            <div class="dp-label">Admin Feedback</div>
+            <textarea class="chat-input" id="admin-feedback-${escapeHtml(String(item.id))}" placeholder="Add review comments, requested changes, or approval note...">${escapeHtml(item.adminFeedback || "")}</textarea>
+            <div class="admin-feedback-actions">
+              <button type="button" class="btn-sm primary" onclick="saveSubmissionFeedback('${escapeHtml(String(item.id))}')">Save Feedback</button>
+            </div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+async function saveSubmissionFeedback(submissionId) {
+  const input = document.getElementById(`admin-feedback-${submissionId}`);
+  if (!input || !currentAdminToken) return;
+  const adminFeedback = input.value.trim();
+  try {
+    const response = await fetch(`${API}/api/project-submissions/${submissionId}/feedback`, {
+      method: "PATCH",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ adminFeedback })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(data.error || "Could not save feedback");
+      return;
+    }
+    const updated = { ...data, id: data._id || data.id };
+    currentProjectSubmissions = currentProjectSubmissions.map(item => String(item.id) === String(updated.id) ? updated : item);
+    renderAdminProjectSubmissions();
+    showToast("Feedback saved");
+  } catch {
+    showToast("Could not save feedback");
+  }
+}
+
 function showAdminShell(admin) {
   currentAdmin = { username: admin?.username || "admin" };
   document.getElementById("loginScreen").style.display = "none";
@@ -2823,6 +2959,7 @@ function showAdminLogin() {
   document.getElementById("loginBtn").disabled = false;
   document.getElementById("loginBtn").textContent = "Sign in →";
   document.getElementById("admin-user-chip").textContent = `👤 ${rememberedUsername || "admin"}`;
+  disconnectAdminEvents();
   closeSidebar();
   closeModal("adminCredentialsModal");
   history.replaceState({ panel: "admin-login" }, "", `${window.location.pathname}${window.location.search}`);
@@ -2834,6 +2971,7 @@ async function finishAdminLogin(admin, token, options = {}) {
   if (!options.skipPersist && currentAdminToken) {
     persistAdminSession(currentAdminToken, admin?.username, Boolean(options.remember));
   }
+  connectAdminEvents();
   await loadAll();
   if (adminPollInterval) clearInterval(adminPollInterval);
   adminPollInterval = setInterval(loadAll, 30000);
