@@ -14,6 +14,15 @@ const REMEMBER_ME_TTL_SECONDS = 60 * 60 * 24 * 30;
 const ADMIN_ACCOUNT_KEY = "primary";
 const MAX_SUBMISSION_FILE_BYTES = 50 * 1024 * 1024;
 const realtimeClients = new Set();
+const SERVICE_SLUGS = [
+  "web-development",
+  "graphic-design",
+  "social-media",
+  "ai-solutions",
+  "video-editing",
+  "content-writing"
+];
+const SERVICE_ICON_SET = ["01", "02", "03", "04", "05", "06"];
 
 /* ══════════════════════════════════════════
    CORS
@@ -39,9 +48,11 @@ const rootDir = path.join(__dirname, "..");
 const uploadsDir = path.join(rootDir, "uploads");
 const submissionUploadsDir = path.join(uploadsDir, "project-submissions");
 app.get("/admin",  (req, res) => res.sendFile(path.join(rootDir, "n.html")));
+app.get("/admin/services",  (req, res) => res.sendFile(path.join(rootDir, "n.html")));
 app.get("/member", (req, res) => res.sendFile(path.join(rootDir, "s.html")));
 app.get("/portal/projects", (req, res) => res.sendFile(path.join(rootDir, "s.html")));
 app.get("/hire",   (req, res) => res.sendFile(path.join(rootDir, "p.html")));
+app.get("/pricing-calculator", (req, res) => res.redirect("/hire#forms"));
 app.use("/static", express.static(rootDir));
 app.use("/uploads", express.static(uploadsDir));
 
@@ -280,6 +291,117 @@ const boardMemberSchema = new mongoose.Schema({
 
 const BoardMember = mongoose.model("BoardMember", boardMemberSchema);
 
+const SERVICE_DEFAULTS = [
+  {
+    slug: "web-development",
+    name: "Web Development",
+    shortLabel: "Web",
+    valueProp: "Conversion-focused websites and digital products built fast, clean, and ready to scale.",
+    meta_description: "YoungMinds Agency builds responsive websites, landing pages, and internal tools for modern Indian businesses.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    pricing_min_inr: 5000,
+    pricing_max_inr: 50000,
+    deliverables: [
+      "Responsive website design",
+      "Landing page build",
+      "CMS or admin integration",
+      "Speed and SEO basics",
+      "Form and lead capture setup",
+      "Launch support and QA"
+    ]
+  },
+  {
+    slug: "graphic-design",
+    name: "Graphic Design",
+    shortLabel: "Design",
+    valueProp: "Brand visuals that look sharp, feel consistent, and work across digital and print touchpoints.",
+    meta_description: "YoungMinds Agency creates logos, launch creatives, brand systems, and everyday design assets for growing brands.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    pricing_min_inr: 2000,
+    pricing_max_inr: 25000,
+    deliverables: [
+      "Logo and identity concepts",
+      "Brand color and type direction",
+      "Social and ad creatives",
+      "Print-ready collateral",
+      "Presentation and deck design",
+      "Design source files handoff"
+    ]
+  },
+  {
+    slug: "social-media",
+    name: "Social Media",
+    shortLabel: "Social",
+    valueProp: "Consistent social content systems that turn scattered posting into a clear growth rhythm.",
+    meta_description: "YoungMinds Agency manages social media content planning, creative production, and publishing support for brands in India.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    pricing_min_inr: 4000,
+    pricing_max_inr: 30000,
+    deliverables: [
+      "Monthly content calendar",
+      "Post and reel concepts",
+      "Caption writing",
+      "Creative asset coordination",
+      "Publishing support",
+      "Performance review summary"
+    ]
+  },
+  {
+    slug: "ai-solutions",
+    name: "AI Solutions",
+    shortLabel: "AI",
+    valueProp: "Practical AI systems that automate repetitive work and make your team faster without extra complexity.",
+    meta_description: "YoungMinds Agency designs automation flows, assistants, and lightweight AI tools for business workflows in India.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    pricing_min_inr: 8000,
+    pricing_max_inr: 100000,
+    deliverables: [
+      "Workflow audit and use-case mapping",
+      "Custom AI assistant setup",
+      "Automation logic and prompts",
+      "Tool integrations",
+      "Testing and guardrails",
+      "Team onboarding guidance"
+    ]
+  },
+  {
+    slug: "video-editing",
+    name: "Video Editing",
+    shortLabel: "Video",
+    valueProp: "Fast-moving edits for reels, explainers, and campaign content that feel current and watchable.",
+    meta_description: "YoungMinds Agency edits reels, explainers, launch videos, and short-form content for brands and creators.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    pricing_min_inr: 2500,
+    pricing_max_inr: 30000,
+    deliverables: [
+      "Short-form reel editing",
+      "Motion graphics support",
+      "Captions and text overlays",
+      "Sound polish and pacing",
+      "Multiple export formats",
+      "Revision-ready project files"
+    ]
+  },
+  {
+    slug: "content-writing",
+    name: "Content Writing",
+    shortLabel: "Content",
+    valueProp: "Clear, persuasive writing for websites, campaigns, and content engines that need a stronger voice.",
+    meta_description: "YoungMinds Agency writes website copy, blogs, product messaging, and social content for modern businesses.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    pricing_min_inr: 1500,
+    pricing_max_inr: 20000,
+    deliverables: [
+      "Website and landing copy",
+      "Brand messaging direction",
+      "Blog and article writing",
+      "Product or service descriptions",
+      "Campaign content support",
+      "Editing and proofreading"
+    ]
+  }
+];
+
 const adminAccountSchema = new mongoose.Schema({
   key:      { type: String, default: ADMIN_ACCOUNT_KEY, unique: true },
   username: { type: String, required: true },
@@ -289,10 +411,318 @@ const adminAccountSchema = new mongoose.Schema({
 
 const AdminAccount = mongoose.model("AdminAccount", adminAccountSchema);
 
+const serviceSchema = new mongoose.Schema({
+  slug:              { type: String, required: true, unique: true },
+  name:              { type: String, required: true },
+  shortLabel:        String,
+  valueProp:         String,
+  meta_description:  String,
+  og_image_url:      String,
+  pricing_min_inr:   { type: Number, default: 0 },
+  pricing_max_inr:   { type: Number, default: 0 },
+  deliverables:      { type: [String], default: [] },
+  updatedAt:         { type: Date, default: Date.now }
+}, { timestamps: false });
+
+const leadSchema = new mongoose.Schema({
+  type:        { type: String, default: "service-quote" },
+  name:        { type: String, required: true },
+  phone:       { type: String, required: true },
+  service:     { type: String, required: true },
+  slug:        String,
+  source:      String,
+  note:        String,
+  createdAt:   { type: Date, default: Date.now }
+}, { timestamps: false });
+
+const Service = mongoose.model("Service", serviceSchema);
+const Lead = mongoose.model("Lead", leadSchema);
+
 function sanitizeAdminAccount(admin) {
   return {
     username: admin?.username || getDefaultAdminUsername()
   };
+}
+
+function serviceFallback(slug) {
+  return SERVICE_DEFAULTS.find(item => item.slug === slug) || null;
+}
+
+async function getServiceRecords() {
+  if (mongoose.connection.readyState !== 1) {
+    return SERVICE_DEFAULTS.map(item => ({ ...item }));
+  }
+
+  const records = await Promise.all(SERVICE_DEFAULTS.map(async item => {
+    const doc = await Service.findOneAndUpdate(
+      { slug: item.slug },
+      { $setOnInsert: { ...item, updatedAt: new Date() } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    return doc.toObject ? doc.toObject() : { ...doc };
+  }));
+
+  return records.sort((a, b) => SERVICE_SLUGS.indexOf(a.slug) - SERVICE_SLUGS.indexOf(b.slug));
+}
+
+async function getServiceRecord(slug) {
+  if (!SERVICE_SLUGS.includes(slug)) return null;
+  if (mongoose.connection.readyState !== 1) {
+    const fallback = serviceFallback(slug);
+    return fallback ? { ...fallback } : null;
+  }
+  const doc = await Service.findOneAndUpdate(
+    { slug },
+    { $setOnInsert: { ...serviceFallback(slug), updatedAt: new Date() } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+  return doc?.toObject ? doc.toObject() : doc;
+}
+
+function formatInr(value) {
+  const amount = Number(value || 0);
+  return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+function serviceMatchValue(raw) {
+  return String(raw || "").trim().toLowerCase();
+}
+
+function serviceMatchesProject(service, project) {
+  const slug = serviceMatchValue(service.slug);
+  const projectValue = serviceMatchValue(project.service);
+  const fallbackName = serviceMatchValue(service.name);
+  return projectValue === slug || projectValue === fallbackName;
+}
+
+function buildAbsoluteAssetUrl(req, rawUrl) {
+  if (!rawUrl) return `${req.protocol}://${req.get("host")}/static/assets/logo-ym.jpg`;
+  if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+  return `${req.protocol}://${req.get("host")}${rawUrl.startsWith("/") ? rawUrl : `/${rawUrl}`}`;
+}
+
+function escapeHtml(raw) {
+  return String(raw ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderServicePageHtml(req, service, recentWork) {
+  const ogImage = buildAbsoluteAssetUrl(req, service.og_image_url);
+  const serviceTitle = escapeHtml(service.name);
+  const description = escapeHtml(service.meta_description || service.valueProp || "");
+  const deliverables = Array.isArray(service.deliverables) && service.deliverables.length
+    ? service.deliverables.slice(0, 6)
+    : (serviceFallback(service.slug)?.deliverables || []).slice(0, 6);
+  const quoteServiceName = escapeHtml(service.name);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${serviceTitle} Agency India | YoungMinds Agency</title>
+<meta name="description" content="${description}">
+<meta property="og:title" content="${serviceTitle} Agency India | YoungMinds Agency">
+<meta property="og:description" content="${description}">
+<meta property="og:image" content="${escapeHtml(ogImage)}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070808;--bg2:#101214;--bg3:#17191b;--panel:#0f1112;--text:#f4f4f4;--muted:#9a9fa6;--border:rgba(255,255,255,.09);--accent:#e8c547;--accent-soft:rgba(232,197,71,.12);--green:#3ecf8e;--amber:#fb923c;--shadow:0 18px 60px rgba(0,0,0,.35)}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;font-family:"DM Sans",system-ui,sans-serif;background:radial-gradient(circle at top right,rgba(232,197,71,.08),transparent 26%),linear-gradient(180deg,#060707,#0d0f11 35%,#060707);color:var(--text)}
+a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
+.page{min-height:100vh}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(7,8,8,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1180px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800}.brand-dot{width:26px;height:26px;border-radius:8px;background:var(--accent);color:#000;display:grid;place-items:center;font-size:12px}
+.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:12px 18px;border:1px solid var(--border);font-weight:700;cursor:pointer}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-ghost{background:transparent;color:var(--text)}
+.shell{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+.hero{padding:46px 0 28px;display:grid;grid-template-columns:1.3fr .9fr;gap:18px;align-items:end}
+.hero-card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:28px;padding:32px;box-shadow:var(--shadow)}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.hero h1{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(2.4rem,5vw,4.6rem);line-height:.97;letter-spacing:-.05em;margin:18px 0 12px}
+.hero p{font-size:15px;line-height:1.8;color:var(--muted);max-width:58ch}
+.hero-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:22px;padding:18px}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.kpi-value{margin-top:8px;font-size:24px;font-weight:800}
+.section{padding:20px 0}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:18px}
+.section-title{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(1.6rem,3vw,2.5rem);letter-spacing:-.04em;margin:0}
+.section-copy{font-size:14px;color:var(--muted);line-height:1.8;max-width:48ch}
+.deliverables{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tile{background:var(--panel);border:1px solid var(--border);border-radius:22px;padding:18px}
+.tile-num{width:36px;height:36px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:12px}
+.tile-title{margin-top:14px;font-size:15px;font-weight:700;line-height:1.5}
+.process{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.step{background:var(--panel);border:1px solid var(--border);border-radius:24px;padding:20px;position:relative;overflow:hidden}
+.step::after{content:"";position:absolute;top:0;right:0;width:90px;height:90px;background:radial-gradient(circle,rgba(232,197,71,.16),transparent 70%)}
+.step-num{font-size:12px;color:var(--accent);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.step-title{margin-top:12px;font-size:20px;font-weight:800}
+.step-copy{margin-top:8px;font-size:13px;line-height:1.7;color:var(--muted)}
+.pricing{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}
+.pricing-card,.portfolio-wrap,.cta-card{background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:24px}
+.price-range{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(2rem,4vw,3.3rem);letter-spacing:-.05em;margin:10px 0}
+.pricing-note{font-size:13px;line-height:1.8;color:var(--muted)}
+.portfolio-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.portfolio-card{border:1px solid var(--border);border-radius:20px;padding:18px;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
+.portfolio-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.portfolio-badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.portfolio-title{font-size:18px;font-weight:800}
+.portfolio-copy{margin-top:8px;font-size:13px;line-height:1.7;color:var(--muted)}
+.empty-card{display:grid;place-items:center;min-height:210px;text-align:center;color:var(--muted)}
+.cta-card{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.quote-fab{position:fixed;right:18px;bottom:18px;z-index:60;background:var(--accent);color:#000;border:none;border-radius:999px;padding:14px 18px;font-weight:800;box-shadow:0 16px 40px rgba(0,0,0,.35);display:none}
+.quote-modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:61;padding:18px}
+.quote-modal-wrap.open{display:flex}
+.quote-modal{width:min(420px,100%);background:#0f1113;border:1px solid var(--border);border-radius:26px;padding:20px;box-shadow:var(--shadow)}
+.quote-title{font-size:20px;font-weight:800}
+.quote-copy{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.7}
+.field{margin-top:14px}.field label{display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;background:#17191b;border:1px solid var(--border);border-radius:14px;color:var(--text);padding:13px 14px;outline:none}
+.field input:focus{border-color:rgba(232,197,71,.4)}
+.quote-actions{display:flex;gap:10px;margin-top:16px}
+.quote-status{margin-top:12px;font-size:12px;color:var(--muted)}
+@media (max-width: 980px){.hero,.pricing,.deliverables,.process,.portfolio-grid,.cta-card{grid-template-columns:1fr}.hero-kpis{grid-template-columns:1fr 1fr 1fr}}
+@media (max-width: 700px){.shell{padding:18px 16px 86px}.hero-card,.pricing-card,.portfolio-wrap,.cta-card{padding:20px}.deliverables,.process,.portfolio-grid,.hero-kpis{grid-template-columns:1fr}.topbar-inner{padding:12px 16px}.quote-fab{display:inline-flex}.top-actions .btn-primary{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-dot">Y</span><span>YoungMinds Agency</span></a>
+      <div class="top-actions">
+        <a class="btn btn-ghost" href="/#services">All Services</a>
+        <a class="btn btn-primary" href="/hire">Hire Us</a>
+      </div>
+    </div>
+  </div>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-card">
+        <span class="eyebrow">${escapeHtml(service.shortLabel || "Service")} Deep Dive</span>
+        <h1>${serviceTitle}</h1>
+        <p>${escapeHtml(service.valueProp || "")}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+          <a class="btn btn-primary" href="/hire">Ready to start? Hire us</a>
+          <a class="btn btn-ghost" href="/pricing-calculator">Use calculator</a>
+        </div>
+      </div>
+      <div class="hero-kpis">
+        <div class="kpi"><div class="kpi-label">Pricing Range</div><div class="kpi-value">${escapeHtml(formatInr(service.pricing_min_inr))}</div></div>
+        <div class="kpi"><div class="kpi-label">To</div><div class="kpi-value">${escapeHtml(formatInr(service.pricing_max_inr))}</div></div>
+        <div class="kpi"><div class="kpi-label">Process</div><div class="kpi-value">4 Steps</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2 class="section-title">What You Get</h2></div>
+        <div class="section-copy">A focused scope with tangible deliverables, so you know exactly what the engagement includes.</div>
+      </div>
+      <div class="deliverables">
+        ${deliverables.map((item, idx) => `<div class="tile"><div class="tile-num">${SERVICE_ICON_SET[idx] || String(idx + 1).padStart(2, "0")}</div><div class="tile-title">${escapeHtml(item)}</div></div>`).join("")}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2 class="section-title">Our Process</h2></div>
+        <div class="section-copy">A clear 4-step flow keeps planning tight, execution visible, and delivery on track.</div>
+      </div>
+      <div class="process">
+        ${[
+          ["Brief", "We understand goals, constraints, timeline, and what success should look like."],
+          ["Strategy", "We shape the approach, scope, priorities, and direction before production starts."],
+          ["Execution", "The right YoungMinds specialist builds, designs, writes, edits, or automates the work."],
+          ["Delivery", "You receive final outputs, revisions if needed, and a clean handoff."]
+        ].map((step, idx) => `<div class="step"><div class="step-num">Step ${String(idx + 1).padStart(2, "0")}</div><div class="step-title">${step[0]}</div><div class="step-copy">${step[1]}</div></div>`).join("")}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="pricing">
+        <div class="pricing-card">
+          <div class="eyebrow">Pricing Range</div>
+          <div class="price-range">${escapeHtml(formatInr(service.pricing_min_inr))} – ${escapeHtml(formatInr(service.pricing_max_inr))}</div>
+          <div class="pricing-note">Final price depends on scope — use calculator for estimate.</div>
+          <div style="margin-top:18px"><a class="btn btn-primary" href="/pricing-calculator">Open pricing calculator</a></div>
+        </div>
+        <div class="portfolio-wrap">
+          <div class="eyebrow">Why Teams Choose This</div>
+          <div class="pricing-note" style="margin-top:16px">YoungMinds keeps specialist-led execution, fast communication, and clear handoff standards in every service line. You get focused delivery instead of generic agency sprawl.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2 class="section-title">Recent Work</h2></div>
+        <div class="section-copy">A quick look at recent project records that match this service area.</div>
+      </div>
+      <div class="portfolio-grid">
+        ${recentWork.length ? recentWork.map(item => `<article class="portfolio-card"><div class="portfolio-meta"><span class="portfolio-badge">${escapeHtml(item.service || service.name)}</span><span style="font-size:12px;color:var(--muted)">${escapeHtml(item.city || "India")}</span></div><div class="portfolio-title">${escapeHtml(item.business || item.name || "Project")}</div><div class="portfolio-copy">${escapeHtml(item.description || item.notes || "Completed work delivered by the YoungMinds team.")}</div></article>`).join("") : `<div class="empty-card">Recent completed work for this service will appear here once matching portfolio-ready projects are marked completed.</div>`}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="cta-card">
+        <div>
+          <div class="eyebrow">Ready to start?</div>
+          <h2 class="section-title" style="margin-top:10px">Let YoungMinds handle your ${serviceTitle.toLowerCase()}.</h2>
+          <div class="section-copy">Tell us the scope, budget, and timeline. We’ll take it from there.</div>
+        </div>
+        <a class="btn btn-primary" href="/hire">Hire us</a>
+      </div>
+    </section>
+  </main>
+</div>
+
+<button class="quote-fab" type="button" onclick="toggleQuoteModal(true)">Get a Quote</button>
+<div class="quote-modal-wrap" id="quoteModalWrap" onclick="if(event.target===this)toggleQuoteModal(false)">
+  <div class="quote-modal">
+    <div class="quote-title">Quick Quote</div>
+    <div class="quote-copy">A lighter version of the hire form for fast WhatsApp follow-up.</div>
+    <div class="field"><label>Name</label><input id="lead-name" type="text" placeholder="Your name"></div>
+    <div class="field"><label>WhatsApp</label><input id="lead-phone" type="tel" placeholder="+91 90000 00000"></div>
+    <div class="field"><label>Service</label><input id="lead-service" type="text" value="${quoteServiceName}" readonly></div>
+    <div class="quote-actions">
+      <button class="btn btn-ghost" type="button" onclick="toggleQuoteModal(false)">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="submitQuickLead()">Send</button>
+    </div>
+    <div class="quote-status" id="quoteStatus">We usually reply on WhatsApp within 24 hours.</div>
+  </div>
+</div>
+<script>
+function toggleQuoteModal(open){document.getElementById('quoteModalWrap').classList.toggle('open',!!open);}
+async function submitQuickLead(){
+  const name=document.getElementById('lead-name').value.trim();
+  const phone=document.getElementById('lead-phone').value.trim();
+  const service=document.getElementById('lead-service').value.trim();
+  const status=document.getElementById('quoteStatus');
+  if(!name||!phone){status.textContent='Enter your name and WhatsApp number.';return;}
+  status.textContent='Sending...';
+  try{
+    const res=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,phone,service,slug:'${escapeHtml(service.slug)}',source:'service-page'})});
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error||'Could not submit');}
+    status.textContent='Thanks — we will reach out on WhatsApp soon.';
+    document.getElementById('lead-name').value='';
+    document.getElementById('lead-phone').value='';
+  }catch(err){status.textContent=err.message||'Could not submit right now.';}
+}
+</script>
+</body>
+</html>`;
 }
 
 async function getOrCreateAdminAccount() {
@@ -601,6 +1031,96 @@ app.delete("/api/board-members/:id", async (req, res) => {
   try {
     await BoardMember.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/services", async (req, res) => {
+  try {
+    const records = await getServiceRecords();
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/services/:slug", async (req, res) => {
+  try {
+    const service = await getServiceRecord(req.params.slug);
+    if (!service) return res.status(404).json({ error: "Service not found" });
+    res.json(service);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put("/api/services/:slug", async (req, res) => {
+  try {
+    const adminSession = await requireAdminSession(req, res);
+    if (!adminSession) return;
+
+    const slug = req.params.slug;
+    if (!SERVICE_SLUGS.includes(slug)) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    const defaultService = serviceFallback(slug);
+    const deliverablesRaw = Array.isArray(req.body?.deliverables)
+      ? req.body.deliverables
+      : String(req.body?.deliverables || "").split(/\n|,/);
+    const deliverables = deliverablesRaw
+      .map(item => String(item || "").trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    if (deliverables.length < 6) {
+      while (deliverables.length < 6) {
+        deliverables.push(defaultService.deliverables[deliverables.length] || `Deliverable ${deliverables.length + 1}`);
+      }
+    }
+
+    const updates = {
+      name: String(req.body?.name || defaultService.name).trim() || defaultService.name,
+      shortLabel: String(req.body?.shortLabel || defaultService.shortLabel || "").trim() || defaultService.shortLabel,
+      valueProp: String(req.body?.valueProp || defaultService.valueProp || "").trim() || defaultService.valueProp,
+      meta_description: String(req.body?.meta_description || defaultService.meta_description || "").trim() || defaultService.meta_description,
+      og_image_url: String(req.body?.og_image_url || defaultService.og_image_url || "").trim() || defaultService.og_image_url,
+      pricing_min_inr: Math.max(0, Number(req.body?.pricing_min_inr || defaultService.pricing_min_inr || 0)),
+      pricing_max_inr: Math.max(0, Number(req.body?.pricing_max_inr || defaultService.pricing_max_inr || 0)),
+      deliverables,
+      updatedAt: new Date()
+    };
+
+    const doc = await Service.findOneAndUpdate(
+      { slug },
+      { $set: { slug, ...updates } },
+      { new: true, upsert: true, runValidators: false, setDefaultsOnInsert: true }
+    );
+    res.json(doc);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/leads", async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const phone = String(req.body?.phone || "").trim();
+    const service = String(req.body?.service || "").trim();
+    if (!name || !phone || !service) {
+      return res.status(400).json({ error: "name, phone, and service are required" });
+    }
+
+    const doc = new Lead({
+      name,
+      phone,
+      service,
+      slug: String(req.body?.slug || "").trim(),
+      source: String(req.body?.source || "service-page").trim(),
+      note: String(req.body?.note || "").trim()
+    });
+    await doc.save();
+    res.status(201).json({ success: true, lead: doc });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -944,6 +1464,21 @@ app.get("/api/projects/:id", async (req, res) => {
     res.json(doc);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/services/:slug", async (req, res) => {
+  try {
+    const service = await getServiceRecord(req.params.slug);
+    if (!service) return res.status(404).send("Service not found");
+    let recentWork = [];
+    if (mongoose.connection.readyState === 1) {
+      const projects = await Project.find({ status: "completed" }).sort({ timestamp: -1 }).limit(40);
+      recentWork = projects.filter(project => serviceMatchesProject(service, project)).slice(0, 2);
+    }
+    res.send(renderServicePageHtml(req, service, recentWork));
+  } catch (err) {
+    res.status(500).send("Could not load service page");
   }
 });
 

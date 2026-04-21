@@ -118,10 +118,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .sec-p{font-size:16px;color:var(--muted);line-height:1.8;max-width:520px}
 
 .svc-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;flex-wrap:wrap;gap:20px}
+.svc-links{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.svc-link{display:inline-flex;align-items:center;padding:9px 14px;border-radius:999px;border:1px solid var(--border2);background:rgba(255,255,255,0.02);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);transition:all .25s}
+.svc-link:hover{color:var(--text);border-color:var(--accent);background:rgba(255,215,0,0.08)}
 .svc-table{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:linear-gradient(135deg,rgba(255,215,0,0.02),rgba(255,215,0,0.01))}
 .svc-row{display:grid;grid-template-columns:40px 1fr 1.3fr auto;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border);transition:all .3s;gap:16px}
 .svc-row:last-child{border-bottom:none}
 .svc-row:hover{background:rgba(255,215,0,0.06);padding-left:28px}
+.svc-row-link{display:grid;grid-template-columns:inherit;align-items:inherit;gap:inherit;color:inherit}
 .svc-num{font-size:11px;color:var(--accent);font-weight:800;opacity:0.6}
 .svc-name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:10px;color:var(--text)}
 .svc-desc{font-size:13px;color:var(--muted);line-height:1.6}
@@ -401,14 +405,8 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
     <div><div class="eyebrow">Services</div><h2 class="sec-h2">Everything your<br>business <em>needs.</em></h2></div>
     <p class="sec-p">Each service is handled by a dedicated specialist — not a generalist.</p>
   </div>
-  <div class="svc-table reveal">
-    <div class="svc-row"><span class="svc-num">01</span><div class="svc-name">Web Development</div><div class="svc-desc">Responsive websites, landing pages, internal tools, and e-commerce builds made to convert.</div><span class="svc-price">From ₹5,000</span></div>
-    <div class="svc-row"><span class="svc-num">02</span><div class="svc-name">Graphic Design</div><div class="svc-desc">Logos, visual identity systems, launch creatives, and everyday design assets.</div><span class="svc-price">From ₹2,000</span></div>
-    <div class="svc-row"><span class="svc-num">03</span><div class="svc-name">Content Writing</div><div class="svc-desc">Website copy, product messaging, blogs, and social content with a clearer voice.</div><span class="svc-price">From ₹1,500</span></div>
-    <div class="svc-row"><span class="svc-num">04</span><div class="svc-name">AI Solutions</div><div class="svc-desc">Automation flows, assistants, and lightweight AI tools tailored to your workflow.</div><span class="svc-price">From ₹8,000</span></div>
-    <div class="svc-row"><span class="svc-num">05</span><div class="svc-name">Social Media</div><div class="svc-desc">Content planning, post production, and monthly support for consistent output.</div><span class="svc-price">From ₹4,000/mo</span></div>
-    <div class="svc-row"><span class="svc-num">06</span><div class="svc-name">Video Editing</div><div class="svc-desc">Reels, explainer cuts, launch edits, and short-form content that feels current.</div><span class="svc-price">From ₹2,500</span></div>
-  </div>
+  <div class="svc-links reveal" id="servicesNav"></div>
+  <div class="svc-table reveal" id="servicesTable"></div>
 </section>
 
 <section class="sec" id="process" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
@@ -650,6 +648,7 @@ const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
 let boardCarouselIndex = 0;
 let boardCarouselTimer = null;
 let boardCarouselCount = 0;
+let serviceEntries = [];
 
 function stopBoardCarousel(){
   if(boardCarouselTimer){
@@ -743,6 +742,43 @@ async function loadBoardMembers(){
     renderBoardMembers(Array.isArray(data)?data:[]);
   }catch{
     renderBoardMembers([]);
+  }
+}
+
+function formatInr(amount){
+  return `₹${Number(amount || 0).toLocaleString('en-IN')}`;
+}
+
+function renderServices(entries){
+  const nav=document.getElementById('servicesNav');
+  const table=document.getElementById('servicesTable');
+  if(!nav||!table)return;
+  if(!entries.length){
+    nav.innerHTML='';
+    table.innerHTML=`<div class="svc-row"><div class="svc-desc">Services will appear here soon.</div></div>`;
+    return;
+  }
+  nav.innerHTML=entries.map(item=>`<a class="svc-link" href="/services/${item.slug}">${escapeHtml(item.name||'Service')}</a>`).join('');
+  table.innerHTML=entries.map((item,index)=>`
+    <div class="svc-row">
+      <a class="svc-row-link" href="/services/${item.slug}">
+        <span class="svc-num">${String(index+1).padStart(2,'0')}</span>
+        <div class="svc-name">${escapeHtml(item.name||'Service')}</div>
+        <div class="svc-desc">${escapeHtml(item.valueProp||'YoungMinds service offering')}</div>
+        <span class="svc-price">${formatInr(item.pricing_min_inr)}+</span>
+      </a>
+    </div>
+  `).join('');
+}
+
+async function loadServices(){
+  try{
+    const response=await fetch(`${API}/api/services`);
+    const data=response.ok?await response.json():[];
+    serviceEntries=Array.isArray(data)?data:[];
+    renderServices(serviceEntries);
+  }catch{
+    renderServices([]);
   }
 }
 
@@ -883,6 +919,7 @@ function updStp(sp,fp,cur,tot){
 updStp('jstp','jfill',1,3);
 updStp('cstp','cfill',1,3);
 loadBoardMembers();
+loadServices();
 
 function toggleAiPanel(id){
   const panel=document.getElementById(id);

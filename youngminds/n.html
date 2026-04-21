@@ -237,6 +237,30 @@ a{text-decoration:none;color:inherit}
 .board-status-pill.live{background:var(--green2);border:1px solid rgba(62,207,142,.2);color:var(--green)}
 .board-status-pill.draft{background:var(--bg4);border:1px solid var(--border2);color:var(--muted3)}
 
+/* ── SERVICES MANAGER ── */
+.service-admin-layout{display:grid;grid-template-columns:320px 1fr;gap:14px}
+.service-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px}
+.service-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.service-admin-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.service-admin-sub{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:4px}
+.service-admin-list{display:grid;gap:10px}
+.service-admin-item{width:100%;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);cursor:pointer;transition:border-color .18s,background .18s,transform .18s;text-align:left;color:inherit;font:inherit}
+.service-admin-item:hover{border-color:var(--border2);transform:translateY(-1px)}
+.service-admin-item.active{border-color:var(--accent);background:rgba(232,197,71,.08)}
+.service-admin-item-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.service-admin-item-name{font-size:13px;font-weight:800}
+.service-admin-item-price{font-size:11px;font-weight:700;color:var(--accent)}
+.service-admin-item-copy{font-size:12px;color:var(--muted3);line-height:1.6}
+.service-admin-form{display:grid;gap:14px}
+.service-admin-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.service-admin-deliverables{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.service-admin-deliverable{display:flex;gap:8px;align-items:flex-start}
+.service-admin-deliverable-num{width:28px;height:28px;border-radius:10px;background:var(--accent2);border:1px solid rgba(232,197,71,.18);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:27px}
+.service-admin-meta{display:flex;gap:8px;flex-wrap:wrap}
+.service-admin-pill{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:var(--bg4);border:1px solid var(--border2);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted3)}
+.service-admin-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.service-admin-note{font-size:12px;color:var(--muted3);line-height:1.6}
+
 /* ── GROUP PILL ── */
 .group-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--purple2);border:1px solid rgba(167,139,250,.2);color:var(--purple);padding:4px 10px;border-radius:100px}
 .group-pill .rm{cursor:pointer;color:var(--muted3);transition:color .15s;font-size:14px;line-height:1}
@@ -334,7 +358,7 @@ canvas#revChart{max-height:220px}
 .ai-foot{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
 
 @media(max-width:960px){
-  .comm-grid,.chat-shell,.board-admin-layout{grid-template-columns:1fr}
+  .comm-grid,.chat-shell,.board-admin-layout,.service-admin-layout{grid-template-columns:1fr}
   .ov-sections,.rev-grid{grid-template-columns:1fr}
 }
 
@@ -381,6 +405,9 @@ canvas#revChart{max-height:220px}
   .chat-msg{max-width:100%}
   .ai-panel{right:12px;left:12px;width:auto;max-width:none;bottom:80px}
   .ai-fab{right:16px;bottom:16px}
+  .service-admin-form-row,.service-admin-deliverables{grid-template-columns:1fr}
+  .service-admin-actions{justify-content:stretch}
+  .service-admin-actions .btn-sm{width:100%}
 }
 </style>
 </head>
@@ -430,6 +457,9 @@ canvas#revChart{max-height:220px}
       </div>
       <div class="sb-item" id="nav-board" onclick="nav('board')">
         <div class="sb-il"><span class="sb-icon">◫</span><span class="sb-label">Board of Members</span></div>
+      </div>
+      <div class="sb-item" id="nav-services" onclick="nav('services')">
+        <div class="sb-il"><span class="sb-icon">◌</span><span class="sb-label">Services</span></div>
       </div>
       <div class="sb-sec">Hiring</div>
       <div class="sb-item" id="nav-app-new" onclick="nav('app-new')">
@@ -628,6 +658,11 @@ canvas#revChart{max-height:220px}
         <div id="board-admin-content"></div>
       </div>
 
+      <!-- SERVICES -->
+      <div class="view" id="view-services">
+        <div id="services-admin-content"></div>
+      </div>
+
       <!-- HIRING VIEWS -->
       <div class="view" id="view-app-new"></div>
       <div class="view" id="view-app-reviewing"></div>
@@ -803,28 +838,33 @@ let apps=[], prjs=[], currentRecord=null;
 let groups = JSON.parse(localStorage.getItem('ym_groups')||'[]'); // UI-only groups (localStorage is fine)
 let payments = []; // Loaded from MongoDB via /api/payments
 let boardEntries = [];
+let serviceEntries = [];
 let currentBoardEditId = null;
+let currentServiceSlug = "web-development";
 let revChart = null;
 
 async function loadAll(){
   setLoading(true);
   let ok=true;
   try{
-    const [ra,rp,rpay,rb]=await Promise.all([
+    const [ra,rp,rpay,rb,rs]=await Promise.all([
       fetch(API+'/api/applications').catch(()=>{ok=false;return null;}),
       fetch(API+'/api/projects').catch(()=>{ok=false;return null;}),
       fetch(API+'/api/payments').catch(()=>null),
-      fetch(API+'/api/board-members/admin').catch(()=>null)
+      fetch(API+'/api/board-members/admin').catch(()=>null),
+      fetch(API+'/api/services').catch(()=>null)
     ]);
     apps=(ra&&ra.ok)?await ra.json():[];
     prjs=(rp&&rp.ok)?await rp.json():[];
     payments=(rpay&&rpay.ok)?await rpay.json():[];
     boardEntries=(rb&&rb.ok)?await rb.json():[];
+    serviceEntries=(rs&&rs.ok)?await rs.json():[];
     apps.forEach(r=>{r.id=r._id||r.id;r.type='application';});
     prjs.forEach(r=>{r.id=r._id||r.id;r.type='project';});
     boardEntries.forEach(r=>{r.id=r._id||r.id;});
+    serviceEntries.forEach(r=>{r.id=r._id||r.id;});
   }catch(e){
-    ok=false;apps=[];prjs=[];payments=[];boardEntries=[];
+    ok=false;apps=[];prjs=[];payments=[];boardEntries=[];serviceEntries=[];
   }
   setLoading(false);
   setStatus(ok);
@@ -866,7 +906,7 @@ function updateAllCounts(){
 
 /* ── NAV ── */
 const NAV_TITLE={
-  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',
+  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',services:'Services',
   'app-new':'Hiring — New','app-reviewing':'Hiring — Reviewing','app-accepted':'Hiring — Accepted',
   'app-hired':'Hiring — Members','app-rejected':'Hiring — Rejected',
   'prj-new':'Projects — New','prj-reviewing':'Projects — Reviewing','prj-accepted':'Projects — Accepted',
@@ -896,6 +936,7 @@ function closeSidebar(){
 /* ── RENDER ALL ── */
 function renderAllViews(){
   renderBoardManager();
+  renderServicesManager();
   APP_STS.forEach(s=>renderView('app',s));
   PRJ_STS.forEach(s=>renderView('prj',s));
 }
@@ -2097,6 +2138,154 @@ function cancelBoardEdit(){
   renderBoardManager();
 }
 
+function getCurrentServiceEntry(){
+  if(!Array.isArray(serviceEntries)||!serviceEntries.length) return null;
+  const current=serviceEntries.find(item=>item.slug===currentServiceSlug);
+  if(current) return current;
+  currentServiceSlug=serviceEntries[0].slug;
+  return serviceEntries[0];
+}
+
+function renderServicesManager(){
+  const el=document.getElementById("services-admin-content");
+  if(!el) return;
+  const current=getCurrentServiceEntry();
+  if(!current){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No services available</div><div class="empty-sub">Service configuration will appear here once the API is reachable.</div></div>`;
+    return;
+  }
+  const deliverables=(Array.isArray(current.deliverables)?current.deliverables:[]).slice(0,6);
+  while(deliverables.length<6) deliverables.push("");
+  el.innerHTML=`
+    <div class="view-hdr">
+      <span class="view-hdr-title">Services</span>
+      <span class="view-hdr-count">${serviceEntries.length} service lines</span>
+    </div>
+    <div class="service-admin-layout">
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Service list</div>
+            <div class="service-admin-sub">Choose a service to edit the deep-dive page, homepage pricing, and public quote content.</div>
+          </div>
+        </div>
+        <div class="service-admin-list">
+          ${serviceEntries.map(item=>`
+            <button class="service-admin-item ${item.slug===current.slug?"active":""}" type="button" onclick="selectServiceSlug('${escapeHtml(item.slug)}')">
+              <div class="service-admin-item-top">
+                <div class="service-admin-item-name">${escapeHtml(item.name||"Service")}</div>
+                <div class="service-admin-item-price">${escapeHtml(formatInrRange(item.pricing_min_inr,item.pricing_max_inr))}</div>
+              </div>
+              <div class="service-admin-meta">
+                <span class="service-admin-pill">${escapeHtml(item.shortLabel||"Service")}</span>
+                <span class="service-admin-pill">${escapeHtml(item.slug||"service")}</span>
+              </div>
+              <div class="service-admin-item-copy" style="margin-top:10px">${escapeHtml(item.valueProp||"No value proposition added yet.")}</div>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Edit ${escapeHtml(current.name||"service")}</div>
+            <div class="service-admin-sub">Changes publish to the homepage service section, the `/services/[slug]` page, and the mobile quote prompt.</div>
+          </div>
+          <a class="btn-sm" href="/services/${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Page</a>
+        </div>
+        <div class="service-admin-form">
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="${escapeHtml(current.name||"")}"></div>
+            <div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="${escapeHtml(current.shortLabel||"")}"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">${escapeHtml(current.valueProp||"")}</textarea></div>
+          </div>
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Pricing Min (INR)</label><input id="service-pricing-min" type="number" min="0" step="100" value="${Number(current.pricing_min_inr||0)}"></div>
+            <div class="form-field"><label>Pricing Max (INR)</label><input id="service-pricing-max" type="number" min="0" step="100" value="${Number(current.pricing_max_inr||0)}"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">${escapeHtml(current.meta_description||"")}</textarea></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="${escapeHtml(current.og_image_url||"")}"></div>
+          </div>
+          <div>
+            <div class="dp-sec-title" style="margin-bottom:14px">What You Get</div>
+            <div class="service-admin-deliverables">
+              ${deliverables.map((item,index)=>`
+                <div class="service-admin-deliverable">
+                  <div class="service-admin-deliverable-num">${String(index+1).padStart(2,"0")}</div>
+                  <div class="form-field" style="margin:0;flex:1"><label>Deliverable ${index+1}</label><input type="text" data-service-deliverable value="${escapeHtml(item)}"></div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div>
+          <div class="service-admin-actions">
+            <button class="btn-sm" type="button" onclick="renderServicesManager()">Reset</button>
+            <button class="btn-sm primary" type="button" onclick="saveServiceConfig()">Save Service</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function formatInrRange(min,max){
+  return `${formatINR(min||0)} - ${formatINR(max||0)}`;
+}
+
+function formatINR(amount){
+  return `₹${Number(amount||0).toLocaleString("en-IN")}`;
+}
+
+function selectServiceSlug(slug){
+  currentServiceSlug=slug;
+  renderServicesManager();
+}
+
+async function saveServiceConfig(){
+  if(!currentAdminToken){
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+  const current=getCurrentServiceEntry();
+  if(!current) return;
+  const deliverables=[...document.querySelectorAll('[data-service-deliverable]')].map(input=>input.value.trim()).filter(Boolean);
+  const payload={
+    name:document.getElementById("service-name")?.value.trim(),
+    shortLabel:document.getElementById("service-short-label")?.value.trim(),
+    valueProp:document.getElementById("service-value-prop")?.value.trim(),
+    meta_description:document.getElementById("service-meta-description")?.value.trim(),
+    og_image_url:document.getElementById("service-og-image")?.value.trim(),
+    pricing_min_inr:Number(document.getElementById("service-pricing-min")?.value||0),
+    pricing_max_inr:Number(document.getElementById("service-pricing-max")?.value||0),
+    deliverables
+  };
+  try{
+    const response=await fetch(`${API}/api/services/${current.slug}`,{
+      method:"PUT",
+      headers:adminAuthHeaders({"Content-Type":"application/json"}),
+      body:JSON.stringify(payload)
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      showToast(data.error||"Could not save service");
+      return;
+    }
+    const updated={...data,id:data._id||data.id};
+    serviceEntries=serviceEntries.map(item=>item.slug===updated.slug?updated:item);
+    currentServiceSlug=updated.slug;
+    renderServicesManager();
+    showToast("Service updated");
+  }catch{
+    showToast("Could not save service");
+  }
+}
+
 async function saveBoardMember(){
   const payload = {
     name: document.getElementById("board-name")?.value.trim(),
@@ -2764,7 +2953,7 @@ const ADMIN_SESSION_KEY = "ym_admin_session";
 const ADMIN_REMEMBER_KEY = "ym_admin_remember";
 const ADMIN_USERNAME_KEY = "ym_admin_username";
 const ADMIN_PAGE_SET = new Set([
-  "overview", "revenue", "comm", "chat", "board",
+  "overview", "revenue", "comm", "chat", "board", "services",
   "app-new", "app-reviewing", "app-hired", "app-rejected",
   "prj-new", "prj-reviewing", "prj-accepted", "prj-assigning",
   "prj-assigned", "prj-inprogress", "prj-completed", "prj-rejected"
@@ -2811,13 +3000,17 @@ function sanitizeAdminPage(page) {
 }
 
 function getAdminPageFromLocation() {
+  const pathname = String(window.location.pathname || "").replace(/\/+$/, "");
+  if (pathname === "/admin/services") return "services";
   const hash = String(window.location.hash || "").replace(/^#/, "");
   return sanitizeAdminPage(hash.startsWith("admin-") ? hash.slice(6) : "overview");
 }
 
 function setAdminHistory(page, mode = "push") {
   const cleanPage = sanitizeAdminPage(page);
-  const url = `${window.location.pathname}${window.location.search}#admin-${cleanPage}`;
+  const basePath = cleanPage === "services" ? "/admin/services" : "/admin";
+  const hash = cleanPage === "services" ? "" : `#admin-${cleanPage}`;
+  const url = `${basePath}${window.location.search}${hash}`;
   const state = { panel: "admin", page: cleanPage };
   if (mode === "replace") history.replaceState(state, "", url);
   else history.pushState(state, "", url);
