@@ -44,6 +44,9 @@ a{text-decoration:none;color:inherit}
 .l-field label{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted3);margin-bottom:6px}
 .l-field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:14px;padding:11px 14px;outline:none;transition:border-color .15s}
 .l-field input:focus{border-color:var(--border3)}
+.l-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 6px;flex-wrap:wrap}
+.check-row{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)}
+.check-row input{accent-color:var(--accent)}
 .l-err{font-size:12px;color:var(--red);margin-top:8px;display:none}
 .l-btn{width:100%;background:var(--text);color:#000;font-size:14px;font-weight:700;padding:12px;border-radius:var(--r);border:none;margin-top:10px;cursor:pointer;transition:opacity .15s}
 .l-btn:hover{opacity:.88}
@@ -348,10 +351,13 @@ canvas#revChart{max-height:220px}
   .l-field input{font-size:16px;padding:12px}
   .l-btn{padding:14px;font-size:14px}
   .topbar{padding:12px}
+  .tb-r{justify-content:flex-start;flex-wrap:wrap}
   .tb-title{font-size:14px}
   .tb-btn,.api-ts,.tb-user{font-size:11px}
+  .tb-user{width:100%}
   .content{padding:16px 12px}
   .stat-grid{grid-template-columns:1fr}
+  .ov-card-header,.pay-hdr,.chat-panel-head,.card-header{flex-direction:column;align-items:flex-start}
   .modal-overlay{padding:0}
   .modal{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0}
   .modal-header,.modal-footer{padding:16px}
@@ -379,10 +385,13 @@ canvas#revChart{max-height:220px}
     </div>
     <div class="l-title">Welcome back</div>
     <div class="l-sub">Sign in to access the control panel.</div>
-    <div class="l-field"><label>Username</label><input type="text" id="l-user" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="l-field"><label>Password</label><input type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-field"><label>Username</label><input type="text" id="l-user" placeholder="admin" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-field"><label>Password</label><input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-options">
+      <label class="check-row"><input type="checkbox" id="remember-admin" checked> <span>Remember this device</span></label>
+    </div>
     <div class="l-err" id="l-err">Incorrect credentials.</div>
-    <button class="l-btn" onclick="doLogin()">Sign in →</button>
+    <button class="l-btn" id="loginBtn" onclick="doLogin()">Sign in →</button>
   </div>
 </div>
 
@@ -467,8 +476,9 @@ canvas#revChart{max-height:220px}
       <div class="tb-r">
         <div id="api-dot" class="api-dot" title="Checking..."></div>
         <span id="api-ts" class="api-ts"></span>
+        <div class="tb-user" id="admin-user-chip">👤 admin</div>
+        <button class="tb-btn" type="button" onclick="openAdminCredentialsModal()">Credentials</button>
         <button class="tb-btn" onclick="loadAll()">↻ Refresh</button>
-        <div class="tb-user">👤 admin</div>
       </div>
     </div>
     <div class="gl-bar" id="gl"><div class="spinner"></div>Syncing with MongoDB...</div>
@@ -715,6 +725,44 @@ canvas#revChart{max-height:220px}
   </div>
 </div>
 
+<div class="modal-overlay" id="adminCredentialsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Admin Credentials</div>
+      <button class="modal-close" onclick="closeModal('adminCredentialsModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label>New Username</label>
+          <input type="text" id="admin-new-username" placeholder="admin" autocomplete="username">
+        </div>
+        <div class="form-field">
+          <label>Current Password</label>
+          <input type="password" id="admin-current-password" placeholder="Current password" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>New Password</label>
+          <input type="password" id="admin-new-password" placeholder="Leave blank to keep current password" autocomplete="new-password">
+        </div>
+        <div class="form-field">
+          <label>Confirm New Password</label>
+          <input type="password" id="admin-confirm-password" placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted3);line-height:1.65">
+        Update the admin username, password, or both. Your current password is required before the new credentials are saved.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" type="button" onclick="closeModal('adminCredentialsModal')">Cancel</button>
+      <button class="btn-sm primary" type="button" onclick="saveAdminCredentials()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div class="ai-panel" id="adminAiPanel">
@@ -733,25 +781,11 @@ canvas#revChart{max-height:220px}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // ── API BASE ──
-const PASS = 'youngminds2026';
 const API = window.location.origin;
 
 /* ── AUTH ── */
-function doLogin(){
-  const u=document.getElementById('l-user').value.trim();
-  const p=document.getElementById('l-pass').value;
-  if(u==='admin'&&p===PASS){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('appShell').style.display='flex';
-    loadAll();
-  } else {
-    document.getElementById('l-err').style.display='block';
-  }
-}
-function doLogout(){
-  document.getElementById('loginScreen').style.display='flex';
-  document.getElementById('appShell').style.display='none';
-}
+function doLogin(){}
+function doLogout(){}
 
 /* ── DATA ── */
 let apps=[], prjs=[], currentRecord=null;
@@ -1898,7 +1932,6 @@ function showToast(msg){
 
 // All data (assignments, payments) now live in MongoDB.
 // No localStorage fallback needed.
-document.addEventListener('DOMContentLoaded', loadAll);
 </script>
 <script>
 let adminNotifications = [];
@@ -1907,6 +1940,9 @@ let adminChatRooms = [];
 let activeAdminChatRoom = "team";
 let adminChatMessages = [];
 let adminPollInterval = null;
+let currentAdmin = null;
+let currentAdminToken = null;
+let activeAdminView = "overview";
 
 APP_STS.splice(APP_STS.indexOf("accepted"), 1);
 NAV_TITLE.comm = "Notices & Resets";
@@ -2702,6 +2738,280 @@ async function sendAdminAi(){
   if (sendBtn) sendBtn.disabled = false;
   appendAiBubble("adminAiBody", "assistant", reply || adminAiReply(text));
 }
+
+const ADMIN_SESSION_KEY = "ym_admin_session";
+const ADMIN_REMEMBER_KEY = "ym_admin_remember";
+const ADMIN_USERNAME_KEY = "ym_admin_username";
+const ADMIN_PAGE_SET = new Set([
+  "overview", "revenue", "comm", "chat", "board",
+  "app-new", "app-reviewing", "app-hired", "app-rejected",
+  "prj-new", "prj-reviewing", "prj-accepted", "prj-assigning",
+  "prj-assigned", "prj-inprogress", "prj-completed", "prj-rejected"
+]);
+
+function adminAuthHeaders(extra = {}) {
+  const headers = { ...extra };
+  if (currentAdminToken) headers.Authorization = `Bearer ${currentAdminToken}`;
+  return headers;
+}
+
+function getStoredAdminToken() {
+  return localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || "";
+}
+
+function getAdminRememberChoice() {
+  return document.getElementById("remember-admin")?.checked ?? localStorage.getItem(ADMIN_REMEMBER_KEY) === "1";
+}
+
+function persistAdminSession(token, username, remember) {
+  localStorage.setItem(ADMIN_REMEMBER_KEY, remember ? "1" : "0");
+  if (username) localStorage.setItem(ADMIN_USERNAME_KEY, username);
+  if (remember) {
+    localStorage.setItem(ADMIN_SESSION_KEY, token);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  } else {
+    sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+  }
+}
+
+function clearAdminSession(options = {}) {
+  const keepIdentity = options.keepIdentity !== false;
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  if (!keepIdentity) {
+    localStorage.removeItem(ADMIN_USERNAME_KEY);
+    localStorage.removeItem(ADMIN_REMEMBER_KEY);
+  }
+}
+
+function sanitizeAdminPage(page) {
+  return ADMIN_PAGE_SET.has(page) ? page : "overview";
+}
+
+function getAdminPageFromLocation() {
+  const hash = String(window.location.hash || "").replace(/^#/, "");
+  return sanitizeAdminPage(hash.startsWith("admin-") ? hash.slice(6) : "overview");
+}
+
+function setAdminHistory(page, mode = "push") {
+  const cleanPage = sanitizeAdminPage(page);
+  const url = `${window.location.pathname}${window.location.search}#admin-${cleanPage}`;
+  const state = { panel: "admin", page: cleanPage };
+  if (mode === "replace") history.replaceState(state, "", url);
+  else history.pushState(state, "", url);
+}
+
+function showAdminShell(admin) {
+  currentAdmin = { username: admin?.username || "admin" };
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("appShell").style.display = "flex";
+  document.getElementById("admin-user-chip").textContent = `👤 ${currentAdmin.username}`;
+  document.getElementById("l-err").style.display = "none";
+}
+
+function showAdminLogin() {
+  const remember = localStorage.getItem(ADMIN_REMEMBER_KEY) === "1";
+  const rememberedUsername = localStorage.getItem(ADMIN_USERNAME_KEY) || "";
+  currentAdmin = null;
+  currentAdminToken = null;
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("appShell").style.display = "none";
+  document.getElementById("l-user").value = rememberedUsername;
+  document.getElementById("l-pass").value = "";
+  document.getElementById("remember-admin").checked = remember || !localStorage.getItem(ADMIN_REMEMBER_KEY);
+  document.getElementById("loginBtn").disabled = false;
+  document.getElementById("loginBtn").textContent = "Sign in →";
+  document.getElementById("admin-user-chip").textContent = `👤 ${rememberedUsername || "admin"}`;
+  closeSidebar();
+  closeModal("adminCredentialsModal");
+  history.replaceState({ panel: "admin-login" }, "", `${window.location.pathname}${window.location.search}`);
+}
+
+async function finishAdminLogin(admin, token, options = {}) {
+  currentAdminToken = token || currentAdminToken;
+  showAdminShell(admin);
+  if (!options.skipPersist && currentAdminToken) {
+    persistAdminSession(currentAdminToken, admin?.username, Boolean(options.remember));
+  }
+  await loadAll();
+  if (adminPollInterval) clearInterval(adminPollInterval);
+  adminPollInterval = setInterval(loadAll, 30000);
+  const targetPage = sanitizeAdminPage(options.page || getAdminPageFromLocation());
+  nav(targetPage, { push: false, replace: true });
+  if (!options.silent) {
+    showToast(`Signed in as ${admin?.username || "admin"}`);
+  }
+}
+
+function openAdminCredentialsModal() {
+  if (!currentAdmin) {
+    showToast("Sign in again to manage admin credentials");
+    return;
+  }
+  document.getElementById("admin-new-username").value = currentAdmin.username || "";
+  document.getElementById("admin-current-password").value = "";
+  document.getElementById("admin-new-password").value = "";
+  document.getElementById("admin-confirm-password").value = "";
+  openModal("adminCredentialsModal");
+}
+
+async function saveAdminCredentials() {
+  if (!currentAdminToken) {
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+
+  const currentPassword = document.getElementById("admin-current-password").value.trim();
+  const newUsername = document.getElementById("admin-new-username").value.trim().toLowerCase();
+  const newPassword = document.getElementById("admin-new-password").value;
+  const confirmPassword = document.getElementById("admin-confirm-password").value;
+
+  if (!currentPassword) {
+    showToast("Enter current password to save changes");
+    return;
+  }
+  if (newPassword && newPassword.length < 8) {
+    showToast("New password must be at least 8 characters");
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    showToast("New password confirmation does not match");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API}/api/admin/auth/change-credentials`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        currentPassword,
+        newUsername,
+        newPassword,
+        remember: getAdminRememberChoice()
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(data.error || "Could not update admin credentials");
+      return;
+    }
+
+    currentAdminToken = data.token || currentAdminToken;
+    persistAdminSession(currentAdminToken, data.admin?.username, getAdminRememberChoice());
+    showAdminShell(data.admin);
+    closeModal("adminCredentialsModal");
+    showToast("Admin credentials updated");
+  } catch {
+    showToast("Could not update admin credentials");
+  }
+}
+
+const baseAdminNav = nav;
+nav = function(page, options = {}) {
+  const cleanPage = sanitizeAdminPage(page);
+  activeAdminView = cleanPage;
+  baseAdminNav(cleanPage);
+  if (currentAdmin) {
+    if (options.replace) setAdminHistory(cleanPage, "replace");
+    else if (options.push !== false) setAdminHistory(cleanPage, "push");
+  }
+};
+
+doLogin = async function(){
+  const username = document.getElementById("l-user").value.trim().toLowerCase();
+  const password = document.getElementById("l-pass").value;
+  const remember = getAdminRememberChoice();
+  const errEl = document.getElementById("l-err");
+  const btn = document.getElementById("loginBtn");
+
+  errEl.style.display = "none";
+  if (!username || !password) {
+    showToast("Enter admin username and password");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Signing in…";
+
+  try {
+    const response = await fetch(`${API}/api/admin/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, remember })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      errEl.textContent = data.error || "Incorrect credentials.";
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Sign in →";
+      return;
+    }
+
+    await finishAdminLogin(data.admin, data.token, { remember });
+    document.getElementById("l-pass").value = "";
+    btn.disabled = false;
+    btn.textContent = "Sign in →";
+  } catch {
+    errEl.textContent = "Cannot reach server. Please try again.";
+    errEl.style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "Sign in →";
+  }
+};
+
+doLogout = function(){
+  if (adminPollInterval) {
+    clearInterval(adminPollInterval);
+    adminPollInterval = null;
+  }
+  clearAdminSession({ keepIdentity: true });
+  showAdminLogin();
+};
+
+window.addEventListener("popstate", event => {
+  if (!currentAdmin) return;
+  closeSidebar();
+  if (event.state?.panel !== "admin") {
+    setAdminHistory(activeAdminView, "replace");
+    return;
+  }
+  nav(event.state.page, { push: false, replace: true });
+});
+
+async function restoreAdminSession() {
+  const token = getStoredAdminToken();
+  if (!token) {
+    showAdminLogin();
+    return;
+  }
+
+  currentAdminToken = token;
+  document.getElementById("loginBtn").disabled = true;
+  document.getElementById("loginBtn").textContent = "Restoring…";
+  try {
+    const response = await fetch(`${API}/api/admin/auth/session`, {
+      headers: adminAuthHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "restore_failed");
+    await finishAdminLogin(data.admin, token, {
+      remember: localStorage.getItem(ADMIN_REMEMBER_KEY) === "1",
+      skipPersist: true,
+      silent: true
+    });
+  } catch {
+    clearAdminSession({ keepIdentity: true });
+    showAdminLogin();
+  } finally {
+    document.getElementById("loginBtn").disabled = false;
+    document.getElementById("loginBtn").textContent = "Sign in →";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", restoreAdminSession);
 </script>
 </body>
 </html>

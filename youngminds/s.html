@@ -34,6 +34,9 @@ a{text-decoration:none;color:inherit}
 .l-field label{display:block;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted3);margin-bottom:6px}
 .l-field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:14px;padding:12px 14px;outline:none;transition:border-color .15s}
 .l-field input:focus{border-color:var(--border3)}
+.l-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 8px;flex-wrap:wrap}
+.check-row{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)}
+.check-row input{accent-color:var(--accent)}
 .l-err{font-size:12px;color:var(--red);margin-top:9px;display:none;line-height:1.5}
 .l-btn{width:100%;background:var(--accent);color:#000;font-size:14px;font-weight:700;padding:13px;border-radius:var(--r);border:none;margin-top:10px;cursor:pointer;transition:opacity .15s}
 .l-btn:hover{opacity:.88}
@@ -335,13 +338,14 @@ canvas{max-height:220px}
   .stat-grid{grid-template-columns:1fr}
   .content{padding:16px 12px}
   .tb-left{width:100%;justify-content:space-between}
-  .tb-r{width:100%;justify-content:flex-start;gap:8px}
+  .tb-r{width:100%;justify-content:flex-start;gap:8px;flex-wrap:wrap}
   #sync-ts{display:none}
   .tb-btn{padding:6px 10px}
   .notif-dropdown{position:fixed;width:auto;left:12px;right:12px;top:86px;max-height:50vh}
   .greeting-text{font-size:16px}
   .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .qa-btn{justify-content:center;padding:12px;font-size:12px}
+  .card-header,.proj-card-header,.profile-hero{flex-direction:column;align-items:flex-start}
   .modal-overlay{padding:0}
   .modal{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0}
   .modal-header,.modal-footer{padding:16px}
@@ -367,8 +371,11 @@ canvas{max-height:220px}
     </div>
     <div class="l-title">Member Sign In</div>
     <div class="l-sub">Sign in with your registered Gmail and password to access your work dashboard, chats, notices, and payouts.</div>
-    <div class="l-field"><label>Gmail Address</label><input type="email" id="l-email" placeholder="you@gmail.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="l-field"><label>Password</label><input type="password" id="l-password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-field"><label>Gmail Address</label><input type="email" id="l-email" placeholder="you@gmail.com" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-field"><label>Password</label><input type="password" id="l-password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-options">
+      <label class="check-row"><input type="checkbox" id="remember-member" checked> <span>Remember this device</span></label>
+    </div>
     <div class="l-err" id="l-err">No active member found. Check your Gmail and password.</div>
     <button class="l-btn" onclick="doLogin()" id="loginBtn">Sign in →</button>
     <div class="l-hint">
@@ -1537,6 +1544,7 @@ let localNotifications = [];
 let memberChatRooms = [];
 let activeMemberChatRoom = "team";
 let memberChatMessages = [];
+let activeMemberView = "dash";
 
 NAV_TITLE.chat = "Chats";
 
@@ -2544,6 +2552,237 @@ async function sendMemberAi(){
   if (sendBtn) sendBtn.disabled = false;
   appendAiBubble("memberAiBody", "assistant", reply || memberAiReply(text));
 }
+
+const MEMBER_SESSION_KEY = "ym_member_session";
+const MEMBER_REMEMBER_KEY = "ym_member_remember";
+const MEMBER_GMAIL_KEY = "ym_member_gmail";
+const MEMBER_PAGE_SET = new Set([
+  "dash", "profile", "achievements", "projects", "requests",
+  "tasks", "team", "chat", "payouts", "stats"
+]);
+
+function memberAuthHeaders(extra = {}) {
+  const headers = { ...extra };
+  if (currentAuthToken) headers.Authorization = `Bearer ${currentAuthToken}`;
+  return headers;
+}
+
+function getStoredMemberToken() {
+  return localStorage.getItem(MEMBER_SESSION_KEY) || sessionStorage.getItem(MEMBER_SESSION_KEY) || "";
+}
+
+function getMemberRememberChoice() {
+  return document.getElementById("remember-member")?.checked ?? localStorage.getItem(MEMBER_REMEMBER_KEY) === "1";
+}
+
+function persistMemberSession(token, gmail, remember) {
+  localStorage.setItem(MEMBER_REMEMBER_KEY, remember ? "1" : "0");
+  if (gmail) localStorage.setItem(MEMBER_GMAIL_KEY, gmail);
+  if (remember) {
+    localStorage.setItem(MEMBER_SESSION_KEY, token);
+    sessionStorage.removeItem(MEMBER_SESSION_KEY);
+  } else {
+    sessionStorage.setItem(MEMBER_SESSION_KEY, token);
+    localStorage.removeItem(MEMBER_SESSION_KEY);
+  }
+}
+
+function clearMemberSession(options = {}) {
+  const keepIdentity = options.keepIdentity !== false;
+  localStorage.removeItem(MEMBER_SESSION_KEY);
+  sessionStorage.removeItem(MEMBER_SESSION_KEY);
+  if (!keepIdentity) {
+    localStorage.removeItem(MEMBER_GMAIL_KEY);
+    localStorage.removeItem(MEMBER_REMEMBER_KEY);
+  }
+}
+
+function sanitizeMemberPage(page) {
+  return MEMBER_PAGE_SET.has(page) ? page : "dash";
+}
+
+function getMemberPageFromLocation() {
+  const hash = String(window.location.hash || "").replace(/^#/, "");
+  return sanitizeMemberPage(hash.startsWith("member-") ? hash.slice(7) : "dash");
+}
+
+function setMemberHistory(page, mode = "push") {
+  const cleanPage = sanitizeMemberPage(page);
+  const url = `${window.location.pathname}${window.location.search}#member-${cleanPage}`;
+  const state = { panel: "member", page: cleanPage };
+  if (mode === "replace") history.replaceState(state, "", url);
+  else history.pushState(state, "", url);
+}
+
+function showMemberShell(member) {
+  currentMember = { ...(member || {}) };
+  currentMember.id = currentMember._id || currentMember.id;
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("appShell").style.display = "flex";
+  document.getElementById("sb-member-name").textContent = currentMember.name || "—";
+  document.getElementById("sb-member-skill").textContent = currentMember.skill || "—";
+  document.getElementById("l-err").style.display = "none";
+}
+
+function showMemberLogin() {
+  const remember = localStorage.getItem(MEMBER_REMEMBER_KEY) === "1";
+  const rememberedGmail = localStorage.getItem(MEMBER_GMAIL_KEY) || "";
+  currentMember = null;
+  currentAuthToken = null;
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("appShell").style.display = "none";
+  document.getElementById("l-email").value = rememberedGmail;
+  document.getElementById("l-password").value = "";
+  document.getElementById("remember-member").checked = remember || !localStorage.getItem(MEMBER_REMEMBER_KEY);
+  document.getElementById("loginBtn").disabled = false;
+  document.getElementById("loginBtn").textContent = "Sign in →";
+  document.getElementById("l-err").style.display = "none";
+  document.body.classList.remove("chat-view-active");
+  closeSidebar();
+  closeNotifDropdown();
+  history.replaceState({ panel: "member-login" }, "", `${window.location.pathname}${window.location.search}`);
+}
+
+async function finishMemberLogin(member, token, options = {}) {
+  currentAuthToken = token || currentAuthToken;
+  showMemberShell(member);
+  if (!options.skipPersist && currentAuthToken) {
+    persistMemberSession(currentAuthToken, member?.gmail || member?.email, Boolean(options.remember));
+  }
+  try { myTasks = JSON.parse(localStorage.getItem(`ym_tasks_${currentMember.id}`) || "{}"); } catch { myTasks = {}; }
+  await loadData();
+  if (_clockInterval) clearInterval(_clockInterval);
+  startClock();
+  if (_pollInterval) clearInterval(_pollInterval);
+  _pollInterval = setInterval(loadData, 30000);
+  const targetPage = sanitizeMemberPage(options.page || getMemberPageFromLocation());
+  nav(targetPage, { push: false, replace: true });
+  if (!options.silent) {
+    pushNotification("Welcome back", `Signed in as ${currentMember.name || "member"}`, "dash");
+  }
+}
+
+const baseMemberNav = nav;
+nav = function(page, options = {}) {
+  const cleanPage = sanitizeMemberPage(page);
+  activeMemberView = cleanPage;
+  baseMemberNav(cleanPage);
+  if (currentMember) {
+    if (options.replace) setMemberHistory(cleanPage, "replace");
+    else if (options.push !== false) setMemberHistory(cleanPage, "push");
+  }
+};
+
+doLogin = async function(){
+  const gmail = document.getElementById("l-email").value.trim().toLowerCase();
+  const password = document.getElementById("l-password").value;
+  const remember = getMemberRememberChoice();
+  const errEl = document.getElementById("l-err");
+  const btn = document.getElementById("loginBtn");
+  errEl.style.display = "none";
+
+  if (!gmail || !password) {
+    showToast("Enter your Gmail and password");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Signing in…";
+
+  try {
+    const response = await fetch(`${API}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gmail, password, remember })
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      errEl.textContent = payload.error || "Unable to sign in";
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Sign in →";
+      return;
+    }
+
+    await finishMemberLogin(payload.member, payload.token, { remember });
+    document.getElementById("l-password").value = "";
+    btn.disabled = false;
+    btn.textContent = "Sign in →";
+  } catch {
+    errEl.textContent = "Cannot reach server. Please try again.";
+    errEl.style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "Sign in →";
+  }
+};
+
+doLogout = function(){
+  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
+  if (_clockInterval) { clearInterval(_clockInterval); _clockInterval = null; }
+  if (perfChart) { perfChart.destroy(); perfChart = null; }
+  if (earningsChart) { earningsChart.destroy(); earningsChart = null; }
+  clearMemberSession({ keepIdentity: true });
+  allProjects = [];
+  allMembers = [];
+  myAssignedProjects = [];
+  myPayouts = [];
+  memberRequests = [];
+  myTasks = {};
+  notifications = [];
+  serverNotifications = [];
+  localNotifications = [];
+  memberChatRooms = [];
+  memberChatMessages = [];
+  activeMemberChatRoom = "team";
+  activeMemberView = "dash";
+  _prevReqCount = -1;
+  notifOpen = false;
+  showMemberLogin();
+};
+
+window.addEventListener("popstate", event => {
+  if (!currentMember) return;
+  closeSidebar();
+  closeNotifDropdown();
+  if (event.state?.panel !== "member") {
+    setMemberHistory(activeMemberView, "replace");
+    return;
+  }
+  nav(event.state.page, { push: false, replace: true });
+});
+
+async function restoreMemberSession() {
+  const token = getStoredMemberToken();
+  if (!token) {
+    showMemberLogin();
+    return;
+  }
+
+  currentAuthToken = token;
+  document.getElementById("loginBtn").disabled = true;
+  document.getElementById("loginBtn").textContent = "Restoring…";
+  try {
+    const response = await fetch(`${API}/api/auth/session`, {
+      headers: memberAuthHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "restore_failed");
+    await finishMemberLogin(payload.member, token, {
+      remember: localStorage.getItem(MEMBER_REMEMBER_KEY) === "1",
+      skipPersist: true,
+      silent: true
+    });
+  } catch {
+    clearMemberSession({ keepIdentity: true });
+    showMemberLogin();
+  } finally {
+    document.getElementById("loginBtn").disabled = false;
+    document.getElementById("loginBtn").textContent = "Sign in →";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", restoreMemberSession);
 </script>
 </body>
 </html>

@@ -5,10 +5,12 @@ const path     = require("path");
 const mongoose = require("mongoose");
 const cors     = require("cors");
 const crypto   = require("crypto");
-const { createAuthToken } = require("./auth");
+const { createAuthToken, verifyAuthToken, DEFAULT_TTL_SECONDS } = require("./auth");
 const { getAiAssistReply, getPasswordCoachReply } = require("./ai-assist");
 
 const app = express();
+const REMEMBER_ME_TTL_SECONDS = 60 * 60 * 24 * 30;
+const ADMIN_ACCOUNT_KEY = "primary";
 
 /* ══════════════════════════════════════════
    CORS
@@ -90,8 +92,26 @@ function normalizeEmail(raw) {
 function normalizePhone(raw) {
   return (raw || "").replace(/[^0-9]/g, "");
 }
+function normalizeAdminUsername(raw) {
+  return String(raw || "").trim().toLowerCase();
+}
 function hashPassword(pw) {
   return crypto.createHash("sha256").update(pw + "ym-salt-2026").digest("hex");
+}
+function getTokenTtlSeconds(remember) {
+  return remember ? REMEMBER_ME_TTL_SECONDS : DEFAULT_TTL_SECONDS;
+}
+function readBearerToken(req) {
+  const header = String(req.get("Authorization") || "");
+  const [scheme, token] = header.split(/\s+/);
+  if (!/^Bearer$/i.test(scheme || "") || !token) return null;
+  return token;
+}
+function getDefaultAdminUsername() {
+  return normalizeAdminUsername(process.env.ADMIN_USERNAME || "admin") || "admin";
+}
+function getDefaultAdminPasswordHash() {
+  return hashPassword(process.env.ADMIN_PASSWORD || "youngminds2026");
 }
 function toWhatsAppE164(raw, defaultCountryCode = "91") {
   const digits = normalizePhone(raw || "");
@@ -195,6 +215,68 @@ const boardMemberSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const BoardMember = mongoose.model("BoardMember", boardMemberSchema);
+
+const adminAccountSchema = new mongoose.Schema({
+  key:      { type: String, default: ADMIN_ACCOUNT_KEY, unique: true },
+  username: { type: String, required: true },
+  password: { type: String, required: true },
+  updatedAt:{ type: Date, default: Date.now }
+}, { timestamps: false });
+
+const AdminAccount = mongoose.model("AdminAccount", adminAccountSchema);
+
+function sanitizeAdminAccount(admin) {
+  return {
+    username: admin?.username || getDefaultAdminUsername()
+  };
+}
+
+async function getOrCreateAdminAccount() {
+  if (mongoose.connection.readyState !== 1) {
+    return {
+      key: ADMIN_ACCOUNT_KEY,
+      username: getDefaultAdminUsername(),
+      password: getDefaultAdminPasswordHash(),
+      isFallback: true
+    };
+  }
+
+  return AdminAccount.findOneAndUpdate(
+    { key: ADMIN_ACCOUNT_KEY },
+    {
+      $setOnInsert: {
+        username: getDefaultAdminUsername(),
+        password: getDefaultAdminPasswordHash(),
+        updatedAt: new Date()
+      }
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+}
+
+async function getAdminSessionFromToken(req) {
+  const payload = verifyAuthToken(readBearerToken(req));
+  if (!payload || payload.role !== "admin" || payload.sub !== ADMIN_ACCOUNT_KEY) {
+    return null;
+  }
+
+  const admin = await getOrCreateAdminAccount();
+  return { payload, admin };
+}
+
+async function getMemberSessionFromToken(req) {
+  const payload = verifyAuthToken(readBearerToken(req));
+  if (!payload || payload.role !== "member" || !payload.sub) {
+    return null;
+  }
+
+  const member = await Application.findById(payload.sub);
+  if (!member || !["hired", "inwork", "accepted"].includes(member.status)) {
+    return null;
+  }
+
+  return { payload, member };
+}
 
 function normalizeBoardSkills(raw) {
   const values = Array.isArray(raw) ? raw : String(raw || "").split(/[,\n]/);
@@ -417,11 +499,113 @@ app.delete("/api/board-members/:id", async (req, res) => {
 });
 
 /* ══════════════════════════════════════════
+   AUTH: Admin Login / Session
+══════════════════════════════════════════ */
+app.post("/api/admin/auth/login", async (req, res) => {
+  try {
+    const { username, password, remember } = req.body || {};
+    const admin = await getOrCreateAdminAccount();
+    const normalizedUsername = normalizeAdminUsername(username);
+
+    if (!normalizedUsername || !password) {
+      return res.status(400).json({ error: "username and password required" });
+    }
+
+    if (normalizedUsername !== admin.username || hashPassword(password) !== admin.password) {
+      return res.status(401).json({ error: "Invalid admin credentials" });
+    }
+
+    res.json({
+      admin: sanitizeAdminAccount(admin),
+      token: createAuthToken(
+        { role: "admin", sub: ADMIN_ACCOUNT_KEY, username: admin.username },
+        { ttlSeconds: getTokenTtlSeconds(Boolean(remember)) }
+      )
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/admin/auth/session", async (req, res) => {
+  try {
+    const session = await getAdminSessionFromToken(req);
+    if (!session) {
+      return res.status(401).json({ error: "Admin session expired" });
+    }
+
+    res.json({ admin: sanitizeAdminAccount(session.admin) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/admin/auth/change-credentials", async (req, res) => {
+  try {
+    const session = await getAdminSessionFromToken(req);
+    if (!session) {
+      return res.status(401).json({ error: "Admin session expired" });
+    }
+    if (session.admin.isFallback) {
+      return res.status(503).json({ error: "Admin credentials cannot be changed while the database is unavailable" });
+    }
+
+    const { currentPassword, newUsername, newPassword, remember } = req.body || {};
+    if (!currentPassword) {
+      return res.status(400).json({ error: "Current password is required" });
+    }
+    if (hashPassword(currentPassword) !== session.admin.password) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    const nextUsername = String(newUsername || "").trim()
+      ? normalizeAdminUsername(newUsername)
+      : session.admin.username;
+    if (!/^[a-z0-9._-]{3,32}$/.test(nextUsername)) {
+      return res.status(400).json({ error: "Username must be 3-32 characters and use letters, numbers, dot, underscore, or dash" });
+    }
+
+    const passwordInput = String(newPassword || "");
+    if (!passwordInput && nextUsername === session.admin.username) {
+      return res.status(400).json({ error: "Add a new username or password to update admin credentials" });
+    }
+    if (passwordInput && passwordInput.length < 8) {
+      return res.status(400).json({ error: "New password must be at least 8 characters" });
+    }
+
+    const update = {
+      username: nextUsername,
+      updatedAt: new Date()
+    };
+    if (passwordInput) {
+      update.password = hashPassword(passwordInput);
+    }
+
+    const admin = await AdminAccount.findOneAndUpdate(
+      { key: ADMIN_ACCOUNT_KEY },
+      { $set: update },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      admin: sanitizeAdminAccount(admin),
+      token: createAuthToken(
+        { role: "admin", sub: ADMIN_ACCOUNT_KEY, username: admin.username },
+        { ttlSeconds: getTokenTtlSeconds(Boolean(remember)) }
+      )
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ══════════════════════════════════════════
    AUTH: Member Login (Gmail + Password)
 ══════════════════════════════════════════ */
 app.post("/api/auth/login", async (req, res) => {
   try {
-    const { gmail, password } = req.body;
+    const { gmail, password, remember } = req.body || {};
     if (!gmail || !password) return res.status(400).json({ error: "gmail and password required" });
     const email = normalizeEmail(gmail);
     const hashed = hashPassword(password);
@@ -436,8 +620,24 @@ app.post("/api/auth/login", async (req, res) => {
     const payload = sanitizeApp(member);
     res.json({
       member: payload,
-      token: createAuthToken({ role: "member", sub: String(member._id), gmail: payload.gmail || payload.email || "" })
+      token: createAuthToken(
+        { role: "member", sub: String(member._id), gmail: payload.gmail || payload.email || "" },
+        { ttlSeconds: getTokenTtlSeconds(Boolean(remember)) }
+      )
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/auth/session", async (req, res) => {
+  try {
+    const session = await getMemberSessionFromToken(req);
+    if (!session) {
+      return res.status(401).json({ error: "Member session expired" });
+    }
+
+    res.json({ member: sanitizeApp(session.member) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
