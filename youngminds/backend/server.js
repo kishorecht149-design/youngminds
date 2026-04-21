@@ -125,6 +125,11 @@ function adminServicesHotfixScript() {
     return state.entries[0];
   }
 
+  function getPackageDrafts(current) {
+    const packages = Array.isArray(current && current.pricing_packages) ? current.pricing_packages.slice(0, 6) : [];
+    return packages.length ? packages : [{ name: "Basic", price_inr: 0, delivery_time: "", revisions: "", note: "", features: [""] }];
+  }
+
   function renderStandalone() {
     const mount = document.getElementById("services-admin-content");
     if (!mount || currentAdminPage() !== "services") return;
@@ -141,12 +146,18 @@ function adminServicesHotfixScript() {
     }
 
     const deliverables = Array.isArray(current.deliverables) ? current.deliverables.slice(0, 6) : [];
+    const pricingPackages = getPackageDrafts(current);
     while (deliverables.length < 6) deliverables.push("");
     mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page, homepage pricing, and public quote content.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
       return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(formatINR(item.pricing_min_inr) + " - " + formatINR(item.pricing_max_inr)) + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
     }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section, the /services/[slug] page, and the mobile quote prompt.</div></div><a class="btn-sm" href="/services/' + escapeHtml(current.slug) + '" target="_blank" rel="noopener">Open Page</a></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="service-admin-form-row"><div class="form-field"><label>Pricing Min (INR)</label><input id="service-pricing-min" type="number" min="0" step="100" value="' + Number(current.pricing_min_inr || 0) + '"></div><div class="form-field"><label>Pricing Max (INR)</label><input id="service-pricing-max" type="number" min="0" step="100" value="' + Number(current.pricing_max_inr || 0) + '"></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
       return '<div class="service-admin-deliverable"><div class="service-admin-deliverable-num">' + String(index + 1).padStart(2, "0") + '</div><div class="form-field" style="margin:0;flex:1"><label>Deliverable ' + (index + 1) + '</label><input type="text" data-service-deliverable value="' + escapeHtml(item) + '"></div></div>';
-    }).join("") + '</div></div><div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
+    }).join("") + '</div></div><div><div class="dp-sec-title" style="margin:16px 0 14px">Pricing Packages</div><div style="display:grid;gap:12px">' + pricingPackages.map(function(pkg, index){
+      const features = Array.isArray(pkg.features) && pkg.features.length ? pkg.features.slice(0, 8) : [""];
+      return '<div data-package-card style="border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--bg3)"><div class="service-admin-form-row"><div class="form-field"><label>Package Name</label><input type="text" data-package-name value="' + escapeHtml(pkg.name || "") + '"></div><div class="form-field"><label>Price (INR)</label><input type="number" min="0" step="100" data-package-price value="' + Number(pkg.price_inr || 0) + '"></div></div><div class="service-admin-form-row"><div class="form-field"><label>Delivery Time</label><input type="text" data-package-delivery value="' + escapeHtml(pkg.delivery_time || "") + '"></div><div class="form-field"><label>Revisions</label><input type="text" data-package-revisions value="' + escapeHtml(pkg.revisions || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Package Note</label><textarea data-package-note placeholder="Best for, summary, or usage note">' + escapeHtml(pkg.note || "") + '</textarea></div></div><div style="display:grid;gap:8px">' + features.map(function(feature){
+        return '<input type="text" data-package-feature value="' + escapeHtml(feature) + '" placeholder="Feature">';
+      }).join("") + '</div><div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRemovePackage(' + index + ')">Remove Package</button></div></div>';
+    }).join("") + '</div><div style="margin-top:12px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddPackage()">+ Add Package</button></div></div><div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
   }
 
   async function syncAdminServices(render, forceFallback) {
@@ -195,7 +206,19 @@ function adminServicesHotfixScript() {
       pricing_max_inr: Number((document.getElementById("service-pricing-max") || {}).value || 0),
       deliverables: Array.prototype.slice.call(document.querySelectorAll("[data-service-deliverable]")).map(function(input){
         return String(input.value || "").trim();
-      }).filter(Boolean)
+      }).filter(Boolean),
+      pricing_packages: Array.prototype.slice.call(document.querySelectorAll("[data-package-card]")).map(function(card){
+        return {
+          name: ((card.querySelector("[data-package-name]") || {}).value || "").trim(),
+          price_inr: Number(((card.querySelector("[data-package-price]") || {}).value || 0)),
+          delivery_time: ((card.querySelector("[data-package-delivery]") || {}).value || "").trim(),
+          revisions: ((card.querySelector("[data-package-revisions]") || {}).value || "").trim(),
+          note: ((card.querySelector("[data-package-note]") || {}).value || "").trim(),
+          features: Array.prototype.slice.call(card.querySelectorAll("[data-package-feature]")).map(function(input){
+            return String(input.value || "").trim();
+          }).filter(Boolean)
+        };
+      }).filter(function(item){ return item.name || item.price_inr || item.features.length; })
     };
     state.saving = true;
     state.error = "";
@@ -230,6 +253,19 @@ function adminServicesHotfixScript() {
   window.__ymStandaloneServicesReload = function(){ return syncAdminServices(true, false); };
   window.__ymStandaloneServicesLoadDefaults = function(){ return syncAdminServices(true, true); };
   window.__ymStandaloneServicesSave = saveStandalone;
+  window.__ymStandaloneServicesAddPackage = function(){
+    const current = getCurrentEntry();
+    if (!current) return;
+    current.pricing_packages = Array.isArray(current.pricing_packages) ? current.pricing_packages : [];
+    current.pricing_packages.push({ name: "New Package", price_inr: 0, delivery_time: "", revisions: "", note: "", features: [""] });
+    renderStandalone();
+  };
+  window.__ymStandaloneServicesRemovePackage = function(index){
+    const current = getCurrentEntry();
+    if (!current || !Array.isArray(current.pricing_packages)) return;
+    current.pricing_packages.splice(index, 1);
+    renderStandalone();
+  };
   window.__ymStandaloneServicesSelect = function(slug){
     state.slug = slug;
     renderStandalone();
@@ -573,6 +609,32 @@ const SERVICE_DEFAULTS = [
       "Speed and SEO basics",
       "Form and lead capture setup",
       "Launch support and QA"
+    ],
+    pricing_packages: [
+      {
+        name: "Basic",
+        price_inr: 4999,
+        delivery_time: "4-6 days",
+        revisions: "1 round",
+        note: "Best for small businesses getting online fast.",
+        features: ["4 pages","Template design","Mobile responsive","Contact form","WhatsApp chat button","Google Maps embed"]
+      },
+      {
+        name: "Standard",
+        price_inr: 9499,
+        delivery_time: "9-13 days",
+        revisions: "2 rounds",
+        note: "Most popular for growing local businesses.",
+        features: ["8 pages","Semi-custom branding","Booking or enquiry form","Gallery and testimonials","Pricing section","Basic admin panel"]
+      },
+      {
+        name: "Premium",
+        price_inr: 17999,
+        delivery_time: "16-22 days",
+        revisions: "Unlimited",
+        note: "For brands that need a custom conversion-focused platform.",
+        features: ["12+ pages","100% custom UI","Online booking system","Service catalogue filters","Offer banners","Full admin panel"]
+      }
     ]
   },
   {
@@ -591,6 +653,32 @@ const SERVICE_DEFAULTS = [
       "Print-ready collateral",
       "Presentation and deck design",
       "Design source files handoff"
+    ],
+    pricing_packages: [
+      {
+        name: "Basic",
+        price_inr: 2000,
+        delivery_time: "2-3 days",
+        revisions: "1 round",
+        note: "Fast-turn visual support for single-brand needs.",
+        features: ["1 core creative set","Template-led design","Brand colour usage","Export-ready files","Social post sizing","Basic support"]
+      },
+      {
+        name: "Standard",
+        price_inr: 7999,
+        delivery_time: "4-6 days",
+        revisions: "2 rounds",
+        note: "For brands building a consistent campaign presence.",
+        features: ["Multi-asset pack","Semi-custom design system","Social and ad creatives","Presentation slides","Print-ready files","Source handoff"]
+      },
+      {
+        name: "Premium",
+        price_inr: 15999,
+        delivery_time: "7-10 days",
+        revisions: "Unlimited",
+        note: "Full visual direction for launches and brand refreshes.",
+        features: ["Brand identity suite","Custom visual language","Campaign creative system","Print and digital formats","Design source files","Priority support"]
+      }
     ]
   },
   {
@@ -609,6 +697,32 @@ const SERVICE_DEFAULTS = [
       "Creative asset coordination",
       "Publishing support",
       "Performance review summary"
+    ],
+    pricing_packages: [
+      {
+        name: "Basic",
+        price_inr: 4000,
+        delivery_time: "5-7 days setup",
+        revisions: "1 round",
+        note: "Ideal for consistent monthly posting on one platform.",
+        features: ["1 platform plan","8 post ideas","Caption support","Basic design guidance","Publishing checklist","Monthly summary"]
+      },
+      {
+        name: "Standard",
+        price_inr: 12000,
+        delivery_time: "7-10 days setup",
+        revisions: "2 rounds",
+        note: "Most popular for businesses growing through content.",
+        features: ["2 platform strategy","Content calendar","Reel concepts","Caption writing","Creative coordination","Performance review"]
+      },
+      {
+        name: "Premium",
+        price_inr: 24000,
+        delivery_time: "10-14 days setup",
+        revisions: "Unlimited",
+        note: "For teams that want a full social content engine.",
+        features: ["3+ platform system","Campaign planning","Advanced reporting","Trend and hook research","Publishing workflows","Priority support"]
+      }
     ]
   },
   {
@@ -627,6 +741,32 @@ const SERVICE_DEFAULTS = [
       "Tool integrations",
       "Testing and guardrails",
       "Team onboarding guidance"
+    ],
+    pricing_packages: [
+      {
+        name: "Basic",
+        price_inr: 7999,
+        delivery_time: "5-7 days",
+        revisions: "1 round",
+        note: "Entry-level AI chatbot or automation setup.",
+        features: ["1 platform chatbot","FAQ response flows","Up to 20 Q&A pairs","Lead capture","Google Sheets logging","7 days support"]
+      },
+      {
+        name: "Standard",
+        price_inr: 14999,
+        delivery_time: "10-14 days",
+        revisions: "2 rounds",
+        note: "Most popular AI package for smart business automation.",
+        features: ["2 platform assistant","Natural language responses","Lead qualification","CRM or Sheets sync","Automated follow-ups","Analytics dashboard"]
+      },
+      {
+        name: "Premium",
+        price_inr: 27999,
+        delivery_time: "18-25 days",
+        revisions: "Unlimited",
+        note: "Full AI assistant with custom training and integrations.",
+        features: ["3 platform AI assistant","Custom business training","Unlimited intent flows","CRM/email/Zapier integration","Sentiment routing","60 days support"]
+      }
     ]
   },
   {
@@ -645,6 +785,32 @@ const SERVICE_DEFAULTS = [
       "Sound polish and pacing",
       "Multiple export formats",
       "Revision-ready project files"
+    ],
+    pricing_packages: [
+      {
+        name: "Basic",
+        price_inr: 4999,
+        delivery_time: "3 working days",
+        revisions: "1 round",
+        note: "Great for creators needing polished short-form content.",
+        features: ["3 short-form videos","Up to 60 seconds each","Basic cuts and transitions","Royalty-free music","Simple text overlays","1080p export"]
+      },
+      {
+        name: "Standard",
+        price_inr: 9999,
+        delivery_time: "5 working days",
+        revisions: "2 rounds",
+        note: "Most popular for trend-based brand and creator edits.",
+        features: ["6 short-form videos","Up to 90 seconds each","Subtitles","Sound design","Text animations","Multi-platform formats"]
+      },
+      {
+        name: "Premium",
+        price_inr: 18999,
+        delivery_time: "7 working days",
+        revisions: "Unlimited",
+        note: "High-retention cinematic editing for serious campaigns.",
+        features: ["12 short-form videos","Cinematic pacing","Styled subtitles","Advanced colour grading","Motion graphics","Priority support"]
+      }
     ]
   },
   {
@@ -663,6 +829,32 @@ const SERVICE_DEFAULTS = [
       "Product or service descriptions",
       "Campaign content support",
       "Editing and proofreading"
+    ],
+    pricing_packages: [
+      {
+        name: "Basic",
+        price_inr: 1500,
+        delivery_time: "2-3 days",
+        revisions: "1 round",
+        note: "For fast copy needs and essential business pages.",
+        features: ["Up to 2 pages","Basic brand tone","Service descriptions","CTA refinement","Editing pass","Delivery-ready copy"]
+      },
+      {
+        name: "Standard",
+        price_inr: 6500,
+        delivery_time: "4-6 days",
+        revisions: "2 rounds",
+        note: "Ideal for websites, campaigns, and blog support.",
+        features: ["Website copy set","Brand messaging direction","Blog/article draft","SEO-friendly structure","Product descriptions","Proofreading"]
+      },
+      {
+        name: "Premium",
+        price_inr: 14000,
+        delivery_time: "7-10 days",
+        revisions: "Unlimited",
+        note: "A full content system for launches and ongoing growth.",
+        features: ["Multi-page copy system","Campaign messaging","Long-form content","Voice and tone guide","Content engine planning","Priority support"]
+      }
     ]
   }
 ];
@@ -686,6 +878,7 @@ const serviceSchema = new mongoose.Schema({
   pricing_min_inr:   { type: Number, default: 0 },
   pricing_max_inr:   { type: Number, default: 0 },
   deliverables:      { type: [String], default: [] },
+  pricing_packages:  { type: [mongoose.Schema.Types.Mixed], default: [] },
   updatedAt:         { type: Date, default: Date.now }
 }, { timestamps: false });
 
@@ -713,9 +906,38 @@ function serviceFallback(slug) {
   return SERVICE_DEFAULTS.find(item => item.slug === slug) || null;
 }
 
+function normalizeServicePackages(items, fallbackPackages = []) {
+  const base = Array.isArray(fallbackPackages) ? fallbackPackages : [];
+  const source = Array.isArray(items) && items.length ? items : base;
+  return source.map((item, index) => {
+    const fallback = base[index] || {};
+    const featureSource = Array.isArray(item?.features) && item.features.length ? item.features : (fallback.features || []);
+    return {
+      name: String(item?.name || fallback.name || `Package ${index + 1}`).trim(),
+      price_inr: Math.max(0, Number(item?.price_inr ?? fallback.price_inr ?? 0)),
+      delivery_time: String(item?.delivery_time || fallback.delivery_time || "").trim(),
+      revisions: String(item?.revisions || fallback.revisions || "").trim(),
+      note: String(item?.note || fallback.note || "").trim(),
+      features: featureSource.map(feature => String(feature || "").trim()).filter(Boolean).slice(0, 8)
+    };
+  }).filter(item => item.name || item.price_inr || item.features.length);
+}
+
+function normalizeServiceRecord(record) {
+  const fallback = serviceFallback(record?.slug) || {};
+  const merged = { ...fallback, ...(record || {}) };
+  merged.deliverables = Array.isArray(merged.deliverables) && merged.deliverables.length
+    ? merged.deliverables
+    : (fallback.deliverables || []);
+  merged.pricing_packages = normalizeServicePackages(merged.pricing_packages, fallback.pricing_packages || []);
+  merged.pricing_min_inr = Math.max(0, Number(merged.pricing_min_inr ?? fallback.pricing_min_inr ?? 0));
+  merged.pricing_max_inr = Math.max(merged.pricing_min_inr, Number(merged.pricing_max_inr ?? fallback.pricing_max_inr ?? merged.pricing_min_inr));
+  return merged;
+}
+
 async function getServiceRecords() {
   if (mongoose.connection.readyState !== 1) {
-    return SERVICE_DEFAULTS.map(item => ({ ...item }));
+    return SERVICE_DEFAULTS.map(item => normalizeServiceRecord({ ...item }));
   }
 
   const records = await Promise.all(SERVICE_DEFAULTS.map(async item => {
@@ -724,7 +946,7 @@ async function getServiceRecords() {
       { $setOnInsert: { ...item, updatedAt: new Date() } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-    return doc.toObject ? doc.toObject() : { ...doc };
+    return normalizeServiceRecord(doc.toObject ? doc.toObject() : { ...doc });
   }));
 
   return records.sort((a, b) => SERVICE_SLUGS.indexOf(a.slug) - SERVICE_SLUGS.indexOf(b.slug));
@@ -734,14 +956,14 @@ async function getServiceRecord(slug) {
   if (!SERVICE_SLUGS.includes(slug)) return null;
   if (mongoose.connection.readyState !== 1) {
     const fallback = serviceFallback(slug);
-    return fallback ? { ...fallback } : null;
+    return fallback ? normalizeServiceRecord({ ...fallback }) : null;
   }
   const doc = await Service.findOneAndUpdate(
     { slug },
     { $setOnInsert: { ...serviceFallback(slug), updatedAt: new Date() } },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
-  return doc?.toObject ? doc.toObject() : doc;
+  return doc ? normalizeServiceRecord(doc?.toObject ? doc.toObject() : doc) : null;
 }
 
 function formatInr(value) {
@@ -776,6 +998,7 @@ function escapeHtml(raw) {
 }
 
 function renderServicePageHtml(req, service, recentWork) {
+  service = normalizeServiceRecord(service);
   const ogImage = buildAbsoluteAssetUrl(req, service.og_image_url);
   const serviceTitle = escapeHtml(service.name);
   const description = escapeHtml(service.meta_description || service.valueProp || "");
@@ -838,6 +1061,18 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
 .pricing-card,.portfolio-wrap,.cta-card{background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:24px}
 .price-range{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(2rem,4vw,3.3rem);letter-spacing:-.05em;margin:10px 0}
 .pricing-note{font-size:13px;line-height:1.8;color:var(--muted)}
+.package-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.package-card{background:var(--panel);border:1px solid var(--border);border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.package-card.featured{border-color:rgba(232,197,71,.3);box-shadow:0 16px 42px rgba(0,0,0,.24)}
+.package-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.package-name{font-size:21px;font-weight:800;letter-spacing:-.04em}
+.package-price{font-family:"Space Grotesk",system-ui,sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.05em}
+.package-meta{display:flex;gap:8px;flex-wrap:wrap}
+.package-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--border);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.package-note{font-size:13px;line-height:1.75;color:var(--muted)}
+.package-features{display:grid;gap:10px}
+.package-feature{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--text)}
+.package-feature::before{content:"✓";color:var(--accent);font-weight:900}
 .portfolio-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .portfolio-card{border:1px solid var(--border);border-radius:20px;padding:18px;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
 .portfolio-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
@@ -857,8 +1092,8 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
 .field input:focus{border-color:rgba(232,197,71,.4)}
 .quote-actions{display:flex;gap:10px;margin-top:16px}
 .quote-status{margin-top:12px;font-size:12px;color:var(--muted)}
-@media (max-width: 980px){.hero,.pricing,.deliverables,.process,.portfolio-grid,.cta-card{grid-template-columns:1fr}.hero-kpis{grid-template-columns:1fr 1fr 1fr}}
-@media (max-width: 700px){.shell{padding:18px 16px 86px}.hero-card,.pricing-card,.portfolio-wrap,.cta-card{padding:20px}.deliverables,.process,.portfolio-grid,.hero-kpis{grid-template-columns:1fr}.topbar-inner{padding:12px 16px}.quote-fab{display:inline-flex}.top-actions .btn-primary{display:none}}
+@media (max-width: 980px){.hero,.pricing,.deliverables,.process,.portfolio-grid,.cta-card,.package-grid{grid-template-columns:1fr}.hero-kpis{grid-template-columns:1fr 1fr 1fr}}
+@media (max-width: 700px){.shell{padding:18px 16px 86px}.hero-card,.pricing-card,.portfolio-wrap,.cta-card,.package-card{padding:20px}.deliverables,.process,.portfolio-grid,.hero-kpis,.package-grid{grid-template-columns:1fr}.topbar-inner{padding:12px 16px}.quote-fab{display:inline-flex}.top-actions .btn-primary{display:none}}
 </style>
 </head>
 <body>
@@ -927,6 +1162,31 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
           <div class="eyebrow">Why Teams Choose This</div>
           <div class="pricing-note" style="margin-top:16px">YoungMinds keeps specialist-led execution, fast communication, and clear handoff standards in every service line. You get focused delivery instead of generic agency sprawl.</div>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2 class="section-title">Packages & Pricing</h2></div>
+        <div class="section-copy">Choose a package as a starting point. Final pricing can still shift based on exact scope, integrations, and content volume.</div>
+      </div>
+      <div class="package-grid">
+        ${(Array.isArray(service.pricing_packages) ? service.pricing_packages : []).map((item, index) => `<article class="package-card ${index === 1 ? "featured" : ""}">
+          <div class="package-head">
+            <div>
+              <div class="eyebrow">${escapeHtml(item.name || `Package ${index + 1}`)}</div>
+              <div class="package-price">${escapeHtml(formatInr(item.price_inr || 0))}</div>
+            </div>
+          </div>
+          <div class="package-meta">
+            ${item.delivery_time ? `<span class="package-chip">${escapeHtml(item.delivery_time)}</span>` : ``}
+            ${item.revisions ? `<span class="package-chip">${escapeHtml(item.revisions)}</span>` : ``}
+          </div>
+          ${item.note ? `<div class="package-note">${escapeHtml(item.note)}</div>` : ``}
+          <div class="package-features">
+            ${(Array.isArray(item.features) ? item.features : []).map(feature => `<div class="package-feature">${escapeHtml(feature)}</div>`).join("")}
+          </div>
+        </article>`).join("")}
       </div>
     </section>
 
@@ -1345,6 +1605,7 @@ app.put("/api/services/:slug", async (req, res) => {
         deliverables.push(defaultService.deliverables[deliverables.length] || `Deliverable ${deliverables.length + 1}`);
       }
     }
+    const pricingPackages = normalizeServicePackages(req.body?.pricing_packages, defaultService.pricing_packages || []);
 
     const updates = {
       name: String(req.body?.name || defaultService.name).trim() || defaultService.name,
@@ -1355,6 +1616,7 @@ app.put("/api/services/:slug", async (req, res) => {
       pricing_min_inr: Math.max(0, Number(req.body?.pricing_min_inr || defaultService.pricing_min_inr || 0)),
       pricing_max_inr: Math.max(0, Number(req.body?.pricing_max_inr || defaultService.pricing_max_inr || 0)),
       deliverables,
+      pricing_packages: pricingPackages,
       updatedAt: new Date()
     };
 
@@ -1363,7 +1625,7 @@ app.put("/api/services/:slug", async (req, res) => {
       { $set: { slug, ...updates } },
       { new: true, upsert: true, runValidators: false, setDefaultsOnInsert: true }
     );
-    res.json(doc);
+    res.json(normalizeServiceRecord(doc?.toObject ? doc.toObject() : doc));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
