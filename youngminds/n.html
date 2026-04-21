@@ -2542,13 +2542,14 @@ loadAll = async function(){
   setLoading(true);
   let ok = true;
   try {
-    const [applicationsRes, projectsRes, paymentsRes, noticesRes, resetRes, boardRes] = await Promise.all([
+    const [applicationsRes, projectsRes, paymentsRes, noticesRes, resetRes, boardRes, servicesRes] = await Promise.all([
       fetch(`${API}/api/applications`).catch(() => { ok = false; return null; }),
       fetch(`${API}/api/projects`).catch(() => { ok = false; return null; }),
       fetch(`${API}/api/payments`).catch(() => null),
       fetch(`${API}/api/notifications`).catch(() => null),
       fetch(`${API}/api/auth/reset-requests`).catch(() => null),
-      fetch(`${API}/api/board-members/admin`).catch(() => null)
+      fetch(`${API}/api/board-members/admin`).catch(() => null),
+      fetch(`${API}/api/services`).catch(() => null)
     ]);
 
     apps = (applicationsRes && applicationsRes.ok) ? await applicationsRes.json() : [];
@@ -2557,6 +2558,8 @@ loadAll = async function(){
     adminNotifications = (noticesRes && noticesRes.ok) ? await noticesRes.json() : [];
     resetRequests = (resetRes && resetRes.ok) ? await resetRes.json() : [];
     boardEntries = (boardRes && boardRes.ok) ? await boardRes.json() : [];
+    const servicesData = (servicesRes && servicesRes.ok) ? await servicesRes.json().catch(() => []) : [];
+    serviceEntries = normalizeServiceEntries(Array.isArray(servicesData) ? servicesData : defaultServiceEntries()).map(item => ({ ...item, id: item._id || item.id || item.slug }));
     apps.forEach(item => { item.id = item._id || item.id; item.type = "application"; });
     prjs.forEach(item => { item.id = item._id || item.id; item.type = "project"; });
     boardEntries.forEach(item => { item.id = item._id || item.id; });
@@ -2569,6 +2572,7 @@ loadAll = async function(){
     adminNotifications = [];
     resetRequests = [];
     boardEntries = [];
+    serviceEntries = defaultServiceEntries().map(item => ({ ...item, id: item.slug }));
   }
   setLoading(false);
   setStatus(ok);
