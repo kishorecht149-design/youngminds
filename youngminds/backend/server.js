@@ -47,11 +47,24 @@ app.use(express.urlencoded({ extended: true, limit: "80mb" }));
 const rootDir = path.join(__dirname, "..");
 const uploadsDir = path.join(rootDir, "uploads");
 const submissionUploadsDir = path.join(uploadsDir, "project-submissions");
-app.get("/admin",  (req, res) => res.sendFile(path.join(rootDir, "n.html")));
-app.get("/admin/services",  (req, res) => res.sendFile(path.join(rootDir, "n.html")));
-app.get("/member", (req, res) => res.sendFile(path.join(rootDir, "s.html")));
-app.get("/portal/projects", (req, res) => res.sendFile(path.join(rootDir, "s.html")));
-app.get("/hire",   (req, res) => res.sendFile(path.join(rootDir, "p.html")));
+const FRONTEND_BUILD_TAG = "services-fix-2026-04-21";
+
+function sendShellFile(res, fileName) {
+  res.set({
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+    "Surrogate-Control": "no-store",
+    "X-YoungMinds-Build": FRONTEND_BUILD_TAG
+  });
+  return res.sendFile(path.join(rootDir, fileName));
+}
+
+app.get("/admin",  (req, res) => sendShellFile(res, "n.html"));
+app.get("/admin/services",  (req, res) => sendShellFile(res, "n.html"));
+app.get("/member", (req, res) => sendShellFile(res, "s.html"));
+app.get("/portal/projects", (req, res) => sendShellFile(res, "s.html"));
+app.get("/hire",   (req, res) => sendShellFile(res, "p.html"));
 app.get("/pricing-calculator", (req, res) => res.redirect("/hire#forms"));
 app.use("/static", express.static(rootDir));
 app.use("/uploads", express.static(uploadsDir));
@@ -59,7 +72,7 @@ app.use("/uploads", express.static(uploadsDir));
 /* ══════════════════════════════════════════
    HEALTH CHECK
 ══════════════════════════════════════════ */
-app.get("/", (req, res) => res.sendFile(path.join(rootDir, "p.html")));
+app.get("/", (req, res) => sendShellFile(res, "p.html"));
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
@@ -860,7 +873,7 @@ app.post("/api/applications", async (req, res) => {
 app.get("/api/applications", async (req, res) => {
   try {
     const data = await Application.find().sort({ timestamp: -1 });
-    res.json(data.map(sanitizeApp));
+    res.json(data.map(doc => sanitizeApp(doc, { includeProfilePic: false })));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -893,11 +906,13 @@ app.get("/api/applications/:id/auth-summary", async (req, res) => {
 });
 
 // Strip password from responses
-function sanitizeApp(doc) {
+function sanitizeApp(doc, options = {}) {
+  const { includeProfilePic = true } = options;
   const obj = doc.toObject ? doc.toObject() : { ...doc };
   delete obj.password;
   delete obj.resetToken;
   delete obj.resetExpiry;
+  if (!includeProfilePic) delete obj.profilePic;
   return obj;
 }
 
