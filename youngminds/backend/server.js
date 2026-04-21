@@ -49,6 +49,118 @@ const uploadsDir = path.join(rootDir, "uploads");
 const submissionUploadsDir = path.join(uploadsDir, "project-submissions");
 const FRONTEND_BUILD_TAG = "services-fix-2026-04-21";
 
+function adminServicesHotfixScript() {
+  return `<script>
+(function(){
+  if (window.__ymAdminServicesHotfixApplied) return;
+  window.__ymAdminServicesHotfixApplied = true;
+
+  function currentAdminPage() {
+    const pathname = String(window.location.pathname || "").replace(/\\/+$/, "");
+    if (pathname === "/admin/services") return "services";
+    return String(window.activeAdminView || "");
+  }
+
+  function fallbackServices() {
+    try {
+      if (typeof window.defaultServiceEntries === "function") {
+        return window.defaultServiceEntries().map(function(item){
+          return Object.assign({}, item, { id: item._id || item.id || item.slug });
+        });
+      }
+    } catch (err) {}
+    return [];
+  }
+
+  function normalizeServices(items) {
+    try {
+      if (typeof window.normalizeServiceEntries === "function") {
+        return window.normalizeServiceEntries(items);
+      }
+    } catch (err) {}
+    return Array.isArray(items) ? items : fallbackServices();
+  }
+
+  async function syncAdminServices(render) {
+    try {
+      const response = await fetch(window.location.origin + "/api/services", { cache: "no-store" });
+      const data = await response.json().catch(function(){ return []; });
+      const normalized = normalizeServices(Array.isArray(data) && data.length ? data : fallbackServices());
+      if (Array.isArray(normalized) && normalized.length) {
+        window.serviceEntries = normalized.map(function(item){
+          return Object.assign({}, item, { id: item._id || item.id || item.slug });
+        });
+        if (!window.currentServiceSlug && window.serviceEntries[0]) {
+          window.currentServiceSlug = window.serviceEntries[0].slug;
+        }
+        if (render !== false && typeof window.renderServicesManager === "function" && currentAdminPage() === "services") {
+          window.renderServicesManager();
+        }
+        return true;
+      }
+    } catch (err) {}
+
+    const fallback = fallbackServices();
+    if (fallback.length) {
+      window.serviceEntries = fallback;
+      if (!window.currentServiceSlug && fallback[0]) {
+        window.currentServiceSlug = fallback[0].slug;
+      }
+      if (render !== false && typeof window.renderServicesManager === "function" && currentAdminPage() === "services") {
+        window.renderServicesManager();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  const originalLoadAll = typeof window.loadAll === "function" ? window.loadAll : null;
+  if (originalLoadAll) {
+    window.loadAll = async function(){
+      const result = await originalLoadAll.apply(this, arguments);
+      await syncAdminServices(currentAdminPage() === "services");
+      return result;
+    };
+  }
+
+  const originalRefreshAdminData = typeof window.refreshAdminData === "function" ? window.refreshAdminData : null;
+  window.refreshAdminData = async function(){
+    if (originalRefreshAdminData) {
+      await originalRefreshAdminData.apply(this, arguments);
+    } else if (typeof window.loadAll === "function") {
+      await window.loadAll();
+    }
+    if (currentAdminPage() === "services") {
+      await syncAdminServices(true);
+    }
+  };
+
+  const originalNav = typeof window.nav === "function" ? window.nav : null;
+  if (originalNav) {
+    window.nav = function(page, options){
+      const result = originalNav.apply(this, arguments);
+      if (String(page || "") === "services") {
+        setTimeout(function(){ syncAdminServices(true); }, 0);
+      }
+      return result;
+    };
+  }
+
+  function boot() {
+    if (currentAdminPage() === "services") {
+      setTimeout(function(){ syncAdminServices(true); }, 20);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>`;
+}
+
 function sendShellFile(res, fileName) {
   res.set({
     "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -57,7 +169,16 @@ function sendShellFile(res, fileName) {
     "Surrogate-Control": "no-store",
     "X-YoungMinds-Build": FRONTEND_BUILD_TAG
   });
-  return res.sendFile(path.join(rootDir, fileName));
+  const fullPath = path.join(rootDir, fileName);
+  if (fileName === "n.html") {
+    try {
+      const html = fs.readFileSync(fullPath, "utf8");
+      return res.send(html.replace("</body>", `${adminServicesHotfixScript()}</body>`));
+    } catch (err) {
+      console.error("❌ Admin shell inject failed:", err.message);
+    }
+  }
+  return res.sendFile(fullPath);
 }
 
 app.get("/admin",  (req, res) => sendShellFile(res, "n.html"));
