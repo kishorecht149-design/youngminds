@@ -4,63 +4,3524 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YoungMinds Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#070808;--bg2:#111315;--border:rgba(255,255,255,.08);--text:#efefef;--muted:#8c8f95;--accent:#e8c547;--blue:#60a5fa;font-family:"DM Sans",system-ui,sans-serif}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:
-radial-gradient(circle at top,rgba(96,165,250,.08),transparent 32%),
-linear-gradient(180deg,#050506,#0d0f10);color:var(--text);padding:24px}
-.card{width:min(560px,100%);background:rgba(17,19,21,.92);border:1px solid var(--border);border-radius:20px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--blue);letter-spacing:.08em;text-transform:uppercase}
-.dot{width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 18px rgba(96,165,250,.45)}
-h1{margin:16px 0 10px;font-size:32px;line-height:1.05;letter-spacing:-.04em}
-p{margin:0 0 12px;color:var(--muted);line-height:1.7}
-.status{margin-top:18px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:14px}
-.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
-.btn{appearance:none;border:none;border-radius:999px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer}
-.btn-primary{background:var(--accent);color:#000}
-.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+:root{
+  --bg:#080909;--bg2:#0e0f10;--bg3:#141516;--bg4:#1a1b1d;--bg5:#202224;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.18);
+  --text:#f0f0f0;--muted:#5a5c60;--muted2:#2e3033;--muted3:#888;
+  --accent:#e8c547;--accent2:rgba(232,197,71,0.12);
+  --green:#3ecf8e;--green2:rgba(62,207,142,0.1);
+  --red:#f87171;--red2:rgba(248,113,113,0.1);
+  --blue:#60a5fa;--blue2:rgba(96,165,250,0.1);
+  --orange:#fb923c;--orange2:rgba(251,146,60,0.1);
+  --purple:#a78bfa;--purple2:rgba(167,139,250,0.1);
+  --teal:#2dd4bf;--teal2:rgba(45,212,191,0.1);
+  --font:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+  --r:8px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:var(--font)}
+a{text-decoration:none;color:inherit}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px}
+
+/* ── LOGIN ── */
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{width:360px;max-width:100%;padding:20px}
+.l-logo{display:flex;align-items:center;gap:10px;margin-bottom:40px}
+.l-dot{width:28px;height:28px;background:var(--accent);border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:900;color:#000;flex-shrink:0}
+.l-name{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.l-badge{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--bg4);border:1px solid var(--border2);padding:2px 9px;border-radius:100px;margin-left:2px}
+.l-title{font-size:26px;font-weight:800;letter-spacing:-.7px;margin-bottom:5px}
+.l-sub{font-size:13px;color:var(--muted3);margin-bottom:28px}
+.l-field{margin-bottom:12px}
+.l-field label{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted3);margin-bottom:6px}
+.l-field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:14px;padding:11px 14px;outline:none;transition:border-color .15s}
+.l-field input:focus{border-color:var(--border3)}
+.l-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 6px;flex-wrap:wrap}
+.check-row{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)}
+.check-row input{accent-color:var(--accent)}
+.l-err{font-size:12px;color:var(--red);margin-top:8px;display:none}
+.l-btn{width:100%;background:var(--text);color:#000;font-size:14px;font-weight:700;padding:12px;border-radius:var(--r);border:none;margin-top:10px;cursor:pointer;transition:opacity .15s}
+.l-btn:hover{opacity:.88}
+
+/* ── APP SHELL ── */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:216px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:89;backdrop-filter:blur(2px)}
+.sb-overlay.open{display:block}
+.sb-header{padding:15px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sb-dot{width:22px;height:22px;background:var(--accent);border-radius:5px;display:grid;place-items:center;font-size:10px;font-weight:900;color:#000;flex-shrink:0}
+.sb-brand{font-size:13px;font-weight:800;letter-spacing:-.2px}
+.sb-tag{font-size:10px;color:var(--muted);font-weight:500;margin-top:1px}
+.sb-nav{padding:8px 7px;flex:1;overflow-y:auto}
+.sb-sec{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);padding:4px 8px;margin:14px 0 3px}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:6.5px 8px;border-radius:6px;font-size:12.5px;color:var(--muted3);transition:background .15s,color .15s;cursor:pointer;margin-bottom:1px;user-select:none;gap:6px}
+.sb-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.sb-item.active{background:rgba(255,255,255,.07);color:var(--text);font-weight:600}
+.sb-il{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.sb-icon{font-size:13px;flex-shrink:0}
+.sb-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-count{font-size:10px;font-weight:700;background:var(--bg5);border:1px solid var(--border2);color:var(--muted3);padding:1px 6px;border-radius:100px;min-width:18px;text-align:center;flex-shrink:0}
+.sb-count.alert{background:var(--accent);border-color:var(--accent);color:#000}
+.sb-footer{padding:10px 7px;border-top:1px solid var(--border)}
+.sb-out{width:100%;background:transparent;border:1px solid var(--border2);color:var(--muted3);font-size:12px;font-weight:500;padding:7px;border-radius:6px;transition:color .15s;cursor:pointer}
+.sb-out:hover{color:var(--text)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.tb-ham{display:none;background:transparent;border:none;color:var(--muted3);font-size:18px;cursor:pointer;padding:2px 4px;line-height:1}
+.tb-title{font-size:14px;font-weight:700;letter-spacing:-.2px}
+.tb-r{display:flex;align-items:center;gap:10px;min-width:0}
+.tb-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--muted3);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;transition:color .15s}
+.tb-btn:hover{color:var(--text)}
+.tb-user{font-size:12px;color:var(--muted3);background:var(--bg4);border:1px solid var(--border2);padding:5px 12px;border-radius:100px}
+.api-dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:background .4s}
+.api-dot.ok{background:var(--green)}.api-dot.err{background:var(--red)}
+.api-ts{font-size:11px;color:var(--muted2);white-space:nowrap}
+.content{flex:1;overflow-y:auto;padding:20px}
+.view{display:none}.view.active{display:block}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:100px;white-space:nowrap;letter-spacing:.02em}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.badge.new{background:var(--accent2);color:var(--accent)}.badge.new::before{background:var(--accent)}
+.badge.reviewing{background:var(--blue2);color:var(--blue)}.badge.reviewing::before{background:var(--blue)}
+.badge.accepted{background:var(--green2);color:var(--green)}.badge.accepted::before{background:var(--green)}
+.badge.hired{background:rgba(62,207,142,.15);color:#86efac;border:1px solid rgba(62,207,142,.15)}.badge.hired::before{background:#86efac}
+.badge.inwork{background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.15)}.badge.inwork::before{background:var(--orange)}
+.badge.free{background:var(--green2);color:var(--green);border:1px solid rgba(62,207,142,.15)}.badge.free::before{background:var(--green)}
+.badge.rejected{background:var(--red2);color:var(--red)}.badge.rejected::before{background:var(--red)}
+.badge.inprogress{background:var(--orange2);color:var(--orange)}.badge.inprogress::before{background:var(--orange)}
+.badge.assigning{background:var(--purple2);color:var(--purple)}.badge.assigning::before{background:var(--purple)}
+.badge.assigned{background:var(--teal2);color:var(--teal)}.badge.assigned::before{background:var(--teal)}
+.badge.completed{background:rgba(167,139,250,.12);color:var(--purple)}.badge.completed::before{background:var(--purple)}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow-x:auto;overflow-y:hidden}
+.tbl-head{display:grid;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.th{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow{display:grid;padding:13px 16px;border-bottom:1px solid var(--border);align-items:center;gap:10px;cursor:pointer;transition:background .12s}
+.trow:last-child{border-bottom:none}
+.trow:hover{background:rgba(255,255,255,.02)}
+.td{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td.muted{color:var(--muted3);font-size:12px}
+.td.name{font-weight:600}
+.td.mono{font-family:var(--mono);font-size:12px;color:var(--muted3)}
+
+/* ── VIEW HEADER ── */
+.view-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.view-hdr-title{font-size:14px;font-weight:700}
+.view-hdr-count{font-size:12px;color:var(--muted)}
+.vhdr-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.f-search{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:7px 12px;outline:none;transition:border-color .15s;width:200px}
+.f-search:focus{border-color:var(--border3)}
+.f-search::placeholder{color:var(--muted)}
+.btn-sm{font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--muted3);cursor:pointer;transition:color .15s,border-color .15s}
+.btn-sm:hover{color:var(--text);border-color:var(--border3)}
+.btn-sm.primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-sm.primary:hover{opacity:.88}
+
+/* ── EMPTY ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 20px;text-align:center}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.3}
+.empty-title{font-size:14px;font-weight:600;margin-bottom:5px;color:var(--muted3)}
+.empty-sub{font-size:12px;color:var(--muted)}
+
+/* ── STATS GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.scard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;transition:border-color .2s;cursor:pointer}
+.scard:hover{border-color:var(--border2)}
+.scard-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.scard-n{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1}
+.scard-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ── OVERVIEW ── */
+.ov-sections{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ov-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.ov-card-header{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ov-card-title{font-size:13px;font-weight:700}
+.ov-card-see{font-size:12px;color:var(--muted);cursor:pointer;transition:color .15s}
+.ov-card-see:hover{color:var(--text)}
+.ov-row{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.ov-row:last-child{border-bottom:none}
+.ov-row:hover{background:rgba(255,255,255,.02)}
+.ov-row-name{font-size:13px;font-weight:600}
+.ov-row-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── DETAIL PANEL ── */
+.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:50;display:none}
+.panel-overlay.open{display:block}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--bg2);border-left:1px solid var(--border);z-index:51;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;max-width:100vw}
+.detail-panel.open{transform:translateX(0)}
+.dp-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dp-close{background:var(--bg4);border:1px solid var(--border2);color:var(--muted3);font-size:17px;width:28px;height:28px;border-radius:6px;display:grid;place-items:center;cursor:pointer;transition:color .15s;flex-shrink:0}
+.dp-close:hover{color:var(--text)}
+.dp-type{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.dp-name{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:8px}
+.dp-body{flex:1;overflow-y:auto;padding:18px 20px}
+.dp-section{margin-bottom:20px}
+.dp-sec-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dp-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px}
+.dp-val{font-size:13px;color:var(--text);line-height:1.5;word-break:break-word}
+.dp-val a{color:var(--blue);text-decoration:underline}
+.dp-footer{padding:14px 20px;border-top:1px solid var(--border)}
+.dp-status-lbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.dp-status-sel{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;padding:9px 12px;outline:none;cursor:pointer;appearance:none;margin-bottom:10px}
+.dp-status-sel:focus{border-color:var(--border3)}
+.dp-actions{display:flex;gap:8px}
+.dp-btn{flex:1;font-size:13px;font-weight:600;padding:9px;border-radius:var(--r);border:none;cursor:pointer;transition:opacity .15s}
+.dp-btn.save{background:var(--text);color:#000}.dp-btn.save:hover{opacity:.85}
+.dp-btn.del{background:var(--red2);border:1px solid rgba(248,113,113,.2);color:var(--red)}.dp-btn.del:hover{background:rgba(248,113,113,.2)}
+.dp-btn.wp{background:var(--green2);border:1px solid rgba(62,207,142,.2);color:var(--green);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:5px}.dp-btn.wp:hover{background:rgba(62,207,142,.2)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:560px;max-width:calc(100vw - 40px);max-height:90vh;display:flex;flex-direction:column}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:700}
+.modal-close{background:transparent;border:none;color:var(--muted3);font-size:20px;cursor:pointer;transition:color .15s;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row.full{grid-template-columns:1fr}
+.form-field label{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted3);margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:9px 11px;outline:none;transition:border-color .15s}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--border3)}
+.form-field textarea{resize:vertical;min-height:80px}
+.form-field select{appearance:none;cursor:pointer}
+.form-sep{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* ── MEMBER CARDS ── */
+.member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:14px}
+.member-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.member-card:hover{border-color:var(--border2);background:var(--bg4)}
+.member-card.selected{border-color:var(--accent);background:var(--accent2)}
+.mc-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.mc-skill{font-size:11px;color:var(--muted3);margin-bottom:8px}
+.mc-status{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* ── BOARD MANAGER ── */
+.board-admin-layout{display:grid;grid-template-columns:1.05fr 1.35fr;gap:14px}
+.board-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px}
+.board-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.board-admin-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.board-admin-sub{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:4px}
+.board-admin-list{display:grid;gap:12px}
+.board-admin-item{display:grid;grid-template-columns:68px 1fr auto;gap:12px;align-items:flex-start;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px}
+.board-admin-thumb{width:68px;height:68px;border-radius:12px;object-fit:cover;background:var(--accent2);display:grid;place-items:center;font-size:20px;font-weight:900;color:var(--accent);flex-shrink:0}
+.board-admin-name{font-size:14px;font-weight:800;letter-spacing:-.2px;margin-bottom:3px}
+.board-admin-role{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.board-admin-bio{font-size:12px;color:var(--muted3);line-height:1.6;margin-bottom:10px}
+.board-admin-skills{display:flex;flex-wrap:wrap;gap:6px}
+.board-admin-skill{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;background:var(--accent2);border:1px solid rgba(232,197,71,.18);font-size:10px;font-weight:700;color:var(--accent)}
+.board-admin-actions{display:flex;flex-direction:column;gap:8px}
+.board-admin-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)}
+.board-admin-check input{accent-color:var(--accent)}
+.board-status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.board-status-pill.live{background:var(--green2);border:1px solid rgba(62,207,142,.2);color:var(--green)}
+.board-status-pill.draft{background:var(--bg4);border:1px solid var(--border2);color:var(--muted3)}
+
+/* ── SERVICES MANAGER ── */
+.service-admin-layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.service-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px}
+.service-admin-layout .service-admin-card:first-child{position:sticky;top:0}
+.service-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.service-admin-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.service-admin-sub{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:4px}
+.service-admin-list{display:grid;gap:10px}
+.service-admin-item{width:100%;padding:15px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));cursor:pointer;transition:border-color .18s,background .18s,transform .18s,box-shadow .18s;text-align:left;color:inherit;font:inherit}
+.service-admin-item:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.service-admin-item.active{border-color:var(--accent);background:linear-gradient(180deg,rgba(232,197,71,.12),rgba(232,197,71,.05));box-shadow:0 14px 30px rgba(0,0,0,.18)}
+.service-admin-item-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.service-admin-item-name{font-size:14px;font-weight:800}
+.service-admin-item-price{font-size:11px;font-weight:800;color:var(--accent);padding:5px 9px;border-radius:999px;background:rgba(232,197,71,.08);border:1px solid rgba(232,197,71,.14)}
+.service-admin-item-copy{font-size:12px;color:var(--muted3);line-height:1.6}
+.service-admin-form{display:grid;gap:14px}
+.service-admin-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.service-admin-deliverables{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.service-admin-deliverable{display:flex;gap:8px;align-items:flex-start}
+.service-admin-deliverable-num{width:28px;height:28px;border-radius:10px;background:var(--accent2);border:1px solid rgba(232,197,71,.18);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:27px}
+.service-admin-meta{display:flex;gap:8px;flex-wrap:wrap}
+.service-admin-pill{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:var(--bg4);border:1px solid var(--border2);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted3)}
+.service-admin-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.service-admin-note{font-size:12px;color:var(--muted3);line-height:1.6}
+
+/* ── GROUP PILL ── */
+.group-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--purple2);border:1px solid rgba(167,139,250,.2);color:var(--purple);padding:4px 10px;border-radius:100px}
+.group-pill .rm{cursor:pointer;color:var(--muted3);transition:color .15s;font-size:14px;line-height:1}
+.group-pill .rm:hover{color:var(--red)}
+.groups-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+
+/* ── REVENUE / CHART ── */
+.rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.rev-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.rev-card-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.rev-big{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:3px}
+.rev-sub{font-size:11px;color:var(--muted3)}
+.chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:14px}
+canvas#revChart{max-height:220px}
+
+/* ── PAYMENT TABLE ── */
+.pay-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.pay-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border)}
+.pay-hdr-title{font-size:13px;font-weight:700}
+.pay-row{display:grid;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;gap:10px}
+.pay-row:last-child{border-bottom:none}
+.pay-row:hover{background:rgba(255,255,255,.02)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content}
+.tab{font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;color:var(--muted3);transition:background .15s,color .15s;user-select:none}
+.tab.active{background:var(--bg5);color:var(--text)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--bg4);border:1px solid var(--border2);color:var(--text);font-size:13px;font-weight:500;padding:10px 20px;border-radius:100px;z-index:500;transition:transform .25s ease,opacity .25s ease;opacity:0;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ── LOADING ── */
+.gl-bar{display:none;align-items:center;gap:10px;padding:11px 20px;font-size:13px;color:var(--muted3);border-bottom:1px solid var(--border);background:var(--bg2)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+
+/* ── PROJECT PROJECT CARD in assign modal ── */
+.prj-sel-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:border-color .15s;margin-bottom:8px}
+.prj-sel-card:hover{border-color:var(--border2)}
+.prj-sel-card.selected{border-color:var(--accent)}
+.prj-sel-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.prj-sel-sub{font-size:11px;color:var(--muted3)}
+
+/* COMMUNICATION */
+.comm-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+.comm-list{display:flex;flex-direction:column;gap:10px}
+.comm-item{padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px}
+.comm-item-title{font-size:13px;font-weight:700}
+.comm-item-sub{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:4px}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-size:16px;font-weight:900;color:#000;flex-shrink:0;object-fit:cover}
+.avatar.sm{width:28px;height:28px;font-size:11px}
+.chat-shell{display:grid;grid-template-columns:280px 1fr;gap:12px;min-height:560px}
+.chat-list{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.chat-room-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:8px}
+.chat-room-btn:hover,.chat-room-btn.active{border-color:var(--accent);background:var(--accent2)}
+.chat-room-meta{flex:1;min-width:0}
+.chat-room-name{font-size:13px;font-weight:700}
+.chat-room-sub{font-size:11px;color:var(--muted3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;min-height:560px}
+.chat-panel-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-msg{max-width:78%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3)}
+.chat-msg.me{align-self:flex-end;background:var(--accent2);border-color:rgba(232,197,71,.18)}
+.chat-msg-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px}
+.chat-msg-name{font-size:11px;font-weight:700}
+.chat-msg-time{font-size:10px;color:var(--muted)}
+.chat-msg-body{font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.chat-msg-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.chat-msg-del{background:transparent;border:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;padding:0}
+.chat-msg-del:hover{color:var(--red)}
+.chat-compose{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none}
+.chat-input:focus{border-color:var(--border3)}
+
+.admin-submission-list{display:flex;flex-direction:column;gap:12px}
+.admin-submission-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px}
+.admin-submission-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.admin-submission-title{font-size:13px;font-weight:800}
+.admin-submission-meta{font-size:11px;color:var(--muted3);margin-top:3px}
+.admin-submission-note{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:8px;white-space:pre-wrap}
+.admin-feedback-box{margin-top:10px}
+.admin-feedback-box textarea{min-height:94px}
+.admin-feedback-actions{display:flex;justify-content:flex-end;margin-top:8px}
+
+/* AI ASSISTANT */
+.ai-fab{position:fixed;right:18px;bottom:18px;z-index:220;background:var(--accent);color:#000;border:none;border-radius:999px;padding:12px 16px;font-size:12px;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.35);cursor:pointer}
+.ai-panel{position:fixed;right:18px;bottom:74px;width:340px;max-width:calc(100vw - 24px);background:var(--bg2);border:1px solid var(--border2);border-radius:14px;z-index:220;display:none;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.ai-panel.open{display:block}
+.ai-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ai-body{padding:14px;max-height:min(52vh,480px);overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.ai-bubble{padding:10px 12px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);font-size:13px;line-height:1.5}
+.ai-bubble.user{background:var(--accent2);border-color:rgba(232,197,71,.18)}
+.ai-foot{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
+
+@media(max-width:960px){
+  .comm-grid,.chat-shell,.board-admin-layout,.service-admin-layout{grid-template-columns:1fr}
+  .ov-sections,.rev-grid{grid-template-columns:1fr}
+  .service-admin-layout .service-admin-card:first-child{position:static}
+}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;top:0;left:0;width:240px;height:100%;transform:translateX(-100%);z-index:100;transition:transform .3s ease;box-shadow:20px 0 50px rgba(0,0,0,0.5)}
+  .sidebar.open{transform:translateX(0)}
+  .main{width:100%;overflow:hidden}
+  .topbar{position:relative;height:auto;min-height:56px;padding:12px 16px;flex-wrap:wrap;gap:12px}
+  .tb-left{width:100%;justify-content:flex-start}
+  .tb-ham{display:block;font-size:22px;margin-right:8px}
+  .tb-r{width:100%;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+  .tbl-head,.trow,.pay-row{min-width:600px}
+  .detail-panel{width:100vw;border-left:none}
+  .dp-grid{grid-template-columns:1fr}
+  .dp-actions{flex-direction:column}
+  .overview-charts,.overview-minis,.overview-breakdown{grid-template-columns:1fr !important}
+  .scard{padding:14px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:480px){
+  .login-box{width:100%;padding:24px}
+  .l-title{font-size:24px;letter-spacing:-0.5px}
+  .l-field input{font-size:16px;padding:12px}
+  .l-btn{padding:14px;font-size:14px}
+  .topbar{padding:12px}
+  .tb-r{justify-content:flex-start;flex-wrap:wrap}
+  .tb-title{font-size:14px}
+  .tb-btn,.api-ts,.tb-user{font-size:11px}
+  .tb-user{width:100%}
+  .content{padding:16px 12px}
+  .stat-grid{grid-template-columns:1fr}
+  .ov-card-header,.pay-hdr,.chat-panel-head,.card-header{flex-direction:column;align-items:flex-start}
+  .admin-submission-head,.admin-feedback-actions{flex-direction:column;align-items:flex-start}
+  .modal-overlay{padding:0}
+  .modal{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0}
+  .modal-header,.modal-footer{padding:16px}
+  .modal-body{padding:20px}
+  .form-row{grid-template-columns:1fr}
+  .view-hdr{flex-direction:column;align-items:stretch;gap:12px}
+  .vhdr-right{margin-left:0;width:100%;flex-direction:column;align-items:stretch}
+  .f-search{width:100%}
+  .chat-compose{flex-direction:column;gap:10px}
+  .chat-msg{max-width:100%}
+  .ai-panel{right:12px;left:12px;width:auto;max-width:none;bottom:80px}
+  .ai-fab{right:16px;bottom:16px}
+  .service-admin-form-row,.service-admin-deliverables{grid-template-columns:1fr}
+  .service-admin-actions{justify-content:stretch}
+  .service-admin-actions .btn-sm{width:100%}
+}
 </style>
 </head>
 <body>
-  <div class="card">
-    <div class="eyebrow"><span class="dot"></span> YoungMinds Admin</div>
-    <h1>Opening admin panel…</h1>
-    <p>We’re warming up the backend and will redirect you into admin as soon as it responds.</p>
-    <div class="status" id="status">Checking backend status…</div>
-    <div class="actions">
-      <button class="btn btn-primary" type="button" onclick="goNow()">Open now</button>
-      <button class="btn btn-ghost" type="button" onclick="window.location.href='/'">Back to site</button>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="l-logo">
+      <div class="l-dot">Y</div>
+      <span class="l-name">YoungMinds</span>
+      <span class="l-badge">Admin</span>
+    </div>
+    <div class="l-title">Welcome back</div>
+    <div class="l-sub">Sign in to access the control panel.</div>
+    <div class="l-field"><label>Username</label><input type="text" id="l-user" placeholder="admin" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-field"><label>Password</label><input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-options">
+      <label class="check-row"><input type="checkbox" id="remember-admin" checked> <span>Remember this device</span></label>
+    </div>
+    <div class="l-err" id="l-err">Incorrect credentials.</div>
+    <button class="l-btn" id="loginBtn" onclick="doLogin()">Sign in →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appShell" style="display:none">
+  <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+  <div class="sidebar">
+    <div class="sb-header">
+      <div class="sb-dot">Y</div>
+      <div><div class="sb-brand">YoungMinds</div><div class="sb-tag">Admin Panel</div></div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">General</div>
+      <div class="sb-item active" id="nav-overview" onclick="nav('overview')">
+        <div class="sb-il"><span class="sb-icon">⬛</span><span class="sb-label">Overview</span></div>
+      </div>
+      <div class="sb-item" id="nav-revenue" onclick="nav('revenue')">
+        <div class="sb-il"><span class="sb-icon">₹</span><span class="sb-label">Revenue & Payments</span></div>
+      </div>
+      <div class="sb-item" id="nav-comm" onclick="nav('comm')">
+        <div class="sb-il"><span class="sb-icon">📣</span><span class="sb-label">Notices & Resets</span></div>
+      </div>
+      <div class="sb-item" id="nav-chat" onclick="nav('chat')">
+        <div class="sb-il"><span class="sb-icon">💬</span><span class="sb-label">Chats</span></div>
+      </div>
+      <div class="sb-item" id="nav-board" onclick="nav('board')">
+        <div class="sb-il"><span class="sb-icon">◫</span><span class="sb-label">Board of Members</span></div>
+      </div>
+      <div class="sb-item" id="nav-services" onclick="nav('services')">
+        <div class="sb-il"><span class="sb-icon">◌</span><span class="sb-label">Services</span></div>
+      </div>
+      <div class="sb-sec">Hiring</div>
+      <div class="sb-item" id="nav-app-new" onclick="nav('app-new')">
+        <div class="sb-il"><span class="sb-icon">⚡</span><span class="sb-label">New</span></div><span class="sb-count" id="cnt-app-new">0</span>
+      </div>
+      <div class="sb-item" id="nav-app-reviewing" onclick="nav('app-reviewing')">
+        <div class="sb-il"><span class="sb-icon">🔍</span><span class="sb-label">Reviewing</span></div><span class="sb-count" id="cnt-app-reviewing">0</span>
+      </div>
+      <div class="sb-item" id="nav-app-accepted" onclick="nav('app-accepted')">
+        <div class="sb-il"><span class="sb-icon">✓</span><span class="sb-label">Accepted</span></div><span class="sb-count" id="cnt-app-accepted">0</span>
+      </div>
+      <div class="sb-item" id="nav-app-hired" onclick="nav('app-hired')">
+        <div class="sb-il"><span class="sb-icon">★</span><span class="sb-label">Hired Members</span></div><span class="sb-count" id="cnt-app-hired">0</span>
+      </div>
+      <div class="sb-item" id="nav-app-rejected" onclick="nav('app-rejected')">
+        <div class="sb-il"><span class="sb-icon">✕</span><span class="sb-label">Rejected</span></div><span class="sb-count" id="cnt-app-rejected">0</span>
+      </div>
+      <div class="sb-sec">Projects</div>
+      <div class="sb-item" id="nav-prj-new" onclick="nav('prj-new')">
+        <div class="sb-il"><span class="sb-icon">⚡</span><span class="sb-label">New</span></div><span class="sb-count" id="cnt-prj-new">0</span>
+      </div>
+      <div class="sb-item" id="nav-prj-reviewing" onclick="nav('prj-reviewing')">
+        <div class="sb-il"><span class="sb-icon">🔍</span><span class="sb-label">Reviewing</span></div><span class="sb-count" id="cnt-prj-reviewing">0</span>
+      </div>
+      <div class="sb-item" id="nav-prj-accepted" onclick="nav('prj-accepted')">
+        <div class="sb-il"><span class="sb-icon">✓</span><span class="sb-label">Accepted</span></div><span class="sb-count" id="cnt-prj-accepted">0</span>
+      </div>
+      <div class="sb-item" id="nav-prj-assigning" onclick="nav('prj-assigning')">
+        <div class="sb-il"><span class="sb-icon">👥</span><span class="sb-label">Assigning</span></div><span class="sb-count" id="cnt-prj-assigning">0</span>
+      </div>
+      <div class="sb-item" id="nav-prj-assigned" onclick="nav('prj-assigned')">
+        <div class="sb-il"><span class="sb-icon">📌</span><span class="sb-label">Assigned</span></div><span class="sb-count" id="cnt-prj-assigned">0</span>
+      </div>
+      <div class="sb-item" id="nav-prj-inprogress" onclick="nav('prj-inprogress')">
+        <div class="sb-il"><span class="sb-icon">◉</span><span class="sb-label">In Progress</span></div><span class="sb-count" id="cnt-prj-inprogress">0</span>
+      </div>
+      <div class="sb-item" id="nav-prj-completed" onclick="nav('prj-completed')">
+        <div class="sb-il"><span class="sb-icon">▣</span><span class="sb-label">Completed</span></div><span class="sb-count" id="cnt-prj-completed">0</span>
+      </div>
+      <div class="sb-item" id="nav-prj-rejected" onclick="nav('prj-rejected')">
+        <div class="sb-il"><span class="sb-icon">✕</span><span class="sb-label">Rejected</span></div><span class="sb-count" id="cnt-prj-rejected">0</span>
+      </div>
+    </div>
+    <div class="sb-footer">
+      <button class="sb-out" onclick="doLogout()">↩ Sign out</button>
     </div>
   </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-left">
+        <button class="tb-ham" onclick="toggleSidebar()">☰</button>
+        <div class="tb-title" id="tb-title">Overview</div>
+      </div>
+      <div class="tb-r">
+        <div id="api-dot" class="api-dot" title="Checking..."></div>
+        <span id="api-ts" class="api-ts"></span>
+        <div class="tb-user" id="admin-user-chip">👤 admin</div>
+        <button class="tb-btn" type="button" onclick="openAdminCredentialsModal()">Credentials</button>
+        <button class="tb-btn" onclick="refreshAdminData()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="gl-bar" id="gl"><div class="spinner"></div>Syncing with MongoDB...</div>
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="view active" id="view-overview">
+
+        <!-- ROW 1: 4 KPI cards -->
+        <div class="stat-grid" id="ov-stats"></div>
+
+        <!-- ROW 2: Big charts row -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:14px" class="overview-charts">
+
+          <!-- Applications + Projects weekly chart -->
+          <div class="ov-card">
+            <div class="ov-card-header" style="padding:14px 18px">
+              <div>
+                <span class="ov-card-title">Activity Overview</span>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">Applications & Projects over time</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:center">
+                <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;background:var(--accent);border-radius:2px;display:inline-block"></span>Applications</span>
+                <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;background:var(--blue);border-radius:2px;display:inline-block"></span>Projects</span>
+              </div>
+            </div>
+            <div style="padding:16px 18px;height:200px">
+              <canvas id="ov-line-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Donut: Application status breakdown -->
+          <div class="ov-card">
+            <div class="ov-card-header" style="padding:14px 18px">
+              <span class="ov-card-title">Application Status</span>
+            </div>
+            <div style="padding:16px 18px;display:flex;flex-direction:column;align-items:center;height:200px;justify-content:center">
+              <canvas id="ov-donut-chart" style="max-height:140px"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 3: 4 mini-stat cards with sparklines -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px" class="overview-minis">
+          <div class="scard" onclick="nav('app-new')" style="position:relative;overflow:hidden">
+            <div class="scard-lbl">Total Applications</div>
+            <div class="scard-n" id="ov-total-apps" style="color:var(--accent)">0</div>
+            <div class="scard-sub" id="ov-apps-sub">—</div>
+            <div style="margin-top:10px;height:32px"><canvas id="spark-apps"></canvas></div>
+          </div>
+          <div class="scard" onclick="nav('prj-new')" style="position:relative;overflow:hidden">
+            <div class="scard-lbl">Total Projects</div>
+            <div class="scard-n" id="ov-total-prjs" style="color:var(--blue)">0</div>
+            <div class="scard-sub" id="ov-prjs-sub">—</div>
+            <div style="margin-top:10px;height:32px"><canvas id="spark-prjs"></canvas></div>
+          </div>
+          <div class="scard" onclick="nav('app-hired')" style="position:relative;overflow:hidden">
+            <div class="scard-lbl">Team Size</div>
+            <div class="scard-n" id="ov-team-n" style="color:var(--green)">0</div>
+            <div class="scard-sub" id="ov-team-sub">—</div>
+            <div style="margin-top:10px;height:32px"><canvas id="spark-team"></canvas></div>
+          </div>
+          <div class="scard" onclick="nav('prj-inprogress')" style="position:relative;overflow:hidden">
+            <div class="scard-lbl">Active Projects</div>
+            <div class="scard-n" id="ov-active-n" style="color:var(--orange)">0</div>
+            <div class="scard-sub" id="ov-active-sub">—</div>
+            <div style="margin-top:10px;height:32px"><canvas id="spark-active"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ROW 4: Skill bar + Service bar + Recent lists -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:12px;margin-bottom:14px" class="overview-breakdown">
+
+          <!-- Skill breakdown bar -->
+          <div class="ov-card">
+            <div class="ov-card-header" style="padding:13px 16px">
+              <span class="ov-card-title">Skills in Team</span>
+            </div>
+            <div style="padding:14px 16px" id="ov-skills-bars"></div>
+          </div>
+
+          <!-- Service breakdown bar -->
+          <div class="ov-card">
+            <div class="ov-card-header" style="padding:13px 16px">
+              <span class="ov-card-title">Top Services Requested</span>
+            </div>
+            <div style="padding:14px 16px" id="ov-svc-bars"></div>
+          </div>
+
+          <!-- Application pipeline funnel -->
+          <div class="ov-card">
+            <div class="ov-card-header" style="padding:13px 16px">
+              <span class="ov-card-title">Application Pipeline</span>
+              <span class="ov-card-see" onclick="nav('app-new')">Details →</span>
+            </div>
+            <div style="padding:14px 16px" id="ov-pipeline"></div>
+          </div>
+        </div>
+
+        <!-- ROW 5: Recent activity tables -->
+        <div class="ov-sections">
+          <div class="ov-card">
+            <div class="ov-card-header">
+              <span class="ov-card-title">Recent Applications</span>
+              <span class="ov-card-see" onclick="nav('app-new')">See all →</span>
+            </div>
+            <div id="ov-apps"></div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-card-header">
+              <span class="ov-card-title">Recent Projects</span>
+              <span class="ov-card-see" onclick="nav('prj-new')">See all →</span>
+            </div>
+            <div id="ov-prjs"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REVENUE & PAYMENTS -->
+      <div class="view" id="view-revenue">
+        <div id="rev-content"></div>
+      </div>
+
+      <!-- COMMUNICATION -->
+      <div class="view" id="view-comm">
+        <div id="comm-content"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="view" id="view-chat">
+        <div id="admin-chat-content"></div>
+      </div>
+
+      <!-- BOARD OF MEMBERS -->
+      <div class="view" id="view-board">
+        <div id="board-admin-content"></div>
+      </div>
+
+      <!-- SERVICES -->
+      <div class="view" id="view-services">
+        <div id="services-admin-content"></div>
+      </div>
+
+      <!-- HIRING VIEWS -->
+      <div class="view" id="view-app-new"></div>
+      <div class="view" id="view-app-reviewing"></div>
+      <div class="view" id="view-app-accepted"></div>
+      <div class="view" id="view-app-hired"></div>
+      <div class="view" id="view-app-rejected"></div>
+
+      <!-- PROJECT VIEWS -->
+      <div class="view" id="view-prj-new"></div>
+      <div class="view" id="view-prj-reviewing"></div>
+      <div class="view" id="view-prj-accepted"></div>
+      <div class="view" id="view-prj-assigning"></div>
+      <div class="view" id="view-prj-assigned"></div>
+      <div class="view" id="view-prj-inprogress"></div>
+      <div class="view" id="view-prj-completed"></div>
+      <div class="view" id="view-prj-rejected"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="dp-header">
+    <div>
+      <div class="dp-type" id="dp-type"></div>
+      <div class="dp-name" id="dp-name"></div>
+      <div id="dp-badge"></div>
+    </div>
+    <button class="dp-close" onclick="closePanel()">×</button>
+  </div>
+  <div class="dp-body" id="dp-body"></div>
+  <div class="dp-footer">
+    <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:10px">
+      <div style="flex:1">
+        <div class="dp-status-lbl">Update Status</div>
+        <select class="dp-status-sel" id="dp-status-sel"></select>
+      </div>
+      <div id="dp-whatsapp-wrap" style="display:none">
+        <a id="dp-whatsapp-btn" class="dp-btn wp" href="#" target="_blank">📱 WhatsApp</a>
+      </div>
+    </div>
+    <div class="dp-actions">
+      <button class="dp-btn save" onclick="saveStatus()">✓ Save Status</button>
+      <button class="dp-btn del" onclick="deleteRecord()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASSIGN MODAL -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Assign Project</div>
+      <button class="modal-close" onclick="closeModal('assignModal')">×</button>
+    </div>
+    <div class="modal-body" id="assignModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal('assignModal')">Cancel</button>
+      <button class="btn-sm primary" onclick="confirmAssign()">Assign & Notify →</button>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP MODAL -->
+<div class="modal-overlay" id="groupModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Manage Groups</div>
+      <button class="modal-close" onclick="closeModal('groupModal')">×</button>
+    </div>
+    <div class="modal-body" id="groupModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal('groupModal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="payModalTitle">Payment Entry</div>
+      <button class="modal-close" onclick="closeModal('payModal')">×</button>
+    </div>
+    <div class="modal-body" id="payModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal('payModal')">Cancel</button>
+      <button class="btn-sm primary" onclick="savePayment()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT DETAIL VIEW MODAL (for hired member project click) -->
+<div class="modal-overlay" id="projDetailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Current Project Details</div>
+      <button class="modal-close" onclick="closeModal('projDetailModal')">×</button>
+    </div>
+    <div class="modal-body" id="projDetailModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal('projDetailModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminCredentialsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Admin Credentials</div>
+      <button class="modal-close" onclick="closeModal('adminCredentialsModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label>New Username</label>
+          <input type="text" id="admin-new-username" placeholder="admin" autocomplete="username">
+        </div>
+        <div class="form-field">
+          <label>Current Password</label>
+          <input type="password" id="admin-current-password" placeholder="Current password" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>New Password</label>
+          <input type="password" id="admin-new-password" placeholder="Leave blank to keep current password" autocomplete="new-password">
+        </div>
+        <div class="form-field">
+          <label>Confirm New Password</label>
+          <input type="password" id="admin-confirm-password" placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted3);line-height:1.65">
+        Update the admin username, password, or both. Your current password is required before the new credentials are saved.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" type="button" onclick="closeModal('adminCredentialsModal')">Cancel</button>
+      <button class="btn-sm primary" type="button" onclick="saveAdminCredentials()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="ai-panel" id="adminAiPanel">
+  <div class="ai-head">
+    <strong style="font-size:13px">Admin Assistant</strong>
+    <button class="modal-close" onclick="toggleAiPanel('adminAiPanel')">×</button>
+  </div>
+  <div class="ai-body" id="adminAiBody"></div>
+  <div class="ai-foot">
+    <input class="chat-input" id="adminAiInput" type="text" placeholder="Try: hiring flow, project stages, payments, notices…" onkeydown="if(event.key==='Enter')sendAdminAi()">
+    <button class="btn-sm primary" onclick="sendAdminAi()">Ask</button>
+  </div>
+</div>
+<button class="ai-fab" onclick="toggleAiPanel('adminAiPanel')">AI Help</button>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const BACKEND = 'https://youngminds-3rk5.onrender.com';
-const TARGET = BACKEND + '/admin';
-const statusEl = document.getElementById('status');
-
-function goNow() {
-  window.location.href = TARGET;
-}
-
-async function wakeAndRedirect() {
-  for (let i = 0; i < 12; i += 1) {
-    statusEl.textContent = i === 0
-      ? 'Waking up the backend service…'
-      : 'Still waking up the backend. Redirecting automatically when ready…';
-    try {
-      const res = await fetch(BACKEND + '/api/health', { cache: 'no-store' });
-      if (res.ok) {
-        statusEl.textContent = 'Backend is ready. Redirecting now…';
-        setTimeout(goNow, 700);
-        return;
-      }
-    } catch {}
-    await new Promise(resolve => setTimeout(resolve, 5000));
+// ── API BASE ──
+const API = window.location.origin;
+const SERVICE_CLIENT_DEFAULTS = [
+  {
+    slug: "web-development",
+    name: "Web Development",
+    shortLabel: "Web",
+    valueProp: "Conversion-focused websites and digital products built fast, clean, and ready to scale.",
+    pricing_min_inr: 5000,
+    pricing_max_inr: 50000,
+    meta_description: "YoungMinds Agency builds responsive websites, landing pages, and internal tools for modern Indian businesses.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Responsive website design",
+      "Landing page build",
+      "CMS or admin integration",
+      "Speed and SEO basics",
+      "Form and lead capture setup",
+      "Launch support and QA"
+    ]
+  },
+  {
+    slug: "graphic-design",
+    name: "Graphic Design",
+    shortLabel: "Design",
+    valueProp: "Brand visuals that look sharp, feel consistent, and work across digital and print touchpoints.",
+    pricing_min_inr: 2000,
+    pricing_max_inr: 25000,
+    meta_description: "YoungMinds Agency creates logos, launch creatives, brand systems, and everyday design assets for growing brands.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Logo and identity concepts",
+      "Brand color and type direction",
+      "Social and ad creatives",
+      "Print-ready collateral",
+      "Presentation and deck design",
+      "Design source files handoff"
+    ]
+  },
+  {
+    slug: "social-media",
+    name: "Social Media",
+    shortLabel: "Social",
+    valueProp: "Consistent social content systems that turn scattered posting into a clear growth rhythm.",
+    pricing_min_inr: 4000,
+    pricing_max_inr: 30000,
+    meta_description: "YoungMinds Agency manages social media content planning, creative production, and publishing support for brands in India.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Monthly content calendar",
+      "Post and reel concepts",
+      "Caption writing",
+      "Creative asset coordination",
+      "Publishing support",
+      "Performance review summary"
+    ]
+  },
+  {
+    slug: "ai-solutions",
+    name: "AI Solutions",
+    shortLabel: "AI",
+    valueProp: "Practical AI systems that automate repetitive work and make your team faster without extra complexity.",
+    pricing_min_inr: 8000,
+    pricing_max_inr: 100000,
+    meta_description: "YoungMinds Agency designs automation flows, assistants, and lightweight AI tools for business workflows in India.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Workflow audit and use-case mapping",
+      "Custom AI assistant setup",
+      "Automation logic and prompts",
+      "Tool integrations",
+      "Testing and guardrails",
+      "Team onboarding guidance"
+    ]
+  },
+  {
+    slug: "video-editing",
+    name: "Video Editing",
+    shortLabel: "Video",
+    valueProp: "Fast-moving edits for reels, explainers, and campaign content that feel current and watchable.",
+    pricing_min_inr: 2500,
+    pricing_max_inr: 30000,
+    meta_description: "YoungMinds Agency edits reels, explainers, launch videos, and short-form content for brands and creators.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Short-form reel editing",
+      "Motion graphics support",
+      "Captions and text overlays",
+      "Sound polish and pacing",
+      "Multiple export formats",
+      "Revision-ready project files"
+    ]
+  },
+  {
+    slug: "content-writing",
+    name: "Content Writing",
+    shortLabel: "Content",
+    valueProp: "Clear, persuasive writing for websites, campaigns, and content engines that need a stronger voice.",
+    pricing_min_inr: 1500,
+    pricing_max_inr: 20000,
+    meta_description: "YoungMinds Agency writes website copy, blogs, product messaging, and social content for modern businesses.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Website and landing copy",
+      "Brand messaging direction",
+      "Blog and article writing",
+      "Product or service descriptions",
+      "Campaign content support",
+      "Editing and proofreading"
+    ]
   }
-  statusEl.textContent = 'The backend is taking longer than usual. You can still open admin manually.';
+];
+
+/* ── AUTH ── */
+function doLogin(){}
+function doLogout(){}
+
+/* ── DATA ── */
+let apps=[], prjs=[], currentRecord=null;
+let groups = JSON.parse(localStorage.getItem('ym_groups')||'[]'); // UI-only groups (localStorage is fine)
+let payments = []; // Loaded from MongoDB via /api/payments
+let boardEntries = [];
+let serviceEntries = [];
+let currentBoardEditId = null;
+let currentServiceSlug = "web-development";
+let revChart = null;
+
+function defaultServiceEntries(){
+  return SERVICE_CLIENT_DEFAULTS.map(item => ({ ...item, deliverables: [...item.deliverables] }));
 }
 
-wakeAndRedirect();
+function normalizeServiceEntries(items){
+  const defaults = defaultServiceEntries();
+  const map = new Map(defaults.map(item => [item.slug, item]));
+  if (Array.isArray(items)) {
+    items.forEach(item => {
+      if (!item || !item.slug) return;
+      const base = map.get(item.slug) || {};
+      map.set(item.slug, {
+        ...base,
+        ...item,
+        deliverables: Array.isArray(item.deliverables) && item.deliverables.length
+          ? item.deliverables
+          : (base.deliverables || [])
+      });
+    });
+  }
+  return defaults.map(item => map.get(item.slug) || item);
+}
+
+async function loadArray(path, options = {}){
+  const {
+    fallback = [],
+    required = false
+  } = options;
+  try{
+    const response = await fetch(`${API}${path}`);
+    if (!response.ok) {
+      if (required) throw new Error(`request_failed:${path}`);
+      return fallback;
+    }
+    const data = await response.json().catch(() => fallback);
+    return Array.isArray(data) ? data : fallback;
+  }catch(err){
+    if (required) throw err;
+    return fallback;
+  }
+}
+
+async function loadServicesData(options = {}){
+  const currentFallback = Array.isArray(serviceEntries) && serviceEntries.length
+    ? serviceEntries
+    : defaultServiceEntries();
+  const incoming = await loadArray("/api/services", { fallback: currentFallback });
+  serviceEntries = normalizeServiceEntries(incoming).map(item => ({ ...item, id: item._id || item.id || item.slug }));
+  if (options.render !== false) renderServicesManager();
+  return serviceEntries;
+}
+
+async function loadAll(){
+  setLoading(true);
+  let ok=true;
+  try{
+    const [appsData, projectsData, paymentsData, boardData, servicesData] = await Promise.all([
+      loadArray('/api/applications', { fallback: [], required: true }),
+      loadArray('/api/projects', { fallback: [], required: true }),
+      loadArray('/api/payments', { fallback: [] }),
+      loadArray('/api/board-members/admin', { fallback: [] }),
+      loadArray('/api/services', { fallback: defaultServiceEntries() })
+    ]);
+    apps=appsData;
+    prjs=projectsData;
+    payments=paymentsData;
+    boardEntries=boardData;
+    serviceEntries=normalizeServiceEntries(servicesData);
+    apps.forEach(r=>{r.id=r._id||r.id;r.type='application';});
+    prjs.forEach(r=>{r.id=r._id||r.id;r.type='project';});
+    boardEntries.forEach(r=>{r.id=r._id||r.id;});
+    serviceEntries.forEach(r=>{r.id=r._id||r.id;});
+  }catch(e){
+    ok=false;
+    apps=[];
+    prjs=[];
+    payments=[];
+    boardEntries=[];
+    serviceEntries=defaultServiceEntries().map(item => ({ ...item, id: item.slug }));
+  }
+  setLoading(false);
+  setStatus(ok);
+  updateAllCounts();
+  renderOverview();
+  renderAllViews();
+  renderRevenue();
+}
+function setLoading(on){const el=document.getElementById('gl');if(el)el.style.display=on?'flex':'none';}
+function setStatus(ok){
+  const dot=document.getElementById('api-dot');
+  const ts=document.getElementById('api-ts');
+  if(dot){dot.className='api-dot '+(ok?'ok':'err');dot.title=ok?'Server connected':'Cannot reach server';}
+  if(ts){ts.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});}
+}
+
+/* ── STATUS LISTS ── */
+const APP_STS=['new','reviewing','accepted','hired','rejected'];
+const PRJ_STS=['new','reviewing','accepted','assigning','assigned','inprogress','completed','rejected'];
+const LABEL={new:'New',reviewing:'Reviewing',accepted:'Accepted',hired:'Hired',rejected:'Rejected',
+  assigning:'Assigning',assigned:'Assigned',inprogress:'In Progress',completed:'Completed',inwork:'In Work',free:'Free'};
+
+function updateAllCounts(){
+  APP_STS.forEach(s=>{
+    const el=document.getElementById('cnt-app-'+s);
+    if(el){
+      const count = s==='hired'
+        ? apps.filter(a=>a.status==='hired'||a.status==='inwork').length
+        : apps.filter(a=>a.status===s).length;
+      el.textContent=count;
+    }
+  });
+  PRJ_STS.forEach(s=>{const el=document.getElementById('cnt-prj-'+s);if(el)el.textContent=prjs.filter(p=>p.status===s).length;});
+  ['app-new','prj-new'].forEach(k=>{
+    const el=document.getElementById('cnt-'+k);
+    if(el){const n=parseInt(el.textContent)||0;el.className='sb-count'+(n>0?' alert':'');}
+  });
+}
+
+/* ── NAV ── */
+const NAV_TITLE={
+  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',services:'Services',
+  'app-new':'Hiring — New','app-reviewing':'Hiring — Reviewing','app-accepted':'Hiring — Accepted',
+  'app-hired':'Hiring — Members','app-rejected':'Hiring — Rejected',
+  'prj-new':'Projects — New','prj-reviewing':'Projects — Reviewing','prj-accepted':'Projects — Accepted',
+  'prj-assigning':'Projects — Assigning','prj-assigned':'Projects — Assigned',
+  'prj-inprogress':'Projects — In Progress','prj-completed':'Projects — Completed','prj-rejected':'Projects — Rejected'
+};
+function nav(page){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  const v=document.getElementById('view-'+page);
+  if(v)v.classList.add('active');
+  const ni=document.getElementById('nav-'+page);if(ni)ni.classList.add('active');
+  document.getElementById('tb-title').textContent=NAV_TITLE[page]||page;
+  closeSidebar();
+}
+
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sbOverlay').classList.toggle('open');
+}
+
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sbOverlay').classList.remove('open');
+}
+
+/* ── RENDER ALL ── */
+function renderAllViews(){
+  renderBoardManager();
+  renderServicesManager();
+  APP_STS.forEach(s=>renderView('app',s));
+  PRJ_STS.forEach(s=>renderView('prj',s));
+}
+
+function fmtDate(ts){try{return new Date(ts).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'})}catch(e){return '—'}}
+function enc(r){return JSON.stringify(r).replace(/'/g,"&#39;").replace(/"/g,"&quot;");}
+
+/* ── HIRED VIEW helper ── */
+function getMemberWork(appId){
+  // Check if assigned to any project
+  return prjs.find(p=>p.assignedMemberIds&&p.assignedMemberIds.includes(appId)&&p.status!=='completed');
+}
+function getMemberGroup(appId){
+  return groups.find(g=>g.memberIds.includes(appId));
+}
+
+function renderView(type,status){
+  const viewId='view-'+type+'-'+status;
+  const el=document.getElementById(viewId);
+  if(!el)return;
+  const isApp=type==='app';
+  let list;
+
+  if(type==='app'&&status==='hired'){
+    list=apps.filter(a=>a.status==='hired'||a.status==='inwork');
+  } else {
+    list=(isApp?apps:prjs).filter(r=>r.status===status);
+  }
+
+  const label=LABEL[status]||status;
+  const srchId='srch-'+type+'-'+status;
+
+  // Special rendering for hired members
+  if(type==='app'&&status==='hired'){
+    renderHiredView(el,list,srchId);
+    return;
+  }
+
+  // Special rendering for assigning
+  if(type==='prj'&&status==='assigning'){
+    renderAssigningView(el,list,srchId);
+    return;
+  }
+
+  if(list.length===0){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No ${label} ${isApp?'applications':'projects'}</div><div class="empty-sub">Records with this status appear here</div></div>`;
+    return;
+  }
+
+  let colsCss,colsHdr,rowsFn;
+  if(isApp){
+    colsCss='grid-template-columns:2fr 1.2fr 1.3fr 1fr 1fr';
+    colsHdr=`<span class="th">Name</span><span class="th">Skill</span><span class="th">College</span><span class="th">Date</span><span class="th">Status</span>`;
+    rowsFn=a=>`<div class="trow" style="${colsCss}" onclick="openRecord(this)" data-record='${enc(a)}'>
+      <div class="td name">${a.name||'—'}</div>
+      <div class="td">${a.skill||'—'}</div>
+      <div class="td muted">${a.college||'—'}</div>
+      <div class="td muted">${fmtDate(a.timestamp)}</div>
+      <div class="td"><span class="badge ${a.status}">${LABEL[a.status]||a.status}</span></div>
+    </div>`;
+  } else {
+    colsCss='grid-template-columns:2fr 1.3fr 1.2fr 1fr 1fr 1fr';
+    colsHdr=`<span class="th">Client</span><span class="th">Service</span><span class="th">Budget</span><span class="th">Timeline</span><span class="th">Date</span><span class="th">Status</span>`;
+    rowsFn=p=>`<div class="trow" style="${colsCss}" onclick="openRecord(this)" data-record='${enc(p)}'>
+      <div class="td name">${p.name||'—'}</div>
+      <div class="td">${p.service||'—'}</div>
+      <div class="td muted">${p.budget||'—'}</div>
+      <div class="td muted">${p.timeline||'—'}</div>
+      <div class="td muted">${fmtDate(p.timestamp)}</div>
+      <div class="td"><span class="badge ${p.status}">${LABEL[p.status]||p.status}</span></div>
+    </div>`;
+  }
+
+  // Accepted projects get "Move to Assigning" button
+  let extraBtn='';
+  if(type==='prj'&&status==='accepted'){
+    extraBtn=`<button class="btn-sm" onclick="bulkMoveToAssigning()">→ Move Selected to Assigning</button>`;
+  }
+
+  el.innerHTML=`
+    <div class="view-hdr">
+      <span class="view-hdr-title">${label}</span>
+      <span class="view-hdr-count">${list.length} record${list.length!==1?'s':''}</span>
+      <div class="vhdr-right">
+        ${extraBtn}
+        <input class="f-search" id="${srchId}" placeholder="Search..." oninput="filterRows('${srchId}','rows-${type}-${status}')">
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head" style="${colsCss}">${colsHdr}</div>
+      <div id="rows-${type}-${status}">${list.map(rowsFn).join('')}</div>
+    </div>`;
+}
+
+function renderHiredView(el,list,srchId){
+  const freeList=list.filter(m=>!getMemberWork(m.id));
+  const workList=list.filter(m=>getMemberWork(m.id));
+
+  el.innerHTML=`
+    <div class="view-hdr">
+      <span class="view-hdr-title">Hired Members</span>
+      <span class="view-hdr-count">${list.length} total · <span style="color:var(--green)">${freeList.length} free</span> · <span style="color:var(--orange)">${workList.length} in work</span></span>
+      <div class="vhdr-right">
+        <button class="btn-sm" onclick="openGroupModal()">👥 Manage Groups</button>
+        <input class="f-search" id="${srchId}" placeholder="Search members..." oninput="filterHired('${srchId}')">
+      </div>
+    </div>
+    <div id="hired-groups-wrap" style="margin-bottom:14px"></div>
+    <div class="tbl-wrap">
+      <div class="tbl-head" style="grid-template-columns:2fr 1.2fr 1.3fr 1.5fr 1fr 1fr">
+        <span class="th">Name</span><span class="th">Skill</span><span class="th">College</span><span class="th">Current Work</span><span class="th">Group</span><span class="th">Status</span>
+      </div>
+      <div id="rows-hired">${list.map(renderHiredRow).join('')}</div>
+    </div>`;
+
+  renderGroupPills();
+}
+
+function renderHiredRow(m){
+  const work=getMemberWork(m.id);
+  const grp=getMemberGroup(m.id);
+  const workStr=work?`<span style="color:var(--orange);cursor:pointer;font-weight:600" onclick="showProjectDetail('${work.id}',event)">⬤ ${work.name||'Project'}</span>`
+    :`<span style="color:var(--green)">● Free</span>`;
+  const grpStr=grp?`<span class="badge" style="background:var(--purple2);color:var(--purple);border:1px solid rgba(167,139,250,.2)">${grp.name}</span>`:'<span style="color:var(--muted)">—</span>';
+  const statusBadge=work?'<span class="badge inwork">In Work</span>':'<span class="badge hired">Free</span>';
+  return `<div class="trow" style="grid-template-columns:2fr 1.2fr 1.3fr 1.5fr 1fr 1fr" onclick="openRecord(this)" data-record='${enc(m)}' id="hrow-${m.id}">
+    <div class="td name">${m.name||'—'}</div>
+    <div class="td">${m.skill||'—'}</div>
+    <div class="td muted">${m.college||'—'}</div>
+    <div class="td">${workStr}</div>
+    <div class="td">${grpStr}</div>
+    <div class="td">${statusBadge}</div>
+  </div>`;
+}
+
+function renderGroupPills(){
+  const wrap=document.getElementById('hired-groups-wrap');
+  if(!wrap)return;
+  if(groups.length===0){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Groups</div>
+    <div class="groups-wrap">${groups.map(g=>`<span class="group-pill">${g.name} <span style="color:var(--muted3);font-size:11px">(${g.memberIds.length})</span></span>`).join('')}</div>`;
+}
+
+function filterHired(srchId){
+  const q=(document.getElementById(srchId)||{}).value?.toLowerCase()||'';
+  document.querySelectorAll('#rows-hired .trow').forEach(row=>{
+    const rec=JSON.parse(row.dataset.record||'{}');
+    const h=[(rec.name||''),(rec.skill||''),(rec.college||'')].map(s=>s.toLowerCase());
+    row.style.display=(!q||h.some(s=>s.includes(q)))?'':'none';
+  });
+}
+
+function renderAssigningView(el,list,srchId){
+  if(list.length===0){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No projects in assigning</div><div class="empty-sub">Accept a project to start assigning members</div></div>`;
+    return;
+  }
+  const colsCss='grid-template-columns:2fr 1.3fr 1.2fr 1fr 1.2fr 1fr';
+  el.innerHTML=`
+    <div class="view-hdr">
+      <span class="view-hdr-title">Assigning</span>
+      <span class="view-hdr-count">${list.length} project${list.length!==1?'s':''} pending assignment</span>
+      <div class="vhdr-right">
+        <input class="f-search" id="${srchId}" placeholder="Search..." oninput="filterRows('${srchId}','rows-prj-assigning')">
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head" style="${colsCss}">
+        <span class="th">Client</span><span class="th">Service</span><span class="th">Budget</span><span class="th">Timeline</span><span class="th">Assigned To</span><span class="th">Action</span>
+      </div>
+      <div id="rows-prj-assigning">${list.map(p=>{
+        const assignedNames=(p.assignedMemberIds||[]).map(id=>{
+          const m=apps.find(a=>a.id===id);return m?m.name:'?';
+        }).join(', ')||'—';
+        return `<div class="trow" style="${colsCss}" data-record='${enc(p)}'>
+          <div class="td name" onclick="openRecord(this.closest('.trow'))">${p.name||'—'}</div>
+          <div class="td" onclick="openRecord(this.closest('.trow'))">${p.service||'—'}</div>
+          <div class="td muted" onclick="openRecord(this.closest('.trow'))">${p.budget||'—'}</div>
+          <div class="td muted" onclick="openRecord(this.closest('.trow'))">${p.timeline||'—'}</div>
+          <div class="td muted">${assignedNames}</div>
+          <div class="td"><button class="btn-sm primary" onclick="openAssignModal('${p.id||p._id}',event)">Assign →</button></div>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+}
+
+function filterRows(srchId,rowsId){
+  const q=(document.getElementById(srchId)||{}).value?.toLowerCase()||'';
+  const rows=document.querySelectorAll('#'+rowsId+' .trow');
+  rows.forEach(row=>{
+    const rec=JSON.parse(row.dataset.record||'{}');
+    const h=[(rec.name||''),(rec.service||''),(rec.business||''),(rec.skill||''),(rec.college||'')].map(s=>s.toLowerCase());
+    row.style.display=(!q||h.some(s=>s.includes(q)))?'':'none';
+  });
+}
+
+/* ── MOVE TO ASSIGNING ── */
+async function bulkMoveToAssigning(){
+  // Find all accepted projects and move them; or just open modal to pick one
+  const accepted=prjs.filter(p=>p.status==='accepted');
+  if(accepted.length===0){showToast('No accepted projects');return;}
+  for(const p of accepted){
+    await updatePrjStatus(p,'assigning');
+  }
+  showToast(`${accepted.length} project(s) moved to Assigning`);
+  renderAllViews();updateAllCounts();
+}
+async function updatePrjStatus(p,status){
+  const id=p._id||p.id;
+  try{
+    const r=await fetch(`${API}/api/projects/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    if(r.ok){prjs.find(x=>(x._id||x.id)===id).status=status;}
+  }catch(e){}
+}
+
+/* ── ASSIGN MODAL ── */
+let assigningProjectId=null, assignType='individual', selectedMemberIds=[], selectedGroupId=null;
+
+function openAssignModal(projId,event){
+  if(event)event.stopPropagation();
+  assigningProjectId=projId;
+  assignType='individual';
+  selectedMemberIds=[];
+  selectedGroupId=null;
+  renderAssignModalBody();
+  openModal('assignModal');
+}
+
+function renderAssignModalBody(){
+  const proj=prjs.find(p=>(p._id||p.id)===assigningProjectId);
+  if(!proj){return;}
+  const freeMembers=apps.filter(a=>(a.status==='hired'||a.status==='inwork')&&!getMemberWork(a.id));
+  const allHired=apps.filter(a=>a.status==='hired'||a.status==='inwork');
+
+  document.getElementById('assignModalBody').innerHTML=`
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">PROJECT</div>
+      <div style="font-size:15px;font-weight:800">${proj.name||'—'}</div>
+      <div style="font-size:12px;color:var(--muted3);margin-top:3px">${proj.service||''} · ${proj.budget||''}</div>
+    </div>
+    <div class="tabs" id="assignTabs">
+      <div class="tab active" onclick="setAssignType('individual',this)">Individual</div>
+      <div class="tab" onclick="setAssignType('team',this)">Team</div>
+      <div class="tab" onclick="setAssignType('group',this)">Group</div>
+    </div>
+    <div id="assignSelBody"></div>
+  `;
+  renderAssignSelBody(freeMembers,allHired);
+}
+
+function setAssignType(type,tabEl){
+  assignType=type;
+  selectedMemberIds=[];
+  selectedGroupId=null;
+  document.querySelectorAll('#assignTabs .tab').forEach(t=>t.classList.remove('active'));
+  tabEl.classList.add('active');
+  const freeMembers=apps.filter(a=>(a.status==='hired'||a.status==='inwork')&&!getMemberWork(a.id));
+  const allHired=apps.filter(a=>a.status==='hired'||a.status==='inwork');
+  renderAssignSelBody(freeMembers,allHired);
+}
+
+function renderAssignSelBody(freeMembers,allHired){
+  const body=document.getElementById('assignSelBody');
+  if(!body)return;
+  if(assignType==='individual'){
+    body.innerHTML=`
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green);margin-bottom:10px">● Free Members (${freeMembers.length})</div>
+      <div class="member-grid" id="am-grid">${freeMembers.map(m=>`
+        <div class="member-card ${selectedMemberIds.includes(m.id)?'selected':''}" onclick="toggleMember('${m.id}',true)">
+          <div class="mc-name">${m.name}</div>
+          <div class="mc-skill">${m.skill||'—'}</div>
+          <div class="mc-status"><span class="badge free">Free</span></div>
+        </div>`).join('')}
+      </div>
+      ${freeMembers.length===0?'<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No free members</div></div>':''}
+    `;
+  } else if(assignType==='team'){
+    body.innerHTML=`
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Select members (free shown first)</div>
+      <div class="member-grid" id="am-grid">${[...freeMembers,...allHired.filter(m=>getMemberWork(m.id))].map(m=>{
+        const work=getMemberWork(m.id);
+        return `<div class="member-card ${selectedMemberIds.includes(m.id)?'selected':''}" onclick="toggleMember('${m.id}',false)">
+          <div class="mc-name">${m.name}</div>
+          <div class="mc-skill">${m.skill||'—'}</div>
+          <div class="mc-status">${work?`<span class="badge inwork">In Work</span>`:`<span class="badge free">Free</span>`}</div>
+        </div>`;
+      }).join('')}</div>
+      <div style="margin-top:12px;font-size:13px;color:var(--muted3)">Selected: <strong style="color:var(--text)">${selectedMemberIds.length}</strong> member(s)</div>
+    `;
+  } else {
+    // Group
+    body.innerHTML=`
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Select a Group</div>
+      ${groups.length===0?`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No groups yet</div><div class="empty-sub">Create groups from Hired Members section</div></div>`:
+      groups.map(g=>`<div class="prj-sel-card ${selectedGroupId===g.id?'selected':''}" onclick="selectGroup('${g.id}')">
+        <div class="prj-sel-name">${g.name}</div>
+        <div class="prj-sel-sub">${g.memberIds.length} member(s) · ${g.memberIds.map(id=>{const m=apps.find(a=>a.id===id);return m?m.name:'?';}).join(', ')}</div>
+      </div>`).join('')}
+    `;
+  }
+}
+
+function toggleMember(id,singleOnly){
+  if(singleOnly){
+    selectedMemberIds=selectedMemberIds[0]===id?[]:[id];
+  } else {
+    const idx=selectedMemberIds.indexOf(id);
+    if(idx>=0)selectedMemberIds.splice(idx,1);
+    else selectedMemberIds.push(id);
+  }
+  // re-render
+  const freeMembers=apps.filter(a=>(a.status==='hired'||a.status==='inwork')&&!getMemberWork(a.id));
+  const allHired=apps.filter(a=>a.status==='hired'||a.status==='inwork');
+  renderAssignSelBody(freeMembers,allHired);
+}
+function selectGroup(gid){
+  selectedGroupId=gid;
+  const grp=groups.find(g=>g.id===gid);
+  selectedMemberIds=grp?[...grp.memberIds]:[];
+  const freeMembers=apps.filter(a=>(a.status==='hired'||a.status==='inwork')&&!getMemberWork(a.id));
+  const allHired=apps.filter(a=>a.status==='hired'||a.status==='inwork');
+  renderAssignSelBody(freeMembers,allHired);
+}
+
+async function confirmAssign(){
+  if(selectedMemberIds.length===0){showToast('Select at least one member');return;}
+  const proj=prjs.find(p=>(p._id||p.id)===assigningProjectId);
+  if(!proj){closeModal('assignModal');return;}
+  const id=proj._id||proj.id;
+
+  // Save assignedMemberIds AND status to MongoDB in one PUT call
+  try{
+    const r=await fetch(`${API}/api/projects/${id}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status:'assigned', assignedMemberIds:selectedMemberIds})
+    });
+    if(!r.ok) throw new Error('assign failed');
+    const updated=await r.json();
+    // Sync local state from server response
+    const local=prjs.find(p=>(p._id||p.id)===id);
+    if(local){local.status='assigned';local.assignedMemberIds=selectedMemberIds;}
+  }catch(e){showToast('Error saving assignment to DB');return;}
+
+  prjs.find(p=>(p._id||p.id)===id).assignedMemberIds=selectedMemberIds;
+
+  // Send WhatsApp notifications to each assigned member
+  const memberNames=selectedMemberIds.map(mid=>{const m=apps.find(a=>a.id===mid);return m?m.name:'Member';});
+  selectedMemberIds.forEach(mid=>{
+    const m=apps.find(a=>a.id===mid);
+    if(m&&m.phone){
+      const phone=formatWhatsAppPhone(m.phone);
+      const msg=encodeURIComponent(`Hi ${m.name} 👋\n\nYou have been assigned a new project by YoungMinds!\n\nProject: ${proj.name||'—'}\nService: ${proj.service||'—'}\nBudget: ${proj.budget||'—'}\nTimeline: ${proj.timeline||'—'}\n\nPlease check your member portal for details and accept or reject this assignment.\n\n— YoungMinds Agency`);
+      window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
+    }
+  });
+
+  closeModal('assignModal');
+  updateAllCounts();
+  renderAllViews();
+  showToast(`Project assigned to ${memberNames.join(', ')} & WhatsApp sent!`);
+}
+
+/* ── GROUPS ── */
+let newGroupName='',newGroupMemberIds=[];
+function openGroupModal(){
+  renderGroupModalBody();
+  openModal('groupModal');
+}
+function renderGroupModalBody(){
+  const hired=apps.filter(a=>a.status==='hired'||a.status==='inwork');
+  document.getElementById('groupModalBody').innerHTML=`
+    <div class="form-sep" style="margin-top:0;border-top:none;padding-top:0">Existing Groups</div>
+    ${groups.length===0?'<div style="font-size:13px;color:var(--muted3);margin-bottom:14px">No groups yet.</div>':
+      groups.map(g=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;margin-bottom:8px">
+        <div><div style="font-size:13px;font-weight:700">${g.name}</div><div style="font-size:11px;color:var(--muted3);margin-top:2px">${g.memberIds.map(id=>{const m=apps.find(a=>a.id===id);return m?m.name:'?';}).join(', ')||'No members'}</div></div>
+        <button class="btn-sm" style="background:var(--red2);color:var(--red);border-color:rgba(248,113,113,.2)" onclick="deleteGroup('${g.id}')">Delete</button>
+      </div>`).join('')}
+    <div class="form-sep">Create New Group</div>
+    <div class="form-row full" style="margin-bottom:10px">
+      <div class="form-field">
+        <label>Group Name</label>
+        <input type="text" id="gname" placeholder="e.g. Design Team" oninput="newGroupName=this.value">
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Select Members</div>
+    <div class="member-grid">${hired.map(m=>`
+      <div class="member-card" id="gc-${m.id}" onclick="toggleGroupMember('${m.id}')">
+        <div class="mc-name">${m.name}</div>
+        <div class="mc-skill">${m.skill||'—'}</div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button class="btn-sm primary" onclick="createGroup()">Create Group</button>
+    </div>
+  `;
+  newGroupMemberIds=[];
+}
+function toggleGroupMember(id){
+  const idx=newGroupMemberIds.indexOf(id);
+  if(idx>=0)newGroupMemberIds.splice(idx,1);
+  else newGroupMemberIds.push(id);
+  const card=document.getElementById('gc-'+id);
+  if(card)card.classList.toggle('selected',newGroupMemberIds.includes(id));
+}
+function createGroup(){
+  const name=(document.getElementById('gname')||{}).value?.trim();
+  if(!name){showToast('Enter a group name');return;}
+  if(newGroupMemberIds.length===0){showToast('Select at least one member');return;}
+  const g={id:'g_'+Date.now(),name,memberIds:[...newGroupMemberIds]};
+  groups.push(g);
+  localStorage.setItem('ym_groups',JSON.stringify(groups));
+  showToast('Group created: '+name);
+  renderGroupModalBody();
+  if(document.getElementById('view-app-hired').classList.contains('active'))renderAllViews();
+}
+function deleteGroup(gid){
+  groups=groups.filter(g=>g.id!==gid);
+  localStorage.setItem('ym_groups',JSON.stringify(groups));
+  renderGroupModalBody();
+  showToast('Group deleted');
+}
+
+/* ── PROJECT DETAIL (for hired row click) ── */
+function showProjectDetail(projId,event){
+  if(event){event.stopPropagation();}
+  const p=prjs.find(x=>(x._id||x.id)===projId);
+  if(!p){showToast('Project not found');return;}
+  document.getElementById('projDetailModalBody').innerHTML=`
+    <div class="dp-grid" style="margin-bottom:16px">
+      <div><div class="dp-label">Client Name</div><div class="dp-val">${p.name||'—'}</div></div>
+      <div><div class="dp-label">Business</div><div class="dp-val">${p.business||'—'}</div></div>
+      <div><div class="dp-label">Service</div><div class="dp-val">${p.service||'—'}</div></div>
+      <div><div class="dp-label">Budget</div><div class="dp-val">${p.budget||'—'}</div></div>
+      <div><div class="dp-label">Timeline</div><div class="dp-val">${p.timeline||'—'}</div></div>
+      <div><div class="dp-label">Status</div><div class="dp-val"><span class="badge ${p.status}">${LABEL[p.status]||p.status}</span></div></div>
+      <div style="grid-column:1/-1"><div class="dp-label">Description</div><div class="dp-val">${p.description||'—'}</div></div>
+    </div>
+  `;
+  openModal('projDetailModal');
+}
+
+/* ── REVENUE & PAYMENTS ── */
+function renderRevenue(){
+  const el=document.getElementById('rev-content');
+  if(!el)return;
+
+  const totalPaid=payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+  const totalPending=payments.filter(p=>p.status==='pending').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+  const memberPaid=payments.filter(p=>p.type==='member'&&p.status==='paid').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+  const memberPending=payments.filter(p=>p.type==='member'&&p.status==='pending').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+  const projPaid=payments.filter(p=>p.type==='project'&&p.status==='paid').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+  const projPending=payments.filter(p=>p.type==='project'&&p.status==='pending').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+
+  el.innerHTML=`
+    <div class="rev-grid">
+      <div class="rev-card">
+        <div class="rev-card-title">Total Revenue Collected</div>
+        <div class="rev-big" style="color:var(--green)">₹${totalPaid.toLocaleString('en-IN')}</div>
+        <div class="rev-sub">₹${totalPending.toLocaleString('en-IN')} pending</div>
+      </div>
+      <div class="rev-card">
+        <div class="rev-card-title">Member Payouts</div>
+        <div class="rev-big" style="color:var(--orange)">₹${memberPaid.toLocaleString('en-IN')}</div>
+        <div class="rev-sub">₹${memberPending.toLocaleString('en-IN')} pending</div>
+      </div>
+      <div class="rev-card">
+        <div class="rev-card-title">Project Revenue</div>
+        <div class="rev-big" style="color:var(--blue)">₹${projPaid.toLocaleString('en-IN')}</div>
+        <div class="rev-sub">₹${projPending.toLocaleString('en-IN')} pending</div>
+      </div>
+      <div class="rev-card">
+        <div class="rev-card-title">Net Profit (approx.)</div>
+        <div class="rev-big" style="color:var(--accent)">₹${(projPaid-memberPaid).toLocaleString('en-IN')}</div>
+        <div class="rev-sub">Project paid − Member payouts</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-title">Revenue Overview</div>
+        <button class="btn-sm primary" onclick="openPayModal()">+ Add Payment</button>
+      </div>
+      <canvas id="revChart"></canvas>
+    </div>
+
+    <div class="tabs" id="payTabs">
+      <div class="tab active" onclick="setPayTab('all',this)">All Payments</div>
+      <div class="tab" onclick="setPayTab('member',this)">Member Payouts</div>
+      <div class="tab" onclick="setPayTab('project',this)">Project Payments</div>
+    </div>
+    <div id="payTableWrap"></div>
+  `;
+
+  drawChart();
+  renderPayTable('all');
+}
+
+function drawChart(){
+  const ctx=document.getElementById('revChart');
+  if(!ctx)return;
+  if(revChart)revChart.destroy();
+
+  // Build monthly data from payments
+  const months={};
+  payments.forEach(p=>{
+    const d=new Date(p.date||p.createdAt||Date.now());
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!months[key])months[key]={paid:0,pending:0};
+    if(p.status==='paid')months[key].paid+=(parseFloat(p.amount)||0);
+    else months[key].pending+=(parseFloat(p.amount)||0);
+  });
+
+  const labels=Object.keys(months).sort().slice(-6);
+  const paid=labels.map(k=>months[k]?.paid||0);
+  const pending=labels.map(k=>months[k]?.pending||0);
+
+  if(labels.length===0){
+    // Show empty placeholder labels
+    labels.push(...['Jan','Feb','Mar','Apr','May','Jun']);
+    paid.push(0,0,0,0,0,0);
+    pending.push(0,0,0,0,0,0);
+  }
+
+  revChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Paid',data:paid,backgroundColor:'rgba(62,207,142,0.7)',borderRadius:4},
+        {label:'Pending',data:pending,backgroundColor:'rgba(251,146,60,0.5)',borderRadius:4}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#888',font:{size:11,family:'DM Sans'}}}},
+      scales:{
+        x:{ticks:{color:'#666',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#666',font:{size:11},callback:v=>'₹'+v.toLocaleString('en-IN')},grid:{color:'rgba(255,255,255,0.06)'}}
+      }
+    }
+  });
+}
+
+let currentPayTab='all';
+function setPayTab(tab,el){
+  currentPayTab=tab;
+  document.querySelectorAll('#payTabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderPayTable(tab);
+}
+
+function renderPayTable(tab){
+  const wrap=document.getElementById('payTableWrap');
+  if(!wrap)return;
+  let list=payments;
+  if(tab==='member')list=payments.filter(p=>p.type==='member');
+  if(tab==='project')list=payments.filter(p=>p.type==='project');
+
+  if(list.length===0){
+    wrap.innerHTML=`<div class="empty"><div class="empty-icon">₹</div><div class="empty-title">No payments yet</div><div class="empty-sub">Add payments using the button above</div></div>`;
+    return;
+  }
+
+  const cols='grid-template-columns:2fr 1fr 1.2fr 1fr 1fr 1fr';
+  wrap.innerHTML=`<div class="tbl-wrap">
+    <div class="tbl-head" style="${cols}">
+      <span class="th">Name</span><span class="th">Type</span><span class="th">Amount</span><span class="th">Note</span><span class="th">Date</span><span class="th">Status</span>
+    </div>
+    <div>${list.map(p=>`<div class="pay-row" style="${cols}">
+      <div class="td name">${p.refName||'—'}</div>
+      <div class="td muted">${p.type==='member'?'👤 Member':'📁 Project'}</div>
+      <div class="td" style="color:var(--accent);font-weight:700;font-family:var(--mono)">₹${parseFloat(p.amount||0).toLocaleString('en-IN')}</div>
+      <div class="td muted">${p.note||'—'}</div>
+      <div class="td muted">${p.date?new Date(p.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'}):'—'}</div>
+      <div class="td"><span class="badge ${p.status==='paid'?'accepted':'new'}">${p.status==='paid'?'Paid':'Pending'}</span></div>
+    </div>`).join('')}</div>
+  </div>`;
+}
+
+/* ── PAY MODAL ── */
+let payFormData={type:'member',refId:'',refName:'',amount:'',note:'',status:'pending',date:''};
+function openPayModal(){
+  payFormData={type:'member',refId:'',refName:'',amount:'',note:'',status:'pending',date:new Date().toISOString().split('T')[0]};
+  renderPayModal();
+  openModal('payModal');
+}
+function renderPayModal(){
+  const memberOpts=apps.filter(a=>['hired','inwork','accepted'].includes(a.status)).map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  const projOpts=prjs.map(p=>`<option value="${p.id||p._id}">${p.name||'—'}</option>`).join('');
+  document.getElementById('payModalBody').innerHTML=`
+    <div class="form-row">
+      <div class="form-field">
+        <label>Type</label>
+        <select id="pay-type" onchange="payFormData.type=this.value;updatePayRef()">
+          <option value="member">Member Payout</option>
+          <option value="project">Project Payment</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>For</label>
+        <select id="pay-ref" onchange="payFormData.refId=this.value;payFormData.refName=this.options[this.selectedIndex].text">
+          ${memberOpts}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Amount (₹)</label>
+        <input type="number" id="pay-amount" placeholder="0" oninput="payFormData.amount=this.value">
+      </div>
+      <div class="form-field">
+        <label>Status</label>
+        <select id="pay-status" onchange="payFormData.status=this.value">
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Date</label>
+        <input type="date" id="pay-date" value="${payFormData.date}" oninput="payFormData.date=this.value">
+      </div>
+      <div class="form-field">
+        <label>Note</label>
+        <input type="text" id="pay-note" placeholder="e.g. Advance, Final payment..." oninput="payFormData.note=this.value">
+      </div>
+    </div>
+  `;
+  // init refId
+  const refSel=document.getElementById('pay-ref');
+  if(refSel&&refSel.options.length>0){
+    payFormData.refId=refSel.value;
+    payFormData.refName=refSel.options[refSel.selectedIndex]?.text||'';
+  }
+}
+function updatePayRef(){
+  const type=payFormData.type;
+  const memberOpts=apps.filter(a=>['hired','inwork','accepted'].includes(a.status)).map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  const projOpts=prjs.map(p=>`<option value="${p.id||p._id}">${p.name||'—'}</option>`).join('');
+  const refSel=document.getElementById('pay-ref');
+  if(refSel){
+    refSel.innerHTML=type==='member'?memberOpts:projOpts;
+    payFormData.refId=refSel.value;
+    payFormData.refName=refSel.options[refSel.selectedIndex]?.text||'';
+  }
+}
+async function savePayment(){
+  const amount=parseFloat((document.getElementById('pay-amount')||{}).value||0);
+  const note=(document.getElementById('pay-note')||{}).value||'';
+  const status=(document.getElementById('pay-status')||{}).value||'pending';
+  const date=(document.getElementById('pay-date')||{}).value||new Date().toISOString().split('T')[0];
+  const refSel=document.getElementById('pay-ref');
+  const refId=refSel?refSel.value:'';
+  const refName=refSel?refSel.options[refSel.selectedIndex]?.text||'':'';
+  const type=(document.getElementById('pay-type')||{}).value||'member';
+  if(!amount){showToast('Enter an amount');return;}
+  const pay={type,refId,refName,amount,note,status,date};
+  try{
+    const res=await fetch(`${API}/api/payments`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(pay)
+    });
+    if(!res.ok) throw new Error('failed');
+    const saved=await res.json();
+    payments.push(saved);
+    closeModal('payModal');
+    renderRevenue();
+    showToast('Payment saved to database ✓');
+  }catch(e){
+    showToast('Error saving payment');
+    console.error(e);
+  }
+}
+
+/* ── MODAL HELPERS ── */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+/* ── OVERVIEW ── */
+/* helper refs to chart instances so we can destroy before redraw */
+let _ovLine=null, _ovDonut=null, _spApps=null, _spPrjs=null, _spTeam=null, _spActive=null;
+
+function destroyChart(ref){ try{ if(ref) ref.destroy(); }catch(e){} return null; }
+
+function mkSparkline(canvasId, data, color){
+  const el=document.getElementById(canvasId); if(!el) return null;
+  const ctx=el.getContext('2d');
+  return new Chart(ctx,{type:'bar',data:{labels:data.map((_,i)=>i),datasets:[{data,backgroundColor:color+'55',borderColor:color,borderWidth:1,borderRadius:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{x:{display:false},y:{display:false}},animation:{duration:600}}});
+}
+
+function buildTimeData(){
+  // Group apps and prjs by month (last 6 months)
+  const now=new Date(); const months=[]; const labels=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({y:d.getFullYear(),m:d.getMonth()});
+    labels.push(d.toLocaleDateString('en-IN',{month:'short'}));
+  }
+  const appCounts=months.map(({y,m})=>apps.filter(a=>{const d=new Date(a.timestamp);return d.getFullYear()===y&&d.getMonth()===m;}).length);
+  const prjCounts=months.map(({y,m})=>prjs.filter(p=>{const d=new Date(p.timestamp);return d.getFullYear()===y&&d.getMonth()===m;}).length);
+  return {labels,appCounts,prjCounts};
+}
+
+function renderOverview(){
+  const newA=apps.filter(a=>a.status==='new').length;
+  const newP=prjs.filter(p=>p.status==='new').length;
+  const hired=apps.filter(a=>a.status==='hired'||a.status==='inwork').length;
+  const inprog=prjs.filter(p=>p.status==='inprogress').length;
+  const completed=prjs.filter(p=>p.status==='completed').length;
+  const reviewing=apps.filter(a=>a.status==='reviewing').length;
+  const accepted=apps.filter(a=>a.status==='accepted').length;
+  const rejected=apps.filter(a=>a.status==='rejected').length;
+  const convRate=apps.length>0?Math.round((hired/apps.length)*100):0;
+
+  // ── KPI row (top 4 big cards) ──
+  const kpiDefs=[
+    {id:'ov-kpi-0',label:'New Applications',n:newA,color:'var(--accent)',sub:`${apps.length} total · ${convRate}% hired`,nav_:'app-new',trend:newA>0?'+'+newA:'0'},
+    {id:'ov-kpi-1',label:'New Projects',n:newP,color:'var(--blue)',sub:`${prjs.length} total · ${completed} completed`,nav_:'prj-new',trend:newP>0?'+'+newP:'0'},
+    {id:'ov-kpi-2',label:'Team Members',n:hired,color:'var(--green)',sub:`${accepted} accepted · ${reviewing} reviewing`,nav_:'app-hired',trend:hired>0?'+'+hired:'0'},
+    {id:'ov-kpi-3',label:'Active Projects',n:inprog,color:'var(--orange)',sub:`${completed} done · ${newP} incoming`,nav_:'prj-inprogress',trend:inprog>0?'●':'○'},
+  ];
+  document.getElementById('ov-stats').innerHTML=kpiDefs.map(k=>`
+    <div class="scard" onclick="nav('${k.nav_}')">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div class="scard-lbl">${k.label}</div>
+        <div style="font-size:11px;font-weight:700;color:${k.color};background:${k.color}22;padding:2px 7px;border-radius:100px">${k.trend}</div>
+      </div>
+      <div class="scard-n" style="color:${k.color}">${k.n}</div>
+      <div class="scard-sub" style="margin-top:6px">${k.sub}</div>
+    </div>`).join('');
+
+  // ── Mini stat cards ──
+  document.getElementById('ov-total-apps').textContent=apps.length;
+  document.getElementById('ov-apps-sub').textContent=`${newA} new · ${reviewing} reviewing`;
+  document.getElementById('ov-total-prjs').textContent=prjs.length;
+  document.getElementById('ov-prjs-sub').textContent=`${newP} new · ${inprog} active`;
+  document.getElementById('ov-team-n').textContent=hired;
+  document.getElementById('ov-team-sub').textContent=`${convRate}% conversion rate`;
+  document.getElementById('ov-active-n').textContent=inprog;
+  document.getElementById('ov-active-sub').textContent=`${completed} completed total`;
+
+  // ── Time data for charts ──
+  const {labels,appCounts,prjCounts}=buildTimeData();
+
+  // ── Line chart ──
+  _ovLine=destroyChart(_ovLine);
+  const lineEl=document.getElementById('ov-line-chart');
+  if(lineEl){
+    const ctx=lineEl.getContext('2d');
+    const gradA=ctx.createLinearGradient(0,0,0,160);
+    gradA.addColorStop(0,'rgba(232,197,71,0.3)');gradA.addColorStop(1,'rgba(232,197,71,0)');
+    const gradP=ctx.createLinearGradient(0,0,0,160);
+    gradP.addColorStop(0,'rgba(96,165,250,0.3)');gradP.addColorStop(1,'rgba(96,165,250,0)');
+    _ovLine=new Chart(ctx,{
+      type:'line',
+      data:{labels,datasets:[
+        {label:'Applications',data:appCounts,borderColor:'#e8c547',backgroundColor:gradA,borderWidth:2,pointRadius:3,pointBackgroundColor:'#e8c547',tension:0.4,fill:true},
+        {label:'Projects',data:prjCounts,borderColor:'#60a5fa',backgroundColor:gradP,borderWidth:2,pointRadius:3,pointBackgroundColor:'#60a5fa',tension:0.4,fill:true}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a1a',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#e8e8e8',bodyColor:'#888',padding:10}},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:11}}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:11},stepSize:1},beginAtZero:true}
+        }}
+    });
+  }
+
+  // ── Donut chart: application status ──
+  _ovDonut=destroyChart(_ovDonut);
+  const donutEl=document.getElementById('ov-donut-chart');
+  if(donutEl){
+    const ctx2=donutEl.getContext('2d');
+    const statuses=['new','reviewing','accepted','hired','rejected'];
+    const counts=statuses.map(s=>apps.filter(a=>a.status===s).length);
+    const colors=['#e8c547','#60a5fa','#2dd4bf','#3ecf8e','#f87171'];
+    const hasData=counts.some(c=>c>0);
+    _ovDonut=new Chart(ctx2,{
+      type:'doughnut',
+      data:{labels:statuses.map(s=>LABEL[s]||s),datasets:[{data:hasData?counts:[1],backgroundColor:hasData?colors:['#2a2a2a'],borderWidth:0,hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'72%',
+        plugins:{legend:{display:false},tooltip:{enabled:hasData,backgroundColor:'#1a1a1a',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#e8e8e8',bodyColor:'#888',padding:10}}}
+    });
+  }
+
+  // ── Sparklines ──
+  _spApps=destroyChart(_spApps); _spPrjs=destroyChart(_spPrjs); _spTeam=destroyChart(_spTeam); _spActive=destroyChart(_spActive);
+  _spApps=mkSparkline('spark-apps',appCounts,'#e8c547');
+  _spPrjs=mkSparkline('spark-prjs',prjCounts,'#60a5fa');
+  _spTeam=mkSparkline('spark-team',labels.map((_,i)=>{
+    const {y,m}=[...Array(6)].map((_,j)=>{const n=new Date();return {y:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getFullYear(),m:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getMonth()};})[i];
+    return apps.filter(a=>{const d=new Date(a.timestamp);return d.getFullYear()===y&&d.getMonth()===m&&(a.status==='hired'||a.status==='inwork');}).length;
+  }),'#3ecf8e');
+  _spActive=mkSparkline('spark-active',labels.map((_,i)=>{
+    const {y,m}=[...Array(6)].map((_,j)=>{const n=new Date();return {y:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getFullYear(),m:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getMonth()};})[i];
+    return prjs.filter(p=>{const d=new Date(p.timestamp);return d.getFullYear()===y&&d.getMonth()===m&&p.status==='inprogress';}).length;
+  }),'#fb923c');
+
+  // ── Skill bars ──
+  const skillMap={};
+  apps.filter(a=>a.skill).forEach(a=>{skillMap[a.skill]=(skillMap[a.skill]||0)+1;});
+  const topSkills=Object.entries(skillMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxSk=topSkills[0]?.[1]||1;
+  const skillColors=['#e8c547','#60a5fa','#3ecf8e','#fb923c','#a78bfa'];
+  const skillEl=document.getElementById('ov-skills-bars');
+  if(skillEl) skillEl.innerHTML=topSkills.length===0
+    ?'<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px">No data yet</div>'
+    :topSkills.map(([sk,cnt],i)=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="font-weight:500;color:var(--text)">${sk}</span>
+          <span style="color:var(--muted);font-weight:600">${cnt}</span>
+        </div>
+        <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+          <div style="height:5px;background:${skillColors[i%5]};border-radius:3px;width:${Math.round((cnt/maxSk)*100)}%;transition:width .5s ease"></div>
+        </div>
+      </div>`).join('');
+
+  // ── Service bars ──
+  const svcMap={};
+  prjs.filter(p=>p.service).forEach(p=>{svcMap[p.service]=(svcMap[p.service]||0)+1;});
+  const topSvc=Object.entries(svcMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxSvc=topSvc[0]?.[1]||1;
+  const svcColors=['#60a5fa','#3ecf8e','#fb923c','#e8c547','#a78bfa'];
+  const svcEl=document.getElementById('ov-svc-bars');
+  if(svcEl) svcEl.innerHTML=topSvc.length===0
+    ?'<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px">No data yet</div>'
+    :topSvc.map(([sv,cnt],i)=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="font-weight:500;color:var(--text)">${sv}</span>
+          <span style="color:var(--muted);font-weight:600">${cnt}</span>
+        </div>
+        <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+          <div style="height:5px;background:${svcColors[i%5]};border-radius:3px;width:${Math.round((cnt/maxSvc)*100)}%;transition:width .5s ease"></div>
+        </div>
+      </div>`).join('');
+
+  // ── Application pipeline funnel ──
+  const stages=[
+    {label:'Applied',count:apps.length,color:'#e8c547'},
+    {label:'Reviewing',count:reviewing,color:'#60a5fa'},
+    {label:'Accepted',count:accepted,color:'#2dd4bf'},
+    {label:'Hired',count:hired,color:'#3ecf8e'},
+  ];
+  const maxStage=stages[0]?.count||1;
+  const pipeEl=document.getElementById('ov-pipeline');
+  if(pipeEl) pipeEl.innerHTML=stages.map((s,i)=>`
+    <div style="margin-bottom:${i<stages.length-1?'10px':'0'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0"></span>
+          <span style="font-size:12px;font-weight:500;color:var(--text)">${s.label}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;font-weight:700;color:${s.color}">${s.count}</span>
+          <span style="font-size:10px;color:var(--muted)">${maxStage>0?Math.round((s.count/maxStage)*100)+'%':''}</span>
+        </div>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+        <div style="height:6px;background:${s.color};opacity:.8;border-radius:3px;width:${maxStage>0?Math.round((s.count/maxStage)*100)+'%':'0%'};transition:width .6s ease ${i*0.1}s"></div>
+      </div>
+    </div>`).join('');
+
+  // ── Recent tables ──
+  const ovA=document.getElementById('ov-apps');
+  const ovP=document.getElementById('ov-prjs');
+  ovA.innerHTML=apps.length===0
+    ?'<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No applications yet</div><div class="empty-sub">Submit the form to see data here</div></div>'
+    :apps.slice(0,6).map(a=>`<div class="ov-row" onclick="openRecord(this)" data-record='${enc(a)}'>
+        <div><div class="ov-row-name">${a.name||'—'}</div><div class="ov-row-sub">${a.skill||'—'} · ${a.college||'—'}</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><span class="badge ${a.status}">${LABEL[a.status]||a.status}</span><span style="font-size:10px;color:var(--muted)">${fmtDate(a.timestamp)}</span></div>
+      </div>`).join('');
+  ovP.innerHTML=prjs.length===0
+    ?'<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No projects yet</div><div class="empty-sub">Client requests appear here</div></div>'
+    :prjs.slice(0,6).map(p=>`<div class="ov-row" onclick="openRecord(this)" data-record='${enc(p)}'>
+        <div><div class="ov-row-name">${p.name||'—'}</div><div class="ov-row-sub">${p.service||'—'} · ${p.budget||'—'}</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><span class="badge ${p.status}">${LABEL[p.status]||p.status}</span><span style="font-size:10px;color:var(--muted)">${fmtDate(p.timestamp)}</span></div>
+      </div>`).join('');
+}
+
+/* ── DETAIL PANEL ── */
+function openRecord(elOrRec){
+  let rec;
+  if(elOrRec&&elOrRec.dataset&&elOrRec.dataset.record){
+    rec=JSON.parse(elOrRec.dataset.record);
+  } else {
+    rec=typeof elOrRec==='string'?JSON.parse(elOrRec):elOrRec;
+  }
+  if(!rec.id)rec.id=rec._id;
+  currentRecord=rec;
+  const isApp=rec.type==='application';
+
+  document.getElementById('dp-type').textContent=isApp?'Member Application':'Client Project';
+  document.getElementById('dp-name').textContent=rec.name||'—';
+  document.getElementById('dp-badge').innerHTML=`<span class="badge ${rec.status}">${LABEL[rec.status]||rec.status}</span>`;
+
+  let body='';
+  if(isApp){
+    const work=getMemberWork(rec.id);
+    body=`
+      <div class="dp-section">
+        <div class="dp-sec-title">Contact Info</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Full Name</div><div class="dp-val">${rec.name||'—'}</div></div>
+          <div><div class="dp-label">WhatsApp</div><div class="dp-val">${rec.phone||'—'}</div></div>
+          <div><div class="dp-label">Email</div><div class="dp-val">${rec.email||'—'}</div></div>
+          <div><div class="dp-label">City</div><div class="dp-val">${rec.city||'—'}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Education</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">College</div><div class="dp-val">${rec.college||'—'}</div></div>
+          <div><div class="dp-label">Year</div><div class="dp-val">${rec.year||'—'}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Skill & Work</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Primary Skill</div><div class="dp-val">${rec.skill||'—'}</div></div>
+          <div><div class="dp-label">Experience</div><div class="dp-val">${rec.experience||'—'}</div></div>
+          <div><div class="dp-label">Availability</div><div class="dp-val">${rec.availability||'—'}</div></div>
+          <div><div class="dp-label">Portfolio</div><div class="dp-val">${rec.portfolio?`<a href="${rec.portfolio}" target="_blank">View →</a>`:'—'}</div></div>
+          <div style="grid-column:1/-1"><div class="dp-label">Current Project</div><div class="dp-val">${work?`<span style="color:var(--orange);font-weight:600">● ${work.name||'Active project'}</span>`:'<span style="color:var(--green)">● Free / No active project</span>'}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Motivation</div>
+        <div class="dp-grid">
+          <div style="grid-column:1/-1"><div class="dp-label">Why join YoungMinds</div><div class="dp-val">${rec.why||'—'}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Meta</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Submitted</div><div class="dp-val">${new Date(rec.timestamp).toLocaleString('en-IN')}</div></div>
+          <div><div class="dp-label">ID</div><div class="dp-val mono">${rec.id}</div></div>
+        </div>
+      </div>`;
+    document.getElementById('dp-status-sel').innerHTML=APP_STS.map(s=>`<option value="${s}" ${rec.status===s?'selected':''}>${LABEL[s]||s}</option>`).join('');
+  } else {
+    body=`
+      <div class="dp-section">
+        <div class="dp-sec-title">Contact Info</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Client Name</div><div class="dp-val">${rec.name||'—'}</div></div>
+          <div><div class="dp-label">Business</div><div class="dp-val">${rec.business||'—'}</div></div>
+          <div><div class="dp-label">WhatsApp</div><div class="dp-val">${rec.phone||'—'}</div></div>
+          <div><div class="dp-label">Email</div><div class="dp-val">${rec.email||'—'}</div></div>
+          <div><div class="dp-label">City</div><div class="dp-val">${rec.city||'—'}</div></div>
+          <div><div class="dp-label">Found Via</div><div class="dp-val">${rec.source||'—'}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Project Details</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Service</div><div class="dp-val">${rec.service||'—'}</div></div>
+          <div><div class="dp-label">Budget</div><div class="dp-val">${rec.budget||'—'}</div></div>
+          <div><div class="dp-label">Timeline</div><div class="dp-val">${rec.timeline||'—'}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Description</div>
+        <div class="dp-grid">
+          <div style="grid-column:1/-1"><div class="dp-label">Project Description</div><div class="dp-val">${rec.description||'—'}</div></div>
+          <div style="grid-column:1/-1"><div class="dp-label">Additional Notes</div><div class="dp-val">${rec.notes||'—'}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Meta</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Submitted</div><div class="dp-val">${new Date(rec.timestamp).toLocaleString('en-IN')}</div></div>
+          <div><div class="dp-label">ID</div><div class="dp-val mono">${rec.id}</div></div>
+        </div>
+      </div>`;
+    document.getElementById('dp-status-sel').innerHTML=PRJ_STS.map(s=>`<option value="${s}" ${rec.status===s?'selected':''}>${LABEL[s]||s}</option>`).join('');
+  }
+
+  document.getElementById('dp-body').innerHTML=body;
+  const phone=formatWhatsAppPhone(rec.phone);
+  const waWrap=document.getElementById('dp-whatsapp-wrap');
+  const waBtn=document.getElementById('dp-whatsapp-btn');
+  if(waWrap&&waBtn&&phone){
+    const msg=encodeURIComponent('Hi '+rec.name+', this is YoungMinds Agency regarding your '+(isApp?'membership application':'project request')+'.');
+    waBtn.href='https://wa.me/'+phone+'?text='+msg;
+    waWrap.style.display='block';
+  } else if(waWrap){waWrap.style.display='none';}
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closePanel(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('detailPanel').classList.remove('open');
+  currentRecord=null;
+}
+
+async function saveStatus(){
+  if(!currentRecord)return;
+  const newStatus=document.getElementById('dp-status-sel').value;
+  const isApp=currentRecord.type==='application';
+  const id=currentRecord._id||currentRecord.id;
+  const endpoint=isApp?'applications':'projects';
+  try{
+    const res=await fetch(`${API}/api/${endpoint}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:newStatus})});
+    if(!res.ok)throw new Error('failed');
+    const list=isApp?apps:prjs;
+    const idx=list.findIndex(r=>(r._id||r.id)===id);
+    if(idx!==-1)list[idx].status=newStatus;
+    currentRecord.status=newStatus;
+    document.getElementById('dp-badge').innerHTML=`<span class="badge ${newStatus}">${LABEL[newStatus]||newStatus}</span>`;
+    updateAllCounts();renderOverview();renderAllViews();
+    showToast('Status → '+LABEL[newStatus]);
+  }catch(err){showToast('Error: could not update');console.error(err);}
+}
+
+async function deleteRecord(){
+  if(!currentRecord)return;
+  if(!confirm('Delete this record? This cannot be undone.'))return;
+  const isApp=currentRecord.type==='application';
+  const id=currentRecord._id||currentRecord.id;
+  const endpoint=isApp?'applications':'projects';
+  try{
+    const res=await fetch(`${API}/api/${endpoint}/${id}`,{method:'DELETE'});
+    if(!res.ok)throw new Error('failed');
+    if(isApp)apps=apps.filter(r=>(r._id||r.id)!==id);
+    else prjs=prjs.filter(r=>(r._id||r.id)!==id);
+    closePanel();updateAllCounts();renderOverview();renderAllViews();
+    showToast('Record deleted');
+  }catch(err){showToast('Error: could not delete');console.error(err);}
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// All data (assignments, payments) now live in MongoDB.
+// No localStorage fallback needed.
+</script>
+<script>
+let adminNotifications = [];
+let resetRequests = [];
+let adminChatRooms = [];
+let activeAdminChatRoom = "team";
+let adminChatMessages = [];
+let adminPollInterval = null;
+let currentAdmin = null;
+let currentAdminToken = null;
+let activeAdminView = "overview";
+let adminEventSource = null;
+let currentProjectSubmissions = [];
+
+APP_STS.splice(APP_STS.indexOf("accepted"), 1);
+NAV_TITLE.comm = "Notices & Resets";
+NAV_TITLE.chat = "Chats";
+const acceptedNav = document.getElementById("nav-app-accepted");
+const acceptedView = document.getElementById("view-app-accepted");
+if (acceptedNav) acceptedNav.style.display = "none";
+if (acceptedView) acceptedView.style.display = "none";
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+function formatWhatsAppPhone(raw, defaultCountryCode = "91"){
+  const digits = String(raw || "").replace(/[^0-9]/g, "");
+  if (!digits) return "";
+  if (digits.length === 10) return `${defaultCountryCode}${digits}`;
+  if (digits.length === 12) return digits;
+  const lastTen = digits.slice(-10);
+  return lastTen.length === 10 ? `${defaultCountryCode}${lastTen}` : "";
+}
+function getAchievementRecords(rec){
+  const items=Array.isArray(rec?.achievements)?rec.achievements.filter(Boolean):[];
+  if(items.length) return items;
+  if(rec?.achievementTitle||rec?.achievementLink){
+    return [{ title: rec.achievementTitle || "", link: rec.achievementLink || "" }];
+  }
+  return [];
+}
+
+function boardEditEntry(){
+  return boardEntries.find(item => String(item.id || item._id) === String(currentBoardEditId)) || null;
+}
+
+function boardPhotoMarkup(entry){
+  const name = entry?.name || "YoungMinds";
+  if (entry?.photo) {
+    return `<img src="${escapeHtml(entry.photo)}" alt="${escapeHtml(name)}" class="board-admin-thumb" style="object-fit:cover" onerror="this.outerHTML='<div class=&quot;board-admin-thumb&quot;>${escapeHtml(name.charAt(0).toUpperCase() || "Y")}</div>'">`;
+  }
+  return `<div class="board-admin-thumb">${escapeHtml(name.charAt(0).toUpperCase() || "Y")}</div>`;
+}
+
+function renderBoardManager(){
+  const el = document.getElementById("board-admin-content");
+  if (!el) return;
+  const current = boardEditEntry();
+  if (currentBoardEditId && !current) currentBoardEditId = null;
+  const formEntry = current || { name:"", designation:"", skills:[], photo:"", bio:"", order:boardEntries.length, active:true };
+  const liveCount = boardEntries.filter(item => item.active !== false).length;
+
+  el.innerHTML = `
+    <div class="view-hdr">
+      <span class="view-hdr-title">Board of Members</span>
+      <span class="view-hdr-count">${boardEntries.length} entr${boardEntries.length === 1 ? "y" : "ies"} · <span style="color:var(--green)">${liveCount} live</span></span>
+    </div>
+    <div class="board-admin-layout">
+      <div class="board-admin-card">
+        <div class="board-admin-head">
+          <div>
+            <div class="board-admin-title">${current ? "Edit member card" : "Add member card"}</div>
+            <div class="board-admin-sub">This controls the public Board of Members section on the YoungMinds homepage.</div>
+          </div>
+          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">New</button>` : ``}
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Name</label><input id="board-name" type="text" placeholder="Member name" value="${escapeHtml(formEntry.name || "")}"></div>
+          <div class="form-field"><label>Designation</label><input id="board-designation" type="text" placeholder="Founder, Designer, Web Developer..." value="${escapeHtml(formEntry.designation || "")}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Photo URL</label><input id="board-photo" type="text" placeholder="https://..." value="${escapeHtml(formEntry.photo || "")}"></div>
+          <div class="form-field"><label>Display Order</label><input id="board-order" type="number" min="0" step="1" value="${Number.isFinite(Number(formEntry.order)) ? Number(formEntry.order) : 0}"></div>
+        </div>
+        <div class="form-row full">
+          <div class="form-field"><label>Skills</label><input id="board-skills" type="text" placeholder="Web Development, UI Design, Content" value="${escapeHtml(Array.isArray(formEntry.skills) ? formEntry.skills.join(", ") : "")}"></div>
+        </div>
+        <div class="form-row full">
+          <div class="form-field"><label>Short Intro</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
+        </div>
+        <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+          <button class="btn-sm primary" type="button" onclick="saveBoardMember()">${current ? "Update member" : "Add member"}</button>
+          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">Cancel</button>` : ``}
+        </div>
+      </div>
+      <div class="board-admin-card">
+        <div class="board-admin-head">
+          <div>
+            <div class="board-admin-title">Published list</div>
+            <div class="board-admin-sub">Reorder or switch entries to draft anytime. Empty list will show “Board will be updated soon” publicly.</div>
+          </div>
+        </div>
+        ${boardEntries.length === 0 ? `
+          <div class="empty" style="padding:32px 18px">
+            <div class="empty-icon">◫</div>
+            <div class="empty-title">No board members yet</div>
+            <div class="empty-sub">Add your first member card from the form on the left.</div>
+          </div>
+        ` : `
+          <div class="board-admin-list">
+            ${boardEntries.map(entry => `
+              <div class="board-admin-item">
+                ${boardPhotoMarkup(entry)}
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                    <div class="board-admin-name">${escapeHtml(entry.name || "YoungMinds Member")}</div>
+                    <span class="board-status-pill ${entry.active !== false ? "live" : "draft"}">${entry.active !== false ? "Live" : "Draft"}</span>
+                  </div>
+                  <div class="board-admin-role">${escapeHtml(entry.designation || "Team Member")}</div>
+                  <div class="board-admin-bio">${escapeHtml(entry.bio || "No intro added yet.")}</div>
+                  <div class="board-admin-skills">
+                    ${(Array.isArray(entry.skills) && entry.skills.length ? entry.skills : ["YoungMinds"]).slice(0,6).map(skill => `<span class="board-admin-skill">${escapeHtml(skill)}</span>`).join("")}
+                  </div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:10px">Order: <strong style="color:var(--text)">${Number.isFinite(Number(entry.order)) ? Number(entry.order) : 0}</strong></div>
+                </div>
+                <div class="board-admin-actions">
+                  <button class="btn-sm" type="button" onclick="editBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Edit</button>
+                  <button class="btn-sm" type="button" onclick="deleteBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Delete</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+function editBoardMember(id){
+  currentBoardEditId = id;
+  renderBoardManager();
+}
+
+function cancelBoardEdit(){
+  currentBoardEditId = null;
+  renderBoardManager();
+}
+
+function getCurrentServiceEntry(){
+  if(!Array.isArray(serviceEntries)||!serviceEntries.length) return null;
+  const current=serviceEntries.find(item=>item.slug===currentServiceSlug);
+  if(current) return current;
+  currentServiceSlug=serviceEntries[0].slug;
+  return serviceEntries[0];
+}
+
+function renderServicesManager(){
+  const el=document.getElementById("services-admin-content");
+  if(!el) return;
+  const current=getCurrentServiceEntry();
+  if(!current){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">Services are syncing</div><div class="empty-sub">We could not load the service list right now. Use the refresh button below and we will retry without losing the rest of the admin panel.</div><div style="margin-top:14px"><button class="btn-sm primary" type="button" onclick="refreshAdminData()">Retry Services</button></div></div>`;
+    return;
+  }
+  const deliverables=(Array.isArray(current.deliverables)?current.deliverables:[]).slice(0,6);
+  while(deliverables.length<6) deliverables.push("");
+  el.innerHTML=`
+    <div class="view-hdr">
+      <span class="view-hdr-title">Services</span>
+      <span class="view-hdr-count">${serviceEntries.length} service lines</span>
+    </div>
+    <div class="service-admin-layout">
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Service list</div>
+            <div class="service-admin-sub">Choose a service to edit the deep-dive page, homepage pricing, and public quote content.</div>
+          </div>
+        </div>
+        <div class="service-admin-list">
+          ${serviceEntries.map(item=>`
+            <button class="service-admin-item ${item.slug===current.slug?"active":""}" type="button" onclick="selectServiceSlug('${escapeHtml(item.slug)}')">
+              <div class="service-admin-item-top">
+                <div class="service-admin-item-name">${escapeHtml(item.name||"Service")}</div>
+                <div class="service-admin-item-price">${escapeHtml(formatInrRange(item.pricing_min_inr,item.pricing_max_inr))}</div>
+              </div>
+              <div class="service-admin-meta">
+                <span class="service-admin-pill">${escapeHtml(item.shortLabel||"Service")}</span>
+                <span class="service-admin-pill">${escapeHtml(item.slug||"service")}</span>
+              </div>
+              <div class="service-admin-item-copy" style="margin-top:10px">${escapeHtml(item.valueProp||"No value proposition added yet.")}</div>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Edit ${escapeHtml(current.name||"service")}</div>
+            <div class="service-admin-sub">Changes publish to the homepage service section, the `/services/[slug]` page, and the mobile quote prompt.</div>
+          </div>
+          <a class="btn-sm" href="/services/${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Page</a>
+        </div>
+        <div class="service-admin-form">
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="${escapeHtml(current.name||"")}"></div>
+            <div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="${escapeHtml(current.shortLabel||"")}"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">${escapeHtml(current.valueProp||"")}</textarea></div>
+          </div>
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Pricing Min (INR)</label><input id="service-pricing-min" type="number" min="0" step="100" value="${Number(current.pricing_min_inr||0)}"></div>
+            <div class="form-field"><label>Pricing Max (INR)</label><input id="service-pricing-max" type="number" min="0" step="100" value="${Number(current.pricing_max_inr||0)}"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">${escapeHtml(current.meta_description||"")}</textarea></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="${escapeHtml(current.og_image_url||"")}"></div>
+          </div>
+          <div>
+            <div class="dp-sec-title" style="margin-bottom:14px">What You Get</div>
+            <div class="service-admin-deliverables">
+              ${deliverables.map((item,index)=>`
+                <div class="service-admin-deliverable">
+                  <div class="service-admin-deliverable-num">${String(index+1).padStart(2,"0")}</div>
+                  <div class="form-field" style="margin:0;flex:1"><label>Deliverable ${index+1}</label><input type="text" data-service-deliverable value="${escapeHtml(item)}"></div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div>
+          <div class="service-admin-actions">
+            <button class="btn-sm" type="button" onclick="renderServicesManager()">Reset</button>
+            <button class="btn-sm primary" type="button" onclick="saveServiceConfig()">Save Service</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function formatInrRange(min,max){
+  return `${formatINR(min||0)} - ${formatINR(max||0)}`;
+}
+
+function formatINR(amount){
+  return `₹${Number(amount||0).toLocaleString("en-IN")}`;
+}
+
+function selectServiceSlug(slug){
+  currentServiceSlug=slug;
+  renderServicesManager();
+}
+
+async function refreshAdminData(){
+  await loadAll();
+  if (activeAdminView === "services") {
+    await loadServicesData({ render: true });
+  }
+}
+
+async function saveServiceConfig(){
+  if(!currentAdminToken){
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+  const current=getCurrentServiceEntry();
+  if(!current) return;
+  const deliverables=[...document.querySelectorAll('[data-service-deliverable]')].map(input=>input.value.trim()).filter(Boolean);
+  const payload={
+    name:document.getElementById("service-name")?.value.trim(),
+    shortLabel:document.getElementById("service-short-label")?.value.trim(),
+    valueProp:document.getElementById("service-value-prop")?.value.trim(),
+    meta_description:document.getElementById("service-meta-description")?.value.trim(),
+    og_image_url:document.getElementById("service-og-image")?.value.trim(),
+    pricing_min_inr:Number(document.getElementById("service-pricing-min")?.value||0),
+    pricing_max_inr:Number(document.getElementById("service-pricing-max")?.value||0),
+    deliverables
+  };
+  try{
+    const response=await fetch(`${API}/api/services/${current.slug}`,{
+      method:"PUT",
+      headers:adminAuthHeaders({"Content-Type":"application/json"}),
+      body:JSON.stringify(payload)
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      showToast(data.error||"Could not save service");
+      return;
+    }
+    const updated={...data,id:data._id||data.id};
+    serviceEntries=serviceEntries.map(item=>item.slug===updated.slug?updated:item);
+    currentServiceSlug=updated.slug;
+    renderServicesManager();
+    showToast("Service updated");
+  }catch{
+    showToast("Could not save service");
+  }
+}
+
+async function saveBoardMember(){
+  const payload = {
+    name: document.getElementById("board-name")?.value.trim(),
+    designation: document.getElementById("board-designation")?.value.trim(),
+    photo: document.getElementById("board-photo")?.value.trim(),
+    skills: document.getElementById("board-skills")?.value.trim(),
+    bio: document.getElementById("board-bio")?.value.trim(),
+    order: Number(document.getElementById("board-order")?.value || 0),
+    active: !!document.getElementById("board-active")?.checked
+  };
+  if (!payload.name) {
+    showToast("Member name is required");
+    return;
+  }
+  const id = currentBoardEditId;
+  const url = id ? `${API}/api/board-members/${id}` : `${API}/api/board-members`;
+  const method = id ? "PUT" : "POST";
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("save failed");
+    currentBoardEditId = null;
+    await loadAll();
+    nav("board");
+    showToast(id ? "Board member updated" : "Board member added");
+  } catch {
+    showToast("Could not save board member");
+  }
+}
+
+async function deleteBoardMember(id){
+  if (!confirm("Delete this board member card?")) return;
+  try {
+    const response = await fetch(`${API}/api/board-members/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error("delete failed");
+    if (String(currentBoardEditId) === String(id)) currentBoardEditId = null;
+    await loadAll();
+    nav("board");
+    showToast("Board member deleted");
+  } catch {
+    showToast("Could not delete board member");
+  }
+}
+
+function avatarMarkup(member, extraClass = ""){
+  const name = member?.name || "YoungMinds";
+  const cls = `avatar${extraClass ? ` ${extraClass}` : ""}`;
+  if (member?.profilePic) {
+    return `<img src="${member.profilePic}" alt="${escapeHtml(name)}" class="${cls}" style="object-fit:cover">`;
+  }
+  return `<div class="${cls}">${escapeHtml(name[0].toUpperCase())}</div>`;
+}
+
+const baseAdminLogin = doLogin;
+doLogin = function(){
+  baseAdminLogin();
+  setTimeout(() => {
+    if (document.getElementById("appShell").style.display !== "none") {
+      if (adminPollInterval) clearInterval(adminPollInterval);
+      adminPollInterval = setInterval(loadAll, 30000);
+    }
+  }, 50);
+};
+
+const baseAdminLogout = doLogout;
+doLogout = function(){
+  if (adminPollInterval) {
+    clearInterval(adminPollInterval);
+    adminPollInterval = null;
+  }
+  baseAdminLogout();
+};
+
+loadAll = async function(){
+  setLoading(true);
+  let ok = true;
+  try {
+    const [applicationsRes, projectsRes, paymentsRes, noticesRes, resetRes, boardRes] = await Promise.all([
+      fetch(`${API}/api/applications`).catch(() => { ok = false; return null; }),
+      fetch(`${API}/api/projects`).catch(() => { ok = false; return null; }),
+      fetch(`${API}/api/payments`).catch(() => null),
+      fetch(`${API}/api/notifications`).catch(() => null),
+      fetch(`${API}/api/auth/reset-requests`).catch(() => null),
+      fetch(`${API}/api/board-members/admin`).catch(() => null)
+    ]);
+
+    apps = (applicationsRes && applicationsRes.ok) ? await applicationsRes.json() : [];
+    prjs = (projectsRes && projectsRes.ok) ? await projectsRes.json() : [];
+    payments = (paymentsRes && paymentsRes.ok) ? await paymentsRes.json() : [];
+    adminNotifications = (noticesRes && noticesRes.ok) ? await noticesRes.json() : [];
+    resetRequests = (resetRes && resetRes.ok) ? await resetRes.json() : [];
+    boardEntries = (boardRes && boardRes.ok) ? await boardRes.json() : [];
+    apps.forEach(item => { item.id = item._id || item.id; item.type = "application"; });
+    prjs.forEach(item => { item.id = item._id || item.id; item.type = "project"; });
+    boardEntries.forEach(item => { item.id = item._id || item.id; });
+    await loadAdminChatRooms();
+  } catch {
+    ok = false;
+    apps = [];
+    prjs = [];
+    payments = [];
+    adminNotifications = [];
+    resetRequests = [];
+    boardEntries = [];
+  }
+  setLoading(false);
+  setStatus(ok);
+  updateAllCounts();
+  renderOverview();
+  renderAllViews();
+  renderRevenue();
+  renderCommunication();
+  renderAdminChat();
+};
+
+const baseRenderAllViews = renderAllViews;
+renderAllViews = function(){
+  baseRenderAllViews();
+  renderCommunication();
+  renderAdminChat();
+};
+
+renderHiredRow = function(member){
+  const work = getMemberWork(member.id);
+  const grp = getMemberGroup(member.id);
+  const workStr = work
+    ? `<span style="color:var(--orange);cursor:pointer;font-weight:600" onclick="showProjectDetail('${work.id}',event)">⬤ ${escapeHtml(work.name || "Project")}</span>`
+    : `<span style="color:var(--green)">● Free</span>`;
+  const grpStr = grp ? `<span class="badge" style="background:var(--purple2);color:var(--purple);border:1px solid rgba(167,139,250,.2)">${escapeHtml(grp.name)}</span>` : '<span style="color:var(--muted)">—</span>';
+  const statusBadge = work ? '<span class="badge inwork">In Work</span>' : '<span class="badge hired">Free</span>';
+  return `<div class="trow" style="grid-template-columns:2.3fr 1.2fr 1.3fr 1.5fr 1fr 1fr" onclick="openRecord(this)" data-record='${enc(member)}' id="hrow-${member.id}">
+    <div class="td name" style="display:flex;align-items:center;gap:10px">${avatarMarkup(member, "sm")} <span>${escapeHtml(member.name || "—")}</span></div>
+    <div class="td">${escapeHtml(member.skill || "—")}</div>
+    <div class="td muted">${escapeHtml(member.college || "—")}</div>
+    <div class="td">${workStr}</div>
+    <div class="td">${grpStr}</div>
+    <div class="td">${statusBadge}</div>
+  </div>`;
+};
+
+openRecord = function(elOrRec){
+  let rec;
+  if (elOrRec && elOrRec.dataset && elOrRec.dataset.record) {
+    rec = JSON.parse(elOrRec.dataset.record);
+  } else {
+    rec = typeof elOrRec === "string" ? JSON.parse(elOrRec) : elOrRec;
+  }
+  if (!rec.id) rec.id = rec._id;
+  currentRecord = rec;
+  const isApp = rec.type === "application";
+
+  document.getElementById("dp-type").textContent = isApp ? "Team Member" : "Client Project";
+  document.getElementById("dp-name").innerHTML = `${isApp ? avatarMarkup(rec, "sm") : ""}<span style="margin-left:${isApp ? "8px" : "0"}">${escapeHtml(rec.name || "—")}</span>`;
+  document.getElementById("dp-badge").innerHTML = `<span class="badge ${rec.status}">${LABEL[rec.status] || rec.status}</span>`;
+
+  if (isApp) {
+    const work = getMemberWork(rec.id);
+    const achievements = getAchievementRecords(rec);
+    document.getElementById("dp-body").innerHTML = `
+      <div class="dp-section">
+        <div class="dp-sec-title">Profile</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          ${avatarMarkup(rec)}
+          <div>
+            <div class="dp-val" style="font-size:15px;font-weight:700">${escapeHtml(rec.name || "—")}</div>
+            <div class="dp-val" style="color:var(--muted3)">${escapeHtml(rec.skill || "—")} · ${escapeHtml(rec.city || "—")}</div>
+          </div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Contact</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Gmail</div><div class="dp-val">${escapeHtml(rec.gmail || rec.email || "—")}</div></div>
+          <div><div class="dp-label">WhatsApp</div><div class="dp-val">${escapeHtml(rec.phone || "—")}</div></div>
+          <div><div class="dp-label">College</div><div class="dp-val">${escapeHtml(rec.college || "—")}</div></div>
+          <div><div class="dp-label">Year</div><div class="dp-val">${escapeHtml(rec.year || "—")}</div></div>
+          <div><div class="dp-label">Availability</div><div class="dp-val">${escapeHtml(rec.availability || "—")}</div></div>
+          <div><div class="dp-label">Current Project</div><div class="dp-val">${work ? escapeHtml(work.name || "Active project") : "Free / No active project"}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Background</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Experience</div><div class="dp-val">${escapeHtml(rec.experience || "—")}</div></div>
+          <div><div class="dp-label">Portfolio</div><div class="dp-val">${rec.portfolio ? `<a href="${rec.portfolio}" target="_blank">View →</a>` : "—"}</div></div>
+          <div style="grid-column:1/-1"><div class="dp-label">Why YoungMinds</div><div class="dp-val">${escapeHtml(rec.why || "—")}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Achievements & Proof</div>
+        ${achievements.length ? achievements.map((item, index) => `
+          <div class="dp-grid" style="${index > 0 ? "margin-top:14px;padding-top:14px;border-top:1px solid var(--border)" : ""}">
+            <div style="grid-column:1/-1"><div class="dp-label">Entry ${index + 1}</div><div class="dp-val">${escapeHtml(item.title || "—")}</div></div>
+            <div style="grid-column:1/-1"><div class="dp-label">Google Drive Link</div><div class="dp-val">${item.link ? `<a href="${item.link}" target="_blank">Open →</a>` : "—"}</div></div>
+          </div>
+        `).join("") : `<div class="dp-grid"><div style="grid-column:1/-1"><div class="dp-label">Records</div><div class="dp-val">—</div></div></div>`}
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Member portal password</div>
+        <p class="dp-val" style="font-size:12px;color:var(--muted3);line-height:1.55">Passwords are stored with one-way hashing. They cannot be retrieved or shown—only replaced. Members can change their own password from the portal when they know the current one; use the field below to set a new password anytime (no reset request required).</p>
+        <div id="dp-auth-meta" class="dp-val" style="font-size:12px;margin-top:10px;color:var(--muted)">Loading account status…</div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+          <input class="chat-input" id="dp-new-password" type="password" placeholder="New password for member" style="flex:1;min-width:160px">
+          <button type="button" class="btn-sm primary" onclick="adminResetFromDetailPanel()">Save new password</button>
+        </div>
+      </div>
+    `;
+    const statusOptions = ["new", "reviewing", "hired", "rejected"];
+    document.getElementById("dp-status-sel").innerHTML = statusOptions.map(status => `<option value="${status}" ${rec.status === status ? "selected" : ""}>${LABEL[status] || status}</option>`).join("");
+    const pwInput = document.getElementById("dp-new-password");
+    if (pwInput) pwInput.value = "";
+    loadMemberAuthSummary(rec.id);
+  } else {
+    const statusOptions = ["new", "reviewing", "accepted", "assigning", "assigned", "inprogress", "completed", "rejected"];
+    document.getElementById("dp-status-sel").innerHTML = statusOptions.map(status => `<option value="${status}" ${rec.status === status ? "selected" : ""}>${LABEL[status] || status}</option>`).join("");
+    document.getElementById("dp-body").innerHTML = `
+      <div class="dp-section">
+        <div class="dp-sec-title">Client</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Client Name</div><div class="dp-val">${escapeHtml(rec.name || "—")}</div></div>
+          <div><div class="dp-label">Business</div><div class="dp-val">${escapeHtml(rec.business || "—")}</div></div>
+          <div><div class="dp-label">Gmail</div><div class="dp-val">${escapeHtml(rec.email || "—")}</div></div>
+          <div><div class="dp-label">WhatsApp</div><div class="dp-val">${escapeHtml(rec.phone || "—")}</div></div>
+          <div><div class="dp-label">City</div><div class="dp-val">${escapeHtml(rec.city || "—")}</div></div>
+          <div><div class="dp-label">Source</div><div class="dp-val">${escapeHtml(rec.source || "—")}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Project</div>
+        <div class="dp-grid">
+          <div><div class="dp-label">Service</div><div class="dp-val">${escapeHtml(rec.service || "—")}</div></div>
+          <div><div class="dp-label">Budget</div><div class="dp-val">${escapeHtml(rec.budget || "—")}</div></div>
+          <div><div class="dp-label">Timeline</div><div class="dp-val">${escapeHtml(rec.timeline || "—")}</div></div>
+          <div><div class="dp-label">Payment Status</div><div class="dp-val">${escapeHtml(rec.paymentStatus || "pending")}</div></div>
+          <div><div class="dp-label">Delivery Stage</div><div class="dp-val">${escapeHtml(rec.deliveryStage || "inprogress")}</div></div>
+          <div><div class="dp-label">Progress</div><div class="dp-val">${Number.isFinite(Number(rec.progressPercent)) ? `${Math.max(0, Math.min(100, Math.round(Number(rec.progressPercent))))}%` : "0%"}</div></div>
+          <div style="grid-column:1/-1"><div class="dp-label">Description</div><div class="dp-val">${escapeHtml(rec.description || "—")}</div></div>
+          <div style="grid-column:1/-1"><div class="dp-label">Notes</div><div class="dp-val">${escapeHtml(rec.notes || "—")}</div></div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Deliverable Submissions</div>
+        <div id="admin-project-submissions"></div>
+      </div>
+    `;
+    currentProjectSubmissions = [];
+    loadAdminProjectSubmissions(rec.id);
+  }
+
+  const phone = formatWhatsAppPhone(rec.phone);
+  const waWrap = document.getElementById("dp-whatsapp-wrap");
+  const waBtn = document.getElementById("dp-whatsapp-btn");
+  if (waWrap && waBtn && phone) {
+    waBtn.href = `https://wa.me/${phone}`;
+    waWrap.style.display = "block";
+  } else if (waWrap) {
+    waWrap.style.display = "none";
+  }
+
+  document.getElementById("overlay").classList.add("open");
+  document.getElementById("detailPanel").classList.add("open");
+};
+
+renderPayTable = function(tab){
+  const wrap = document.getElementById("payTableWrap");
+  if (!wrap) return;
+  let list = payments;
+  if (tab === "member") list = payments.filter(payment => payment.type === "member");
+  if (tab === "project") list = payments.filter(payment => payment.type === "project");
+  if (list.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">₹</div><div class="empty-title">No payments yet</div><div class="empty-sub">Add payments using the button above</div></div>`;
+    return;
+  }
+  const cols = "grid-template-columns:1.6fr .8fr 1fr 1.2fr 1fr 1fr 1.2fr";
+  wrap.innerHTML = `<div class="tbl-wrap">
+    <div class="tbl-head" style="${cols}">
+      <span class="th">Name</span><span class="th">Type</span><span class="th">Amount</span><span class="th">Note</span><span class="th">Date</span><span class="th">Status</span><span class="th">Actions</span>
+    </div>
+    <div>${list.map(payment => `
+      <div class="pay-row" style="${cols}">
+        <div class="td name">${escapeHtml(payment.refName || "—")}</div>
+        <div class="td muted">${payment.type === "member" ? "👤 Member" : "📁 Project"}</div>
+        <div class="td" style="color:var(--accent);font-weight:700;font-family:var(--mono)">₹${parseFloat(payment.amount || 0).toLocaleString("en-IN")}</div>
+        <div class="td muted">${escapeHtml(payment.note || "—")}</div>
+        <div class="td muted">${payment.date ? new Date(payment.date).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"2-digit"}) : "—"}</div>
+        <div class="td"><span class="badge ${payment.status === "paid" ? "accepted" : "new"}">${payment.status === "paid" ? "Paid" : "Pending"}</span></div>
+        <div class="td" style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-sm ${payment.status === "paid" ? "" : "primary"}" onclick="togglePaymentStatus('${payment._id || payment.id}','${payment.status === "paid" ? "pending" : "paid"}')">${payment.status === "paid" ? "Mark Pending" : "Mark Paid"}</button>
+          <button class="btn-sm" style="color:var(--red);border-color:rgba(248,113,113,.2)" onclick="deletePaymentRecord('${payment._id || payment.id}')">Delete</button>
+        </div>
+      </div>
+    `).join("")}</div>
+  </div>`;
+};
+
+async function togglePaymentStatus(id, status){
+  try {
+    const response = await fetch(`${API}/api/payments/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    });
+    if (!response.ok) throw new Error("payment update failed");
+    const updated = await response.json();
+    const index = payments.findIndex(item => String(item._id || item.id) === String(id));
+    if (index !== -1) payments[index] = updated;
+    renderRevenue();
+    showToast(`Payment marked ${status}`);
+  } catch {
+    showToast("Could not update payment");
+  }
+}
+
+async function deletePaymentRecord(id){
+  if (!confirm("Delete this payment record?")) return;
+  try {
+    const response = await fetch(`${API}/api/payments/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error("payment delete failed");
+    payments = payments.filter(item => String(item._id || item.id) !== String(id));
+    renderRevenue();
+    showToast("Payment deleted");
+  } catch {
+    showToast("Could not delete payment");
+  }
+}
+
+async function loadAdminChatRooms(){
+  adminChatRooms = [
+    { room: "team", label: "Team Lounge", description: "Broadcast and team collaboration" },
+    ...apps.filter(member => ["hired", "inwork", "accepted"].includes(member.status)).map(member => ({
+      room: `admin-${member.id}`,
+      label: member.name || "Member",
+      description: member.skill || member.gmail || member.email || "Direct chat"
+    }))
+  ];
+  if (!adminChatRooms.some(room => room.room === activeAdminChatRoom)) {
+    activeAdminChatRoom = adminChatRooms[0]?.room || "team";
+  }
+  await loadAdminChatMessages();
+}
+
+async function loadAdminChatMessages(){
+  try {
+    const response = await fetch(`${API}/api/chat/${encodeURIComponent(activeAdminChatRoom)}`);
+    adminChatMessages = response.ok ? await response.json() : [];
+  } catch {
+    adminChatMessages = [];
+  }
+}
+
+async function switchAdminChat(room){
+  activeAdminChatRoom = room;
+  await loadAdminChatMessages();
+  renderAdminChat();
+}
+
+async function deleteAdminChatMessage(id){
+  if (!confirm("Delete this message?")) return;
+  try {
+    const response = await fetch(`${API}/api/chat/${id}?senderId=admin`, { method: "DELETE" });
+    if (!response.ok) throw new Error("delete failed");
+    await loadAdminChatMessages();
+    renderAdminChat();
+    showToast("Message deleted");
+  } catch {
+    showToast("Could not delete message");
+  }
+}
+
+async function sendAdminChat(){
+  const input = document.getElementById("admin-chat-input");
+  const message = input?.value.trim();
+  if (!message) return;
+  try {
+    const response = await fetch(`${API}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room: activeAdminChatRoom, senderId: "admin", senderName: "Admin", message })
+    });
+    if (!response.ok) throw new Error("chat failed");
+    input.value = "";
+    await loadAdminChatMessages();
+    renderAdminChat();
+  } catch {
+    showToast("Could not send message");
+  }
+}
+
+function renderAdminChat(){
+  const el = document.getElementById("admin-chat-content");
+  if (!el) return;
+  const activeRoom = adminChatRooms.find(room => room.room === activeAdminChatRoom) || adminChatRooms[0];
+  el.innerHTML = `
+    <div class="chat-shell">
+      <div class="chat-list">
+        <div class="ov-card-title" style="margin-bottom:10px">Rooms</div>
+        ${adminChatRooms.map(room => `
+          <button type="button" class="chat-room-btn ${room.room === activeAdminChatRoom ? "active" : ""}" data-room="${escapeHtml(room.room)}" onclick="switchAdminChat(this.dataset.room)">
+            <div class="avatar sm">${escapeHtml((room.label || "R")[0])}</div>
+            <div class="chat-room-meta">
+              <div class="chat-room-name">${escapeHtml(room.label)}</div>
+              <div class="chat-room-sub">${escapeHtml(room.description)}</div>
+            </div>
+          </button>
+        `).join("")}
+      </div>
+      <div class="chat-panel">
+        <div class="chat-panel-head">
+          <div>
+            <div class="ov-card-title">${escapeHtml(activeRoom?.label || "Chat")}</div>
+            <div style="font-size:12px;color:var(--muted3);margin-top:2px">${escapeHtml(activeRoom?.description || "Conversation")}</div>
+          </div>
+          <button class="btn-sm" onclick="loadAdminChatMessages().then(renderAdminChat)">Refresh</button>
+        </div>
+        <div class="chat-messages">
+          ${adminChatMessages.length === 0
+            ? `<div class="empty"><div class="empty-icon">💬</div><div class="empty-title">No messages yet</div><div class="empty-sub">Start a team or member conversation from here.</div></div>`
+            : adminChatMessages.map(item => `
+              <div class="chat-msg ${item.senderId === "admin" ? "me" : ""}">
+                <div class="chat-msg-head">
+                  <span class="chat-msg-name">${escapeHtml(item.senderName || "Unknown")}</span>
+                  <span class="chat-msg-time">${fmtDate(item.createdAt)}</span>
+                </div>
+                <div class="chat-msg-body">${escapeHtml(item.message)}</div>
+                ${item.senderId === "admin" ? `<div class="chat-msg-actions"><button class="chat-msg-del" onclick="deleteAdminChatMessage('${escapeHtml(String(item._id || item.id || ""))}')">Delete</button></div>` : ``}
+              </div>
+            `).join("")}
+        </div>
+        <div class="chat-compose">
+          <input id="admin-chat-input" class="chat-input" type="text" placeholder="Write a message..." onkeydown="if(event.key==='Enter')sendAdminChat()">
+          <button class="btn-sm primary" onclick="sendAdminChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+function renderCommunication(){
+  const el = document.getElementById("comm-content");
+  if (!el) return;
+  el.innerHTML = `
+    <div class="comm-grid">
+      <div class="ov-card">
+        <div class="ov-card-header"><span class="ov-card-title">Send Circular / Notice</span></div>
+        <div style="padding:16px">
+          <div class="form-row full">
+            <div class="form-field"><label>Title</label><input type="text" id="notice-title" placeholder="Exam week schedule, payout update, urgent notice..."></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Message</label><textarea id="notice-message" placeholder="This message will appear in every member notification center."></textarea></div>
+          </div>
+          <button class="btn-sm primary" onclick="sendCircular()">Send To All Members</button>
+        </div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-card-header"><span class="ov-card-title">Pending Password Resets</span><span class="ov-card-see">${resetRequests.length}</span></div>
+        <div style="padding:16px" class="comm-list">
+          ${resetRequests.length === 0
+            ? `<div class="empty" style="padding:18px"><div class="empty-icon">🔐</div><div class="empty-title">No reset requests</div><div class="empty-sub">Members appear here after they verify Gmail + WhatsApp on the sign-in screen (or wrong “current password” attempts are blocked).</div></div>`
+            : resetRequests.map(request => `
+              <div class="comm-item">
+                <div class="comm-item-title">${escapeHtml(request.name || "Member")}</div>
+                <div class="comm-item-sub">${escapeHtml(request.gmail || request.email || "No Gmail")}<br>Expires ${new Date(request.resetExpiry).toLocaleString("en-IN")}</div>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <input class="chat-input" id="reset-${request._id}" type="password" placeholder="New password">
+                  <button class="btn-sm primary" onclick="adminResetPassword('${request._id}')">Save</button>
+                </div>
+              </div>
+            `).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="ov-card" style="margin-top:14px">
+      <div class="ov-card-header"><span class="ov-card-title">Notice History</span><span class="ov-card-see">${adminNotifications.length}</span></div>
+      <div style="padding:16px" class="comm-list">
+        ${adminNotifications.length === 0
+          ? `<div class="empty" style="padding:18px"><div class="empty-icon">📣</div><div class="empty-title">No notices yet</div><div class="empty-sub">Circulars and member-to-admin notices will appear here.</div></div>`
+          : adminNotifications.map(item => `
+            <div class="comm-item">
+              <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+                <div>
+                  <div class="comm-item-title">${escapeHtml(item.title)}</div>
+                  <div class="comm-item-sub">${escapeHtml(item.message || "")}</div>
+                </div>
+                <span class="badge ${item.type === "circular" ? "assigned" : "reviewing"}">${item.type === "circular" ? "Circular" : "Direct"}</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:8px">${new Date(item.createdAt).toLocaleString("en-IN")}</div>
+            </div>
+          `).join("")}
+      </div>
+    </div>
+  `;
+};
+
+async function sendCircular(){
+  const title = document.getElementById("notice-title").value.trim();
+  const message = document.getElementById("notice-message").value.trim();
+  if (!title || !message) {
+    showToast("Enter a title and message");
+    return;
+  }
+  try {
+    const response = await fetch(`${API}/api/notifications`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, message, type: "circular" })
+    });
+    if (!response.ok) throw new Error("notice failed");
+    document.getElementById("notice-title").value = "";
+    document.getElementById("notice-message").value = "";
+    await loadAll();
+    nav("comm");
+    showToast("Circular sent to all members");
+  } catch {
+    showToast("Could not send circular");
+  }
+}
+
+async function adminResetPassword(memberId){
+  const input = document.getElementById(`reset-${memberId}`);
+  const newPassword = input?.value.trim();
+  if (!newPassword) {
+    showToast("Enter a new password");
+    return;
+  }
+  try {
+    const response = await fetch(`${API}/api/auth/admin-reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberId, newPassword })
+    });
+    if (!response.ok) throw new Error("reset failed");
+    await loadAll();
+    nav("comm");
+    showToast("Password reset saved");
+  } catch {
+    showToast("Could not reset password");
+  }
+}
+
+async function loadMemberAuthSummary(memberId){
+  const el = document.getElementById("dp-auth-meta");
+  if (!el || !memberId) return;
+  try {
+    const response = await fetch(`${API}/api/applications/${memberId}/auth-summary`);
+    if (!response.ok) throw new Error("bad");
+    const data = await response.json();
+    const parts = [
+      data.hasPassword
+        ? "Password: <strong>set</strong> (stored encrypted — cannot be displayed)."
+        : "Password: <strong>not set</strong> — set one below so the member can sign in.",
+      data.resetPending
+        ? "Member requested a reset; saving a new password clears that request."
+        : "No active reset request from this member."
+    ];
+    el.innerHTML = parts.join("<br>");
+  } catch {
+    el.textContent = "Could not load credential status.";
+  }
+}
+
+async function adminResetFromDetailPanel(){
+  const rec = currentRecord;
+  if (!rec || rec.type !== "application") return;
+  const input = document.getElementById("dp-new-password");
+  const newPassword = input?.value?.trim();
+  if (!newPassword) {
+    showToast("Enter a new password");
+    return;
+  }
+  try {
+    const response = await fetch(`${API}/api/auth/admin-reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberId: rec.id, newPassword })
+    });
+    if (!response.ok) throw new Error("reset failed");
+    if (input) input.value = "";
+    await loadAll();
+    await loadMemberAuthSummary(rec.id);
+    showToast("Member password updated");
+  } catch {
+    showToast("Could not update password");
+  }
+}
+
+function toggleAiPanel(id){
+  const panel = document.getElementById(id);
+  if (!panel) return;
+  panel.classList.toggle("open");
+  if (panel.classList.contains("open") && !document.getElementById("adminAiBody").dataset.seeded) {
+    appendAiBubble("adminAiBody", "assistant", "Ask about hiring rules, project stages, payments, circulars, password tools, or chat. I can include live dashboard context and AI-powered help when available.");
+    document.getElementById("adminAiBody").dataset.seeded = "true";
+  }
+}
+
+function appendAiBubble(containerId, role, text){
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return null;
+  const bubble = document.createElement("div");
+  bubble.className = `ai-bubble${role === "user" ? " user" : ""}`;
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  wrap.scrollTop = wrap.scrollHeight;
+  return bubble;
+}
+
+function buildAdminAiContext(){
+  const appsList = typeof apps !== "undefined" && apps ? apps : [];
+  const prjsList = typeof prjs !== "undefined" && prjs ? prjs : [];
+  const resets = typeof resetRequests !== "undefined" && resetRequests ? resetRequests : [];
+  return {
+    appsNew: appsList.filter(a => a.status === "new").length,
+    appsReviewing: appsList.filter(a => a.status === "reviewing").length,
+    projectsNew: prjsList.filter(p => p.status === "new").length,
+    projectsInProgress: prjsList.filter(p => p.status === "inprogress").length,
+    resetPending: resets.length,
+    paymentsLoaded: typeof payments !== "undefined" && payments ? payments.length : 0
+  };
+}
+
+function adminAiReply(input){
+  const text = input.toLowerCase();
+  if (text.includes("hire") || text.includes("application")) return "Hiring now follows the stricter flow: new, reviewing, hired, or rejected. Use Reviewing before making the final hire decision.";
+  if (text.includes("project")) return "Projects move through new, reviewing, accepted, assigning, assigned, in progress, reassign if needed, and completed.";
+  if (text.includes("payment")) return "Use Revenue & Payments to create, mark paid, revert to pending, or delete payment entries. Project payment status also syncs back to the project.";
+  if (text.includes("notice") || text.includes("circular")) return "Open Notices & Resets to send a circular. Members receive it in their notification panel automatically.";
+  if (text.includes("reset") || text.includes("password")) return "Members who request help appear in Pending Password Resets. Set a new password there and their request clears.";
+  if (text.includes("chat")) return "Open Chats to message the whole team in Team Lounge or open a direct room for any hired member.";
+  return "Ask me about hiring, project stages, chats, circulars, reset requests, or payment management.";
+}
+
+async function sendAdminAi(){
+  const input = document.getElementById("adminAiInput");
+  const text = input?.value.trim();
+  if (!text) return;
+  appendAiBubble("adminAiBody", "user", text);
+  input.value = "";
+  const sendBtn = input?.parentElement?.querySelector("button");
+  const thinking = appendAiBubble("adminAiBody", "assistant", "Thinking…");
+  if (sendBtn) sendBtn.disabled = true;
+  let reply = null;
+  try {
+    const response = await fetch(`${API}/api/ai/assist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "admin", message: text, context: buildAdminAiContext() })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.reply) reply = data.reply;
+    }
+  } catch (e) {
+    console.warn("[AI]", e);
+  }
+  if (thinking) thinking.remove();
+  if (sendBtn) sendBtn.disabled = false;
+  appendAiBubble("adminAiBody", "assistant", reply || adminAiReply(text));
+}
+
+const ADMIN_SESSION_KEY = "ym_admin_session";
+const ADMIN_REMEMBER_KEY = "ym_admin_remember";
+const ADMIN_USERNAME_KEY = "ym_admin_username";
+const ADMIN_PAGE_SET = new Set([
+  "overview", "revenue", "comm", "chat", "board", "services",
+  "app-new", "app-reviewing", "app-hired", "app-rejected",
+  "prj-new", "prj-reviewing", "prj-accepted", "prj-assigning",
+  "prj-assigned", "prj-inprogress", "prj-completed", "prj-rejected"
+]);
+
+function adminAuthHeaders(extra = {}) {
+  const headers = { ...extra };
+  if (currentAdminToken) headers.Authorization = `Bearer ${currentAdminToken}`;
+  return headers;
+}
+
+function getStoredAdminToken() {
+  return localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || "";
+}
+
+function getAdminRememberChoice() {
+  return document.getElementById("remember-admin")?.checked ?? localStorage.getItem(ADMIN_REMEMBER_KEY) === "1";
+}
+
+function persistAdminSession(token, username, remember) {
+  localStorage.setItem(ADMIN_REMEMBER_KEY, remember ? "1" : "0");
+  if (username) localStorage.setItem(ADMIN_USERNAME_KEY, username);
+  if (remember) {
+    localStorage.setItem(ADMIN_SESSION_KEY, token);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  } else {
+    sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+  }
+}
+
+function clearAdminSession(options = {}) {
+  const keepIdentity = options.keepIdentity !== false;
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  if (!keepIdentity) {
+    localStorage.removeItem(ADMIN_USERNAME_KEY);
+    localStorage.removeItem(ADMIN_REMEMBER_KEY);
+  }
+}
+
+function sanitizeAdminPage(page) {
+  return ADMIN_PAGE_SET.has(page) ? page : "overview";
+}
+
+function getAdminPageFromLocation() {
+  const pathname = String(window.location.pathname || "").replace(/\/+$/, "");
+  if (pathname === "/admin/services") return "services";
+  const hash = String(window.location.hash || "").replace(/^#/, "");
+  return sanitizeAdminPage(hash.startsWith("admin-") ? hash.slice(6) : "overview");
+}
+
+function setAdminHistory(page, mode = "push") {
+  const cleanPage = sanitizeAdminPage(page);
+  const basePath = cleanPage === "services" ? "/admin/services" : "/admin";
+  const hash = cleanPage === "services" ? "" : `#admin-${cleanPage}`;
+  const url = `${basePath}${window.location.search}${hash}`;
+  const state = { panel: "admin", page: cleanPage };
+  if (mode === "replace") history.replaceState(state, "", url);
+  else history.pushState(state, "", url);
+}
+
+function disconnectAdminEvents() {
+  if (adminEventSource) {
+    adminEventSource.close();
+    adminEventSource = null;
+  }
+}
+
+function connectAdminEvents() {
+  disconnectAdminEvents();
+  if (!currentAdminToken || typeof EventSource === "undefined") return;
+  adminEventSource = new EventSource(`${API}/api/events?token=${encodeURIComponent(currentAdminToken)}`);
+  adminEventSource.addEventListener("project-submission", event => {
+    try {
+      const data = JSON.parse(event.data || "{}");
+      showToast(`New deliverable: ${(data.projectTitle || "Project")} from ${data.memberName || "member"}`);
+      if (currentRecord?.type === "project" && String(currentRecord.id || currentRecord._id) === String(data.projectId)) {
+        loadAdminProjectSubmissions(data.projectId);
+      }
+      loadAll();
+    } catch {
+      loadAll();
+    }
+  });
+  adminEventSource.onerror = () => {
+    disconnectAdminEvents();
+    setTimeout(() => {
+      if (currentAdminToken) connectAdminEvents();
+    }, 4000);
+  };
+}
+
+function formatSubmissionLabel(item) {
+  return item?.type === "file" ? "File upload" : item?.type === "link" ? "Shared link" : "Submission";
+}
+
+async function loadAdminProjectSubmissions(projectId) {
+  const mount = document.getElementById("admin-project-submissions");
+  if (!mount || !projectId || !currentAdminToken) return;
+  mount.innerHTML = `<div class="empty" style="padding:18px"><div class="empty-icon">📦</div><div class="empty-title">Loading submissions…</div></div>`;
+  try {
+    const response = await fetch(`${API}/api/projects/${projectId}/submissions`, {
+      headers: adminAuthHeaders()
+    });
+    const data = await response.json().catch(() => []);
+    if (!response.ok) throw new Error(data.error || "load_failed");
+    currentProjectSubmissions = Array.isArray(data) ? data.map(item => ({ ...item, id: item._id || item.id })) : [];
+    renderAdminProjectSubmissions();
+  } catch {
+    mount.innerHTML = `<div class="empty" style="padding:18px"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load submissions</div><div class="empty-sub">Try refreshing the panel.</div></div>`;
+  }
+}
+
+function renderAdminProjectSubmissions() {
+  const mount = document.getElementById("admin-project-submissions");
+  if (!mount) return;
+  if (!currentProjectSubmissions.length) {
+    mount.innerHTML = `<div class="empty" style="padding:18px"><div class="empty-icon">📦</div><div class="empty-title">No submissions yet</div><div class="empty-sub">Member deliverables will appear here with notes and feedback fields.</div></div>`;
+    return;
+  }
+
+  mount.innerHTML = `
+    <div class="admin-submission-list">
+      ${currentProjectSubmissions.map(item => `
+        <div class="admin-submission-card">
+          <div class="admin-submission-head">
+            <div>
+              <div class="admin-submission-title">${escapeHtml(formatSubmissionLabel(item))}</div>
+              <div class="admin-submission-meta">${escapeHtml(item.memberName || "Member")} · ${escapeHtml(new Date(item.createdAt).toLocaleString("en-IN"))}</div>
+            </div>
+            <span class="badge ${item.type === "file" ? "assigned" : "reviewing"}">${escapeHtml(item.type || "submission")}</span>
+          </div>
+          <div class="dp-val">
+            ${item.type === "file"
+              ? `<a href="${escapeHtml(item.filePath || "#")}" target="_blank" rel="noopener">${escapeHtml(item.fileName || "Download file")}</a>`
+              : `<a href="${escapeHtml(item.linkUrl || "#")}" target="_blank" rel="noopener">${escapeHtml(item.linkUrl || "Open link")}</a>`
+            }
+          </div>
+          ${item.note ? `<div class="admin-submission-note">${escapeHtml(item.note)}</div>` : ``}
+          <div class="admin-feedback-box">
+            <div class="dp-label">Admin Feedback</div>
+            <textarea class="chat-input" id="admin-feedback-${escapeHtml(String(item.id))}" placeholder="Add review comments, requested changes, or approval note...">${escapeHtml(item.adminFeedback || "")}</textarea>
+            <div class="admin-feedback-actions">
+              <button type="button" class="btn-sm primary" onclick="saveSubmissionFeedback('${escapeHtml(String(item.id))}')">Save Feedback</button>
+            </div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+async function saveSubmissionFeedback(submissionId) {
+  const input = document.getElementById(`admin-feedback-${submissionId}`);
+  if (!input || !currentAdminToken) return;
+  const adminFeedback = input.value.trim();
+  try {
+    const response = await fetch(`${API}/api/project-submissions/${submissionId}/feedback`, {
+      method: "PATCH",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ adminFeedback })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(data.error || "Could not save feedback");
+      return;
+    }
+    const updated = { ...data, id: data._id || data.id };
+    currentProjectSubmissions = currentProjectSubmissions.map(item => String(item.id) === String(updated.id) ? updated : item);
+    renderAdminProjectSubmissions();
+    showToast("Feedback saved");
+  } catch {
+    showToast("Could not save feedback");
+  }
+}
+
+function showAdminShell(admin) {
+  currentAdmin = { username: admin?.username || "admin" };
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("appShell").style.display = "flex";
+  document.getElementById("admin-user-chip").textContent = `👤 ${currentAdmin.username}`;
+  document.getElementById("l-err").style.display = "none";
+}
+
+function showAdminLogin() {
+  const remember = localStorage.getItem(ADMIN_REMEMBER_KEY) === "1";
+  const rememberedUsername = localStorage.getItem(ADMIN_USERNAME_KEY) || "";
+  currentAdmin = null;
+  currentAdminToken = null;
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("appShell").style.display = "none";
+  document.getElementById("l-user").value = rememberedUsername;
+  document.getElementById("l-pass").value = "";
+  document.getElementById("remember-admin").checked = remember || !localStorage.getItem(ADMIN_REMEMBER_KEY);
+  document.getElementById("loginBtn").disabled = false;
+  document.getElementById("loginBtn").textContent = "Sign in →";
+  document.getElementById("admin-user-chip").textContent = `👤 ${rememberedUsername || "admin"}`;
+  disconnectAdminEvents();
+  closeSidebar();
+  closeModal("adminCredentialsModal");
+  history.replaceState({ panel: "admin-login" }, "", `${window.location.pathname}${window.location.search}`);
+}
+
+async function finishAdminLogin(admin, token, options = {}) {
+  currentAdminToken = token || currentAdminToken;
+  showAdminShell(admin);
+  if (!options.skipPersist && currentAdminToken) {
+    persistAdminSession(currentAdminToken, admin?.username, Boolean(options.remember));
+  }
+  connectAdminEvents();
+  await loadAll();
+  if (adminPollInterval) clearInterval(adminPollInterval);
+  adminPollInterval = setInterval(loadAll, 30000);
+  const targetPage = sanitizeAdminPage(options.page || getAdminPageFromLocation());
+  nav(targetPage, { push: false, replace: true });
+  if (!options.silent) {
+    showToast(`Signed in as ${admin?.username || "admin"}`);
+  }
+}
+
+function openAdminCredentialsModal() {
+  if (!currentAdmin) {
+    showToast("Sign in again to manage admin credentials");
+    return;
+  }
+  document.getElementById("admin-new-username").value = currentAdmin.username || "";
+  document.getElementById("admin-current-password").value = "";
+  document.getElementById("admin-new-password").value = "";
+  document.getElementById("admin-confirm-password").value = "";
+  openModal("adminCredentialsModal");
+}
+
+async function saveAdminCredentials() {
+  if (!currentAdminToken) {
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+
+  const currentPassword = document.getElementById("admin-current-password").value.trim();
+  const newUsername = document.getElementById("admin-new-username").value.trim().toLowerCase();
+  const newPassword = document.getElementById("admin-new-password").value;
+  const confirmPassword = document.getElementById("admin-confirm-password").value;
+
+  if (!currentPassword) {
+    showToast("Enter current password to save changes");
+    return;
+  }
+  if (newPassword && newPassword.length < 8) {
+    showToast("New password must be at least 8 characters");
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    showToast("New password confirmation does not match");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API}/api/admin/auth/change-credentials`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        currentPassword,
+        newUsername,
+        newPassword,
+        remember: getAdminRememberChoice()
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(data.error || "Could not update admin credentials");
+      return;
+    }
+
+    currentAdminToken = data.token || currentAdminToken;
+    persistAdminSession(currentAdminToken, data.admin?.username, getAdminRememberChoice());
+    showAdminShell(data.admin);
+    closeModal("adminCredentialsModal");
+    showToast("Admin credentials updated");
+  } catch {
+    showToast("Could not update admin credentials");
+  }
+}
+
+const baseAdminNav = nav;
+nav = function(page, options = {}) {
+  const cleanPage = sanitizeAdminPage(page);
+  activeAdminView = cleanPage;
+  baseAdminNav(cleanPage);
+  if (cleanPage === "services") {
+    loadServicesData({ render: true });
+  }
+  if (currentAdmin) {
+    if (options.replace) setAdminHistory(cleanPage, "replace");
+    else if (options.push !== false) setAdminHistory(cleanPage, "push");
+  }
+};
+
+doLogin = async function(){
+  const username = document.getElementById("l-user").value.trim().toLowerCase();
+  const password = document.getElementById("l-pass").value;
+  const remember = getAdminRememberChoice();
+  const errEl = document.getElementById("l-err");
+  const btn = document.getElementById("loginBtn");
+
+  errEl.style.display = "none";
+  if (!username || !password) {
+    showToast("Enter admin username and password");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Signing in…";
+
+  try {
+    const response = await fetch(`${API}/api/admin/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, remember })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      errEl.textContent = data.error || "Incorrect credentials.";
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Sign in →";
+      return;
+    }
+
+    await finishAdminLogin(data.admin, data.token, { remember });
+    document.getElementById("l-pass").value = "";
+    btn.disabled = false;
+    btn.textContent = "Sign in →";
+  } catch {
+    errEl.textContent = "Cannot reach server. Please try again.";
+    errEl.style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "Sign in →";
+  }
+};
+
+doLogout = function(){
+  if (adminPollInterval) {
+    clearInterval(adminPollInterval);
+    adminPollInterval = null;
+  }
+  clearAdminSession({ keepIdentity: true });
+  showAdminLogin();
+};
+
+window.addEventListener("popstate", event => {
+  if (!currentAdmin) return;
+  closeSidebar();
+  if (event.state?.panel !== "admin") {
+    setAdminHistory(activeAdminView, "replace");
+    return;
+  }
+  nav(event.state.page, { push: false, replace: true });
+});
+
+async function restoreAdminSession() {
+  const token = getStoredAdminToken();
+  if (!token) {
+    showAdminLogin();
+    return;
+  }
+
+  currentAdminToken = token;
+  document.getElementById("loginBtn").disabled = true;
+  document.getElementById("loginBtn").textContent = "Restoring…";
+  try {
+    const response = await fetch(`${API}/api/admin/auth/session`, {
+      headers: adminAuthHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "restore_failed");
+    await finishAdminLogin(data.admin, token, {
+      remember: localStorage.getItem(ADMIN_REMEMBER_KEY) === "1",
+      skipPersist: true,
+      silent: true
+    });
+  } catch {
+    clearAdminSession({ keepIdentity: true });
+    showAdminLogin();
+  } finally {
+    document.getElementById("loginBtn").disabled = false;
+    document.getElementById("loginBtn").textContent = "Sign in →";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", restoreAdminSession);
 </script>
 </body>
 </html>
