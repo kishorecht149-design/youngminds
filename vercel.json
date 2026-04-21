@@ -1,13 +1,3 @@
 {
-  "trailingSlash": true,
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://youngminds-3rk5.onrender.com/api/:path*" },
-    { "source": "/uploads/:path*", "destination": "https://youngminds-3rk5.onrender.com/uploads/:path*" },
-    { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/admin/:path*", "destination": "/admin/index.html" },
-    { "source": "/member", "destination": "/member/index.html" },
-    { "source": "/member/:path*", "destination": "/member/index.html" },
-    { "source": "/portal/projects", "destination": "/member/index.html" },
-    { "source": "/portal/:path*", "destination": "/member/index.html" }
-  ]
+  "trailingSlash": true
 }

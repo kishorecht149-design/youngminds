@@ -648,6 +648,7 @@ function openFormsTab(tab){
 function selSk(p,n){for(let i=1;i<=n;i++){const el=document.getElementById(p+'-'+i);if(!el)continue;const inp=el.querySelector('input[type=radio]');el.classList.toggle('sel',!!(inp&&inp.checked))}}
 // ── API BASE ──
 const APP_ORIGIN = window.location.origin;
+const BACKEND_ORIGIN = 'https://youngminds-3rk5.onrender.com';
 const API = 'https://youngminds-3rk5.onrender.com';
 const SERVICE_FALLBACKS = [
   { slug:'web-development', name:'Web Development', valueProp:'Conversion-focused websites and digital products built fast, clean, and ready to scale.', pricing_min_inr:5000, deliverables:['Responsive website design','Landing page build'] },
@@ -669,7 +670,7 @@ function appUrl(path){
 
 function goToPortal(path){
   closeMobileNav();
-  window.location.href = appUrl(path);
+  window.location.href = `${BACKEND_ORIGIN}${path}`;
 }
 
 function stopBoardCarousel(){
