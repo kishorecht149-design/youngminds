@@ -951,6 +951,7 @@ let groups = JSON.parse(localStorage.getItem('ym_groups')||'[]'); // UI-only gro
 let payments = []; // Loaded from MongoDB via /api/payments
 let boardEntries = [];
 let serviceEntries = [];
+let serviceState = { loading: false, saving: false, ready: false, error: "" };
 let currentBoardEditId = null;
 let currentServiceSlug = "web-development";
 let revChart = null;
@@ -998,13 +999,40 @@ async function loadArray(path, options = {}){
 }
 
 async function loadServicesData(options = {}){
+  const {
+    render = true,
+    silent = false,
+    preferFallback = false
+  } = options;
   const currentFallback = Array.isArray(serviceEntries) && serviceEntries.length
     ? serviceEntries
     : defaultServiceEntries();
-  const incoming = await loadArray("/api/services", { fallback: currentFallback });
-  serviceEntries = normalizeServiceEntries(incoming).map(item => ({ ...item, id: item._id || item.id || item.slug }));
-  if (options.render !== false) renderServicesManager();
-  return serviceEntries;
+
+  if (!silent) {
+    serviceState.loading = true;
+    serviceState.error = "";
+    if (render) renderServicesManager();
+  }
+
+  try{
+    const incoming = preferFallback
+      ? currentFallback
+      : await loadArray("/api/services", { fallback: currentFallback });
+    serviceEntries = normalizeServiceEntries(incoming).map(item => ({ ...item, id: item._id || item.id || item.slug }));
+    serviceState.ready = Array.isArray(serviceEntries) && serviceEntries.length > 0;
+    serviceState.error = serviceState.ready ? "" : "Service list is empty.";
+    return serviceEntries;
+  }catch(err){
+    serviceEntries = normalizeServiceEntries(currentFallback).map(item => ({ ...item, id: item._id || item.id || item.slug }));
+    serviceState.ready = Array.isArray(serviceEntries) && serviceEntries.length > 0;
+    serviceState.error = "Could not load service configuration right now.";
+    return serviceEntries;
+  }finally{
+    if (!silent) {
+      serviceState.loading = false;
+      if (render) renderServicesManager();
+    }
+  }
 }
 
 async function loadAll(){
@@ -2332,9 +2360,13 @@ function getCurrentServiceEntry(){
 function renderServicesManager(){
   const el=document.getElementById("services-admin-content");
   if(!el) return;
+  if(serviceState.loading && (!Array.isArray(serviceEntries) || !serviceEntries.length)){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">Loading services</div><div class="empty-sub">Fetching the latest service configuration from the backend.</div></div>`;
+    return;
+  }
   const current=getCurrentServiceEntry();
   if(!current){
-    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">Services are syncing</div><div class="empty-sub">We could not load the service list right now. Use the refresh button below and we will retry without losing the rest of the admin panel.</div><div style="margin-top:14px"><button class="btn-sm primary" type="button" onclick="refreshAdminData()">Retry Services</button></div></div>`;
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">Services unavailable</div><div class="empty-sub">${escapeHtml(serviceState.error || "We could not load the service list right now.")}</div><div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center"><button class="btn-sm primary" type="button" onclick="reloadServicesManager()">Retry Services</button><button class="btn-sm" type="button" onclick="loadServicesData({ render: true, preferFallback: true })">Load Defaults</button></div></div>`;
     return;
   }
   const deliverables=(Array.isArray(current.deliverables)?current.deliverables:[]).slice(0,6);
@@ -2342,7 +2374,10 @@ function renderServicesManager(){
   el.innerHTML=`
     <div class="view-hdr">
       <span class="view-hdr-title">Services</span>
-      <span class="view-hdr-count">${serviceEntries.length} service lines</span>
+      <span class="view-hdr-count">${serviceEntries.length} service lines${serviceState.saving ? " · saving…" : ""}</span>
+      <div class="vhdr-right">
+        <button class="btn-sm" type="button" onclick="reloadServicesManager()" ${serviceState.loading ? "disabled" : ""}>Refresh Services</button>
+      </div>
     </div>
     <div class="service-admin-layout">
       <div class="service-admin-card">
@@ -2376,6 +2411,7 @@ function renderServicesManager(){
           </div>
           <a class="btn-sm" href="/services/${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Page</a>
         </div>
+        ${serviceState.error ? `<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">${escapeHtml(serviceState.error)}</div>` : ``}
         <div class="service-admin-form">
           <div class="service-admin-form-row">
             <div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="${escapeHtml(current.name||"")}"></div>
@@ -2408,7 +2444,7 @@ function renderServicesManager(){
           <div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div>
           <div class="service-admin-actions">
             <button class="btn-sm" type="button" onclick="renderServicesManager()">Reset</button>
-            <button class="btn-sm primary" type="button" onclick="saveServiceConfig()">Save Service</button>
+            <button class="btn-sm primary" type="button" onclick="saveServiceConfig()" ${serviceState.saving ? "disabled" : ""}>${serviceState.saving ? "Saving…" : "Save Service"}</button>
           </div>
         </div>
       </div>
@@ -2429,10 +2465,14 @@ function selectServiceSlug(slug){
   renderServicesManager();
 }
 
+async function reloadServicesManager(){
+  await loadServicesData({ render: true });
+}
+
 async function refreshAdminData(){
   await loadAll();
   if (activeAdminView === "services") {
-    await loadServicesData({ render: true });
+    await reloadServicesManager();
   }
 }
 
@@ -2455,6 +2495,9 @@ async function saveServiceConfig(){
     pricing_max_inr:Number(document.getElementById("service-pricing-max")?.value||0),
     deliverables
   };
+  serviceState.saving = true;
+  serviceState.error = "";
+  renderServicesManager();
   try{
     const response=await fetch(`${API}/api/services/${current.slug}`,{
       method:"PUT",
@@ -2463,16 +2506,23 @@ async function saveServiceConfig(){
     });
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
+      serviceState.error = data.error || "Could not save service";
       showToast(data.error||"Could not save service");
       return;
     }
     const updated={...data,id:data._id||data.id};
     serviceEntries=serviceEntries.map(item=>item.slug===updated.slug?updated:item);
     currentServiceSlug=updated.slug;
+    serviceState.ready = true;
+    serviceState.error = "";
     renderServicesManager();
     showToast("Service updated");
   }catch{
+    serviceState.error = "Could not save service";
     showToast("Could not save service");
+  }finally{
+    serviceState.saving = false;
+    renderServicesManager();
   }
 }
 
