@@ -238,18 +238,19 @@ a{text-decoration:none;color:inherit}
 .board-status-pill.draft{background:var(--bg4);border:1px solid var(--border2);color:var(--muted3)}
 
 /* ── SERVICES MANAGER ── */
-.service-admin-layout{display:grid;grid-template-columns:320px 1fr;gap:14px}
+.service-admin-layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
 .service-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px}
+.service-admin-layout .service-admin-card:first-child{position:sticky;top:0}
 .service-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
 .service-admin-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
 .service-admin-sub{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:4px}
 .service-admin-list{display:grid;gap:10px}
-.service-admin-item{width:100%;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);cursor:pointer;transition:border-color .18s,background .18s,transform .18s;text-align:left;color:inherit;font:inherit}
-.service-admin-item:hover{border-color:var(--border2);transform:translateY(-1px)}
-.service-admin-item.active{border-color:var(--accent);background:rgba(232,197,71,.08)}
+.service-admin-item{width:100%;padding:15px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));cursor:pointer;transition:border-color .18s,background .18s,transform .18s,box-shadow .18s;text-align:left;color:inherit;font:inherit}
+.service-admin-item:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.service-admin-item.active{border-color:var(--accent);background:linear-gradient(180deg,rgba(232,197,71,.12),rgba(232,197,71,.05));box-shadow:0 14px 30px rgba(0,0,0,.18)}
 .service-admin-item-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.service-admin-item-name{font-size:13px;font-weight:800}
-.service-admin-item-price{font-size:11px;font-weight:700;color:var(--accent)}
+.service-admin-item-name{font-size:14px;font-weight:800}
+.service-admin-item-price{font-size:11px;font-weight:800;color:var(--accent);padding:5px 9px;border-radius:999px;background:rgba(232,197,71,.08);border:1px solid rgba(232,197,71,.14)}
 .service-admin-item-copy{font-size:12px;color:var(--muted3);line-height:1.6}
 .service-admin-form{display:grid;gap:14px}
 .service-admin-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -360,6 +361,7 @@ canvas#revChart{max-height:220px}
 @media(max-width:960px){
   .comm-grid,.chat-shell,.board-admin-layout,.service-admin-layout{grid-template-columns:1fr}
   .ov-sections,.rev-grid{grid-template-columns:1fr}
+  .service-admin-layout .service-admin-card:first-child{position:static}
 }
 
 @media(max-width:768px){
@@ -519,7 +521,7 @@ canvas#revChart{max-height:220px}
         <span id="api-ts" class="api-ts"></span>
         <div class="tb-user" id="admin-user-chip">👤 admin</div>
         <button class="tb-btn" type="button" onclick="openAdminCredentialsModal()">Credentials</button>
-        <button class="tb-btn" onclick="loadAll()">↻ Refresh</button>
+        <button class="tb-btn" onclick="refreshAdminData()">↻ Refresh</button>
       </div>
     </div>
     <div class="gl-bar" id="gl"><div class="spinner"></div>Syncing with MongoDB...</div>
@@ -828,6 +830,116 @@ canvas#revChart{max-height:220px}
 <script>
 // ── API BASE ──
 const API = window.location.origin;
+const SERVICE_CLIENT_DEFAULTS = [
+  {
+    slug: "web-development",
+    name: "Web Development",
+    shortLabel: "Web",
+    valueProp: "Conversion-focused websites and digital products built fast, clean, and ready to scale.",
+    pricing_min_inr: 5000,
+    pricing_max_inr: 50000,
+    meta_description: "YoungMinds Agency builds responsive websites, landing pages, and internal tools for modern Indian businesses.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Responsive website design",
+      "Landing page build",
+      "CMS or admin integration",
+      "Speed and SEO basics",
+      "Form and lead capture setup",
+      "Launch support and QA"
+    ]
+  },
+  {
+    slug: "graphic-design",
+    name: "Graphic Design",
+    shortLabel: "Design",
+    valueProp: "Brand visuals that look sharp, feel consistent, and work across digital and print touchpoints.",
+    pricing_min_inr: 2000,
+    pricing_max_inr: 25000,
+    meta_description: "YoungMinds Agency creates logos, launch creatives, brand systems, and everyday design assets for growing brands.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Logo and identity concepts",
+      "Brand color and type direction",
+      "Social and ad creatives",
+      "Print-ready collateral",
+      "Presentation and deck design",
+      "Design source files handoff"
+    ]
+  },
+  {
+    slug: "social-media",
+    name: "Social Media",
+    shortLabel: "Social",
+    valueProp: "Consistent social content systems that turn scattered posting into a clear growth rhythm.",
+    pricing_min_inr: 4000,
+    pricing_max_inr: 30000,
+    meta_description: "YoungMinds Agency manages social media content planning, creative production, and publishing support for brands in India.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Monthly content calendar",
+      "Post and reel concepts",
+      "Caption writing",
+      "Creative asset coordination",
+      "Publishing support",
+      "Performance review summary"
+    ]
+  },
+  {
+    slug: "ai-solutions",
+    name: "AI Solutions",
+    shortLabel: "AI",
+    valueProp: "Practical AI systems that automate repetitive work and make your team faster without extra complexity.",
+    pricing_min_inr: 8000,
+    pricing_max_inr: 100000,
+    meta_description: "YoungMinds Agency designs automation flows, assistants, and lightweight AI tools for business workflows in India.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Workflow audit and use-case mapping",
+      "Custom AI assistant setup",
+      "Automation logic and prompts",
+      "Tool integrations",
+      "Testing and guardrails",
+      "Team onboarding guidance"
+    ]
+  },
+  {
+    slug: "video-editing",
+    name: "Video Editing",
+    shortLabel: "Video",
+    valueProp: "Fast-moving edits for reels, explainers, and campaign content that feel current and watchable.",
+    pricing_min_inr: 2500,
+    pricing_max_inr: 30000,
+    meta_description: "YoungMinds Agency edits reels, explainers, launch videos, and short-form content for brands and creators.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Short-form reel editing",
+      "Motion graphics support",
+      "Captions and text overlays",
+      "Sound polish and pacing",
+      "Multiple export formats",
+      "Revision-ready project files"
+    ]
+  },
+  {
+    slug: "content-writing",
+    name: "Content Writing",
+    shortLabel: "Content",
+    valueProp: "Clear, persuasive writing for websites, campaigns, and content engines that need a stronger voice.",
+    pricing_min_inr: 1500,
+    pricing_max_inr: 20000,
+    meta_description: "YoungMinds Agency writes website copy, blogs, product messaging, and social content for modern businesses.",
+    og_image_url: "/static/assets/logo-ym.jpg",
+    deliverables: [
+      "Website and landing copy",
+      "Brand messaging direction",
+      "Blog and article writing",
+      "Product or service descriptions",
+      "Campaign content support",
+      "Editing and proofreading"
+    ]
+  }
+];
 
 /* ── AUTH ── */
 function doLogin(){}
@@ -843,28 +955,85 @@ let currentBoardEditId = null;
 let currentServiceSlug = "web-development";
 let revChart = null;
 
+function defaultServiceEntries(){
+  return SERVICE_CLIENT_DEFAULTS.map(item => ({ ...item, deliverables: [...item.deliverables] }));
+}
+
+function normalizeServiceEntries(items){
+  const defaults = defaultServiceEntries();
+  const map = new Map(defaults.map(item => [item.slug, item]));
+  if (Array.isArray(items)) {
+    items.forEach(item => {
+      if (!item || !item.slug) return;
+      const base = map.get(item.slug) || {};
+      map.set(item.slug, {
+        ...base,
+        ...item,
+        deliverables: Array.isArray(item.deliverables) && item.deliverables.length
+          ? item.deliverables
+          : (base.deliverables || [])
+      });
+    });
+  }
+  return defaults.map(item => map.get(item.slug) || item);
+}
+
+async function loadArray(path, options = {}){
+  const {
+    fallback = [],
+    required = false
+  } = options;
+  try{
+    const response = await fetch(`${API}${path}`);
+    if (!response.ok) {
+      if (required) throw new Error(`request_failed:${path}`);
+      return fallback;
+    }
+    const data = await response.json().catch(() => fallback);
+    return Array.isArray(data) ? data : fallback;
+  }catch(err){
+    if (required) throw err;
+    return fallback;
+  }
+}
+
+async function loadServicesData(options = {}){
+  const currentFallback = Array.isArray(serviceEntries) && serviceEntries.length
+    ? serviceEntries
+    : defaultServiceEntries();
+  const incoming = await loadArray("/api/services", { fallback: currentFallback });
+  serviceEntries = normalizeServiceEntries(incoming).map(item => ({ ...item, id: item._id || item.id || item.slug }));
+  if (options.render !== false) renderServicesManager();
+  return serviceEntries;
+}
+
 async function loadAll(){
   setLoading(true);
   let ok=true;
   try{
-    const [ra,rp,rpay,rb,rs]=await Promise.all([
-      fetch(API+'/api/applications').catch(()=>{ok=false;return null;}),
-      fetch(API+'/api/projects').catch(()=>{ok=false;return null;}),
-      fetch(API+'/api/payments').catch(()=>null),
-      fetch(API+'/api/board-members/admin').catch(()=>null),
-      fetch(API+'/api/services').catch(()=>null)
+    const [appsData, projectsData, paymentsData, boardData, servicesData] = await Promise.all([
+      loadArray('/api/applications', { fallback: [], required: true }),
+      loadArray('/api/projects', { fallback: [], required: true }),
+      loadArray('/api/payments', { fallback: [] }),
+      loadArray('/api/board-members/admin', { fallback: [] }),
+      loadArray('/api/services', { fallback: defaultServiceEntries() })
     ]);
-    apps=(ra&&ra.ok)?await ra.json():[];
-    prjs=(rp&&rp.ok)?await rp.json():[];
-    payments=(rpay&&rpay.ok)?await rpay.json():[];
-    boardEntries=(rb&&rb.ok)?await rb.json():[];
-    serviceEntries=(rs&&rs.ok)?await rs.json():[];
+    apps=appsData;
+    prjs=projectsData;
+    payments=paymentsData;
+    boardEntries=boardData;
+    serviceEntries=normalizeServiceEntries(servicesData);
     apps.forEach(r=>{r.id=r._id||r.id;r.type='application';});
     prjs.forEach(r=>{r.id=r._id||r.id;r.type='project';});
     boardEntries.forEach(r=>{r.id=r._id||r.id;});
     serviceEntries.forEach(r=>{r.id=r._id||r.id;});
   }catch(e){
-    ok=false;apps=[];prjs=[];payments=[];boardEntries=[];serviceEntries=[];
+    ok=false;
+    apps=[];
+    prjs=[];
+    payments=[];
+    boardEntries=[];
+    serviceEntries=defaultServiceEntries().map(item => ({ ...item, id: item.slug }));
   }
   setLoading(false);
   setStatus(ok);
@@ -2151,7 +2320,7 @@ function renderServicesManager(){
   if(!el) return;
   const current=getCurrentServiceEntry();
   if(!current){
-    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No services available</div><div class="empty-sub">Service configuration will appear here once the API is reachable.</div></div>`;
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">Services are syncing</div><div class="empty-sub">We could not load the service list right now. Use the refresh button below and we will retry without losing the rest of the admin panel.</div><div style="margin-top:14px"><button class="btn-sm primary" type="button" onclick="refreshAdminData()">Retry Services</button></div></div>`;
     return;
   }
   const deliverables=(Array.isArray(current.deliverables)?current.deliverables:[]).slice(0,6);
@@ -2244,6 +2413,13 @@ function formatINR(amount){
 function selectServiceSlug(slug){
   currentServiceSlug=slug;
   renderServicesManager();
+}
+
+async function refreshAdminData(){
+  await loadAll();
+  if (activeAdminView === "services") {
+    await loadServicesData({ render: true });
+  }
 }
 
 async function saveServiceConfig(){
@@ -3244,6 +3420,9 @@ nav = function(page, options = {}) {
   const cleanPage = sanitizeAdminPage(page);
   activeAdminView = cleanPage;
   baseAdminNav(cleanPage);
+  if (cleanPage === "services") {
+    loadServicesData({ render: true });
+  }
   if (currentAdmin) {
     if (options.replace) setAdminHistory(cleanPage, "replace");
     else if (options.push !== false) setAdminHistory(cleanPage, "push");

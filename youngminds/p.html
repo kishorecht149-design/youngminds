@@ -121,15 +121,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .svc-links{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
 .svc-link{display:inline-flex;align-items:center;padding:9px 14px;border-radius:999px;border:1px solid var(--border2);background:rgba(255,255,255,0.02);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);transition:all .25s}
 .svc-link:hover{color:var(--text);border-color:var(--accent);background:rgba(255,215,0,0.08)}
-.svc-table{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:linear-gradient(135deg,rgba(255,215,0,0.02),rgba(255,215,0,0.01))}
-.svc-row{display:grid;grid-template-columns:40px 1fr 1.3fr auto;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border);transition:all .3s;gap:16px}
-.svc-row:last-child{border-bottom:none}
-.svc-row:hover{background:rgba(255,215,0,0.06);padding-left:28px}
-.svc-row-link{display:grid;grid-template-columns:inherit;align-items:inherit;gap:inherit;color:inherit}
-.svc-num{font-size:11px;color:var(--accent);font-weight:800;opacity:0.6}
-.svc-name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:10px;color:var(--text)}
-.svc-desc{font-size:13px;color:var(--muted);line-height:1.6}
-.svc-price{font-size:12px;font-weight:700;background:rgba(255,215,0,0.12);border:1px solid var(--accent);padding:6px 12px;border-radius:100px;color:var(--accent);white-space:nowrap;font-weight:600}
+.svc-table{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.svc-row{min-width:0}
+.svc-row-link{display:flex;flex-direction:column;min-height:100%;padding:22px;border-radius:18px;border:1px solid var(--border2);background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));color:inherit;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease,background .25s ease}
+.svc-row-link:hover{transform:translateY(-4px);border-color:rgba(255,215,0,0.35);background:linear-gradient(180deg,rgba(255,215,0,0.08),rgba(255,255,255,0.02));box-shadow:0 18px 34px rgba(0,0,0,0.24)}
+.svc-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.svc-num{font-size:11px;color:var(--accent);font-weight:800;opacity:0.75;letter-spacing:.14em;text-transform:uppercase}
+.svc-price{font-size:12px;font-weight:800;background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.28);padding:7px 12px;border-radius:100px;color:var(--accent);white-space:nowrap}
+.svc-name{font-size:20px;font-weight:800;line-height:1.15;letter-spacing:-.03em;color:var(--text);margin-bottom:12px}
+.svc-desc{font-size:14px;color:var(--muted);line-height:1.75;flex:1;margin-bottom:18px}
+.svc-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.svc-tag{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted)}
+.svc-cta{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.svc-cta::after{content:'↗';font-size:13px}
 
 .proc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-top:48px}
 .proc-cell{background:var(--bg);padding:36px 28px;transition:all .3s;position:relative;overflow:hidden}
@@ -641,12 +645,25 @@ function openFormsTab(tab){
 }
 function selSk(p,n){for(let i=1;i<=n;i++){const el=document.getElementById(p+'-'+i);if(!el)continue;const inp=el.querySelector('input[type=radio]');el.classList.toggle('sel',!!(inp&&inp.checked))}}
 // ── API BASE ──
-const API = window.location.origin;
+const APP_ORIGIN = window.location.origin;
+const API = APP_ORIGIN;
+const SERVICE_FALLBACKS = [
+  { slug:'web-development', name:'Web Development', valueProp:'Conversion-focused websites and digital products built fast, clean, and ready to scale.', pricing_min_inr:5000, deliverables:['Responsive website design','Landing page build'] },
+  { slug:'graphic-design', name:'Graphic Design', valueProp:'Brand visuals that look sharp, feel consistent, and work across digital and print touchpoints.', pricing_min_inr:2000, deliverables:['Logo and identity concepts','Social and ad creatives'] },
+  { slug:'social-media', name:'Social Media', valueProp:'Consistent social content systems that turn scattered posting into a clear growth rhythm.', pricing_min_inr:4000, deliverables:['Monthly content calendar','Post and reel concepts'] },
+  { slug:'ai-solutions', name:'AI Solutions', valueProp:'Practical AI systems that automate repetitive work and make your team faster without extra complexity.', pricing_min_inr:8000, deliverables:['Workflow audit and use-case mapping','Custom AI assistant setup'] },
+  { slug:'video-editing', name:'Video Editing', valueProp:'Fast-moving edits for reels, explainers, and campaign content that feel current and watchable.', pricing_min_inr:2500, deliverables:['Short-form reel editing','Motion graphics support'] },
+  { slug:'content-writing', name:'Content Writing', valueProp:'Clear, persuasive writing for websites, campaigns, and content engines that need a stronger voice.', pricing_min_inr:1500, deliverables:['Website and landing copy','Blog and article writing'] }
+];
 const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
 let boardCarouselIndex = 0;
 let boardCarouselTimer = null;
 let boardCarouselCount = 0;
 let serviceEntries = [];
+
+function appUrl(path){
+  return `${APP_ORIGIN}${path}`;
+}
 
 function stopBoardCarousel(){
   if(boardCarouselTimer){
@@ -751,19 +768,21 @@ function renderServices(entries){
   const nav=document.getElementById('servicesNav');
   const table=document.getElementById('servicesTable');
   if(!nav||!table)return;
-  if(!entries.length){
-    nav.innerHTML='';
-    table.innerHTML=`<div class="svc-row"><div class="svc-desc">Services will appear here soon.</div></div>`;
-    return;
-  }
-  nav.innerHTML=entries.map(item=>`<a class="svc-link" href="/services/${item.slug}">${escapeHtml(item.name||'Service')}</a>`).join('');
-  table.innerHTML=entries.map((item,index)=>`
+  const items=entries.length?entries:SERVICE_FALLBACKS;
+  nav.innerHTML=items.map(item=>`<a class="svc-link" href="${appUrl(`/services/${item.slug}`)}">${escapeHtml(item.name||'Service')}</a>`).join('');
+  table.innerHTML=items.map((item,index)=>`
     <div class="svc-row">
-      <a class="svc-row-link" href="/services/${item.slug}">
-        <span class="svc-num">${String(index+1).padStart(2,'0')}</span>
+      <a class="svc-row-link" href="${appUrl(`/services/${item.slug}`)}">
+        <div class="svc-card-top">
+          <span class="svc-num">Service ${String(index+1).padStart(2,'0')}</span>
+          <span class="svc-price">${formatInr(item.pricing_min_inr)}+</span>
+        </div>
         <div class="svc-name">${escapeHtml(item.name||'Service')}</div>
         <div class="svc-desc">${escapeHtml(item.valueProp||'YoungMinds service offering')}</div>
-        <span class="svc-price">${formatInr(item.pricing_min_inr)}+</span>
+        <div class="svc-tags">
+          ${(Array.isArray(item.deliverables)?item.deliverables:[]).slice(0,2).map(tag=>`<span class="svc-tag">${escapeHtml(tag)}</span>`).join('')}
+        </div>
+        <span class="svc-cta">Explore service</span>
       </a>
     </div>
   `).join('');
@@ -776,7 +795,7 @@ async function loadServices(){
     serviceEntries=Array.isArray(data)?data:[];
     renderServices(serviceEntries);
   }catch{
-    renderServices([]);
+    renderServices(SERVICE_FALLBACKS);
   }
 }
 
