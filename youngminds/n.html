@@ -1092,6 +1092,15 @@ function nav(page){
   closeSidebar();
 }
 
+function safeAdminRender(label, fn){
+  try{
+    return fn();
+  }catch(err){
+    console.error(`[admin-render] ${label}`, err);
+    return null;
+  }
+}
+
 function toggleSidebar(){
   document.querySelector('.sidebar').classList.toggle('open');
   document.getElementById('sbOverlay').classList.toggle('open');
@@ -1104,10 +1113,10 @@ function closeSidebar(){
 
 /* ── RENDER ALL ── */
 function renderAllViews(){
-  renderBoardManager();
-  renderServicesManager();
-  APP_STS.forEach(s=>renderView('app',s));
-  PRJ_STS.forEach(s=>renderView('prj',s));
+  safeAdminRender('board-manager', ()=>renderBoardManager());
+  safeAdminRender('services-manager', ()=>renderServicesManager());
+  APP_STS.forEach(s=>safeAdminRender(`app-${s}`, ()=>renderView('app',s)));
+  PRJ_STS.forEach(s=>safeAdminRender(`prj-${s}`, ()=>renderView('prj',s)));
 }
 
 function fmtDate(ts){try{return new Date(ts).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'})}catch(e){return '—'}}
@@ -1607,6 +1616,7 @@ function renderRevenue(){
 function drawChart(){
   const ctx=document.getElementById('revChart');
   if(!ctx)return;
+  if (typeof Chart === 'undefined') return;
   if(revChart)revChart.destroy();
 
   // Build monthly data from payments
@@ -1795,6 +1805,7 @@ function destroyChart(ref){ try{ if(ref) ref.destroy(); }catch(e){} return null;
 
 function mkSparkline(canvasId, data, color){
   const el=document.getElementById(canvasId); if(!el) return null;
+  if (typeof Chart === 'undefined') return null;
   const ctx=el.getContext('2d');
   return new Chart(ctx,{type:'bar',data:{labels:data.map((_,i)=>i),datasets:[{data,backgroundColor:color+'55',borderColor:color,borderWidth:1,borderRadius:2}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
@@ -1854,11 +1865,12 @@ function renderOverview(){
 
   // ── Time data for charts ──
   const {labels,appCounts,prjCounts}=buildTimeData();
+  const hasChartLib = typeof Chart !== 'undefined';
 
   // ── Line chart ──
   _ovLine=destroyChart(_ovLine);
   const lineEl=document.getElementById('ov-line-chart');
-  if(lineEl){
+  if(lineEl && hasChartLib){
     const ctx=lineEl.getContext('2d');
     const gradA=ctx.createLinearGradient(0,0,0,160);
     gradA.addColorStop(0,'rgba(232,197,71,0.3)');gradA.addColorStop(1,'rgba(232,197,71,0)');
@@ -1882,7 +1894,7 @@ function renderOverview(){
   // ── Donut chart: application status ──
   _ovDonut=destroyChart(_ovDonut);
   const donutEl=document.getElementById('ov-donut-chart');
-  if(donutEl){
+  if(donutEl && hasChartLib){
     const ctx2=donutEl.getContext('2d');
     const statuses=['new','reviewing','accepted','hired','rejected'];
     const counts=statuses.map(s=>apps.filter(a=>a.status===s).length);
@@ -1898,16 +1910,18 @@ function renderOverview(){
 
   // ── Sparklines ──
   _spApps=destroyChart(_spApps); _spPrjs=destroyChart(_spPrjs); _spTeam=destroyChart(_spTeam); _spActive=destroyChart(_spActive);
-  _spApps=mkSparkline('spark-apps',appCounts,'#e8c547');
-  _spPrjs=mkSparkline('spark-prjs',prjCounts,'#60a5fa');
-  _spTeam=mkSparkline('spark-team',labels.map((_,i)=>{
-    const {y,m}=[...Array(6)].map((_,j)=>{const n=new Date();return {y:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getFullYear(),m:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getMonth()};})[i];
-    return apps.filter(a=>{const d=new Date(a.timestamp);return d.getFullYear()===y&&d.getMonth()===m&&(a.status==='hired'||a.status==='inwork');}).length;
-  }),'#3ecf8e');
-  _spActive=mkSparkline('spark-active',labels.map((_,i)=>{
-    const {y,m}=[...Array(6)].map((_,j)=>{const n=new Date();return {y:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getFullYear(),m:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getMonth()};})[i];
-    return prjs.filter(p=>{const d=new Date(p.timestamp);return d.getFullYear()===y&&d.getMonth()===m&&p.status==='inprogress';}).length;
-  }),'#fb923c');
+  if(hasChartLib){
+    _spApps=mkSparkline('spark-apps',appCounts,'#e8c547');
+    _spPrjs=mkSparkline('spark-prjs',prjCounts,'#60a5fa');
+    _spTeam=mkSparkline('spark-team',labels.map((_,i)=>{
+      const {y,m}=[...Array(6)].map((_,j)=>{const n=new Date();return {y:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getFullYear(),m:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getMonth()};})[i];
+      return apps.filter(a=>{const d=new Date(a.timestamp);return d.getFullYear()===y&&d.getMonth()===m&&(a.status==='hired'||a.status==='inwork');}).length;
+    }),'#3ecf8e');
+    _spActive=mkSparkline('spark-active',labels.map((_,i)=>{
+      const {y,m}=[...Array(6)].map((_,j)=>{const n=new Date();return {y:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getFullYear(),m:new Date(n.getFullYear(),n.getMonth()-(5-j),1).getMonth()};})[i];
+      return prjs.filter(p=>{const d=new Date(p.timestamp);return d.getFullYear()===y&&d.getMonth()===m&&p.status==='inprogress';}).length;
+    }),'#fb923c');
+  }
 
   // ── Skill bars ──
   const skillMap={};
@@ -2577,18 +2591,18 @@ loadAll = async function(){
   setLoading(false);
   setStatus(ok);
   updateAllCounts();
-  renderOverview();
-  renderAllViews();
-  renderRevenue();
-  renderCommunication();
-  renderAdminChat();
+  safeAdminRender('overview', ()=>renderOverview());
+  safeAdminRender('all-views', ()=>renderAllViews());
+  safeAdminRender('revenue', ()=>renderRevenue());
+  safeAdminRender('communication', ()=>renderCommunication());
+  safeAdminRender('admin-chat', ()=>renderAdminChat());
 };
 
 const baseRenderAllViews = renderAllViews;
 renderAllViews = function(){
-  baseRenderAllViews();
-  renderCommunication();
-  renderAdminChat();
+  safeAdminRender('base-all-views', ()=>baseRenderAllViews());
+  safeAdminRender('communication-inline', ()=>renderCommunication());
+  safeAdminRender('admin-chat-inline', ()=>renderAdminChat());
 };
 
 renderHiredRow = function(member){
