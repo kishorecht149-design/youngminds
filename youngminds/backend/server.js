@@ -55,6 +55,8 @@ function adminServicesHotfixScript() {
   if (window.__ymAdminServicesHotfixApplied) return;
   window.__ymAdminServicesHotfixApplied = true;
 
+  const SESSION_KEY = "ym_admin_session";
+
   function currentAdminPage() {
     const pathname = String(window.location.pathname || "").replace(/\\/+$/, "");
     if (pathname === "/admin/services") return "services";
@@ -81,44 +83,173 @@ function adminServicesHotfixScript() {
     return Array.isArray(items) ? items : fallbackServices();
   }
 
-  async function syncAdminServices(render) {
-    try {
-      const response = await fetch(window.location.origin + "/api/services", { cache: "no-store" });
-      const data = await response.json().catch(function(){ return []; });
-      const normalized = normalizeServices(Array.isArray(data) && data.length ? data : fallbackServices());
-      if (Array.isArray(normalized) && normalized.length) {
-        window.serviceEntries = normalized.map(function(item){
-          return Object.assign({}, item, { id: item._id || item.id || item.slug });
-        });
-        if (!window.currentServiceSlug && window.serviceEntries[0]) {
-          window.currentServiceSlug = window.serviceEntries[0].slug;
-        }
-        if (render !== false && typeof window.renderServicesManager === "function" && currentAdminPage() === "services") {
-          window.renderServicesManager();
-        }
-        return true;
-      }
-    } catch (err) {}
-
-    const fallback = fallbackServices();
-    if (fallback.length) {
-      window.serviceEntries = fallback;
-      if (!window.currentServiceSlug && fallback[0]) {
-        window.currentServiceSlug = fallback[0].slug;
-      }
-      if (render !== false && typeof window.renderServicesManager === "function" && currentAdminPage() === "services") {
-        window.renderServicesManager();
-      }
-      return true;
-    }
-    return false;
+  function getAdminToken() {
+    return sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY) || "";
   }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatINR(amount) {
+    return "₹" + Number(amount || 0).toLocaleString("en-IN");
+  }
+
+  const state = {
+    entries: [],
+    slug: "web-development",
+    loading: false,
+    saving: false,
+    error: ""
+  };
+
+  function ensureEntries(items) {
+    const normalized = normalizeServices(items);
+    return Array.isArray(normalized)
+      ? normalized.map(function(item){
+          return Object.assign({}, item, { id: item._id || item.id || item.slug });
+        })
+      : [];
+  }
+
+  function getCurrentEntry() {
+    if (!Array.isArray(state.entries) || !state.entries.length) return null;
+    const found = state.entries.find(function(item){ return item.slug === state.slug; });
+    if (found) return found;
+    state.slug = state.entries[0].slug;
+    return state.entries[0];
+  }
+
+  function renderStandalone() {
+    const mount = document.getElementById("services-admin-content");
+    if (!mount || currentAdminPage() !== "services") return;
+
+    if (state.loading && !state.entries.length) {
+      mount.innerHTML = '<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">Loading services</div><div class="empty-sub">Fetching the latest service configuration from the backend.</div></div>';
+      return;
+    }
+
+    const current = getCurrentEntry();
+    if (!current) {
+      mount.innerHTML = '<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">Services unavailable</div><div class="empty-sub">' + escapeHtml(state.error || "We could not load the service list right now.") + '</div><div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center"><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesReload()">Retry Services</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesLoadDefaults()">Load Defaults</button></div></div>';
+      return;
+    }
+
+    const deliverables = Array.isArray(current.deliverables) ? current.deliverables.slice(0, 6) : [];
+    while (deliverables.length < 6) deliverables.push("");
+    mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page, homepage pricing, and public quote content.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
+      return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(formatINR(item.pricing_min_inr) + " - " + formatINR(item.pricing_max_inr)) + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
+    }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section, the /services/[slug] page, and the mobile quote prompt.</div></div><a class="btn-sm" href="/services/' + escapeHtml(current.slug) + '" target="_blank" rel="noopener">Open Page</a></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="service-admin-form-row"><div class="form-field"><label>Pricing Min (INR)</label><input id="service-pricing-min" type="number" min="0" step="100" value="' + Number(current.pricing_min_inr || 0) + '"></div><div class="form-field"><label>Pricing Max (INR)</label><input id="service-pricing-max" type="number" min="0" step="100" value="' + Number(current.pricing_max_inr || 0) + '"></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
+      return '<div class="service-admin-deliverable"><div class="service-admin-deliverable-num">' + String(index + 1).padStart(2, "0") + '</div><div class="form-field" style="margin:0;flex:1"><label>Deliverable ' + (index + 1) + '</label><input type="text" data-service-deliverable value="' + escapeHtml(item) + '"></div></div>';
+    }).join("") + '</div></div><div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
+  }
+
+  async function syncAdminServices(render, forceFallback) {
+    state.loading = true;
+    state.error = "";
+    if (render !== false) renderStandalone();
+    try {
+      let entries = [];
+      if (forceFallback) {
+        entries = fallbackServices();
+      } else {
+        const response = await fetch(window.location.origin + "/api/services", { cache: "no-store" });
+        const data = await response.json().catch(function(){ return []; });
+        entries = Array.isArray(data) && data.length ? data : fallbackServices();
+      }
+      state.entries = ensureEntries(entries);
+      window.serviceEntries = state.entries.slice();
+      state.error = state.entries.length ? "" : "Service list is empty.";
+      return state.entries;
+    } catch (err) {
+      state.entries = ensureEntries(fallbackServices());
+      window.serviceEntries = state.entries.slice();
+      state.error = "Could not load service configuration right now.";
+      return state.entries;
+    } finally {
+      state.loading = false;
+      if (render !== false) renderStandalone();
+    }
+  }
+
+  async function saveStandalone() {
+    const current = getCurrentEntry();
+    if (!current) return;
+    const token = getAdminToken();
+    if (!token) {
+      if (typeof window.showToast === "function") window.showToast("Admin session expired. Please sign in again.");
+      return;
+    }
+    const payload = {
+      name: document.getElementById("service-name") ? document.getElementById("service-name").value.trim() : "",
+      shortLabel: document.getElementById("service-short-label") ? document.getElementById("service-short-label").value.trim() : "",
+      valueProp: document.getElementById("service-value-prop") ? document.getElementById("service-value-prop").value.trim() : "",
+      meta_description: document.getElementById("service-meta-description") ? document.getElementById("service-meta-description").value.trim() : "",
+      og_image_url: document.getElementById("service-og-image") ? document.getElementById("service-og-image").value.trim() : "",
+      pricing_min_inr: Number((document.getElementById("service-pricing-min") || {}).value || 0),
+      pricing_max_inr: Number((document.getElementById("service-pricing-max") || {}).value || 0),
+      deliverables: Array.prototype.slice.call(document.querySelectorAll("[data-service-deliverable]")).map(function(input){
+        return String(input.value || "").trim();
+      }).filter(Boolean)
+    };
+    state.saving = true;
+    state.error = "";
+    renderStandalone();
+    try {
+      const response = await fetch(window.location.origin + "/api/services/" + encodeURIComponent(current.slug), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(function(){ return {}; });
+      if (!response.ok) throw new Error(data.error || "Could not save service");
+      state.entries = state.entries.map(function(item){
+        return item.slug === data.slug ? Object.assign({}, data, { id: data._id || data.id || data.slug }) : item;
+      });
+      window.serviceEntries = state.entries.slice();
+      state.slug = data.slug || state.slug;
+      if (typeof window.showToast === "function") window.showToast("Service updated");
+    } catch (err) {
+      state.error = err && err.message ? err.message : "Could not save service";
+      if (typeof window.showToast === "function") window.showToast(state.error);
+    } finally {
+      state.saving = false;
+      renderStandalone();
+    }
+  }
+
+  window.__ymStandaloneServicesRender = renderStandalone;
+  window.__ymStandaloneServicesReload = function(){ return syncAdminServices(true, false); };
+  window.__ymStandaloneServicesLoadDefaults = function(){ return syncAdminServices(true, true); };
+  window.__ymStandaloneServicesSave = saveStandalone;
+  window.__ymStandaloneServicesSelect = function(slug){
+    state.slug = slug;
+    renderStandalone();
+  };
+
+  window.renderServicesManager = renderStandalone;
+  window.loadServicesData = function(options){
+    const render = !options || options.render !== false;
+    const preferFallback = !!(options && options.preferFallback);
+    return syncAdminServices(render, preferFallback);
+  };
+  window.selectServiceSlug = window.__ymStandaloneServicesSelect;
+  window.reloadServicesManager = window.__ymStandaloneServicesReload;
+  window.saveServiceConfig = saveStandalone;
 
   const originalLoadAll = typeof window.loadAll === "function" ? window.loadAll : null;
   if (originalLoadAll) {
     window.loadAll = async function(){
       const result = await originalLoadAll.apply(this, arguments);
-      await syncAdminServices(currentAdminPage() === "services");
+      await syncAdminServices(currentAdminPage() === "services", false);
       return result;
     };
   }
@@ -131,7 +262,7 @@ function adminServicesHotfixScript() {
       await window.loadAll();
     }
     if (currentAdminPage() === "services") {
-      await syncAdminServices(true);
+      await syncAdminServices(true, false);
     }
   };
 
@@ -140,7 +271,7 @@ function adminServicesHotfixScript() {
     window.nav = function(page, options){
       const result = originalNav.apply(this, arguments);
       if (String(page || "") === "services") {
-        setTimeout(function(){ syncAdminServices(true); }, 0);
+        setTimeout(function(){ syncAdminServices(true, false); }, 0);
       }
       return result;
     };
@@ -148,7 +279,7 @@ function adminServicesHotfixScript() {
 
   function boot() {
     if (currentAdminPage() === "services") {
-      setTimeout(function(){ syncAdminServices(true); }, 20);
+      setTimeout(function(){ syncAdminServices(true, false); }, 20);
     }
   }
 
