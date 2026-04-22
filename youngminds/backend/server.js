@@ -125,9 +125,14 @@ function adminServicesHotfixScript() {
     return state.entries[0];
   }
 
-  function getPackageDrafts(current) {
-    const packages = Array.isArray(current && current.pricing_packages) ? current.pricing_packages.slice(0, 6) : [];
-    return packages.length ? packages : [{ name: "Basic", price_inr: 0, delivery_time: "", revisions: "", note: "", features: [""] }];
+  function getSectorDrafts(current) {
+    const sectors = Array.isArray(current && current.sectors) ? current.sectors.slice(0, 8) : [];
+    if (sectors.length) return sectors;
+    return [{
+      title: "Core Packages",
+      description: "Package groups for this service.",
+      packages: [{ name: "Basic", price_inr: 0, price_usd: 0, delivery: "", revisions: "", duration: "", isPopular: false, features: [""] }]
+    }];
   }
 
   function renderStandalone() {
@@ -146,18 +151,21 @@ function adminServicesHotfixScript() {
     }
 
     const deliverables = Array.isArray(current.deliverables) ? current.deliverables.slice(0, 6) : [];
-    const pricingPackages = getPackageDrafts(current);
+    const sectorDrafts = getSectorDrafts(current);
     while (deliverables.length < 6) deliverables.push("");
     mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page, homepage pricing, and public quote content.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
       return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(formatINR(item.pricing_min_inr) + " - " + formatINR(item.pricing_max_inr)) + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
     }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section, the /services/[slug] page, and the mobile quote prompt.</div></div><a class="btn-sm" href="/services/' + escapeHtml(current.slug) + '" target="_blank" rel="noopener">Open Page</a></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="service-admin-form-row"><div class="form-field"><label>Pricing Min (INR)</label><input id="service-pricing-min" type="number" min="0" step="100" value="' + Number(current.pricing_min_inr || 0) + '"></div><div class="form-field"><label>Pricing Max (INR)</label><input id="service-pricing-max" type="number" min="0" step="100" value="' + Number(current.pricing_max_inr || 0) + '"></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
       return '<div class="service-admin-deliverable"><div class="service-admin-deliverable-num">' + String(index + 1).padStart(2, "0") + '</div><div class="form-field" style="margin:0;flex:1"><label>Deliverable ' + (index + 1) + '</label><input type="text" data-service-deliverable value="' + escapeHtml(item) + '"></div></div>';
-    }).join("") + '</div></div><div><div class="dp-sec-title" style="margin:16px 0 14px">Pricing Packages</div><div style="display:grid;gap:12px">' + pricingPackages.map(function(pkg, index){
-      const features = Array.isArray(pkg.features) && pkg.features.length ? pkg.features.slice(0, 8) : [""];
-      return '<div data-package-card style="border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--bg3)"><div class="service-admin-form-row"><div class="form-field"><label>Package Name</label><input type="text" data-package-name value="' + escapeHtml(pkg.name || "") + '"></div><div class="form-field"><label>Price (INR)</label><input type="number" min="0" step="100" data-package-price value="' + Number(pkg.price_inr || 0) + '"></div></div><div class="service-admin-form-row"><div class="form-field"><label>Delivery Time</label><input type="text" data-package-delivery value="' + escapeHtml(pkg.delivery_time || "") + '"></div><div class="form-field"><label>Revisions</label><input type="text" data-package-revisions value="' + escapeHtml(pkg.revisions || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Package Note</label><textarea data-package-note placeholder="Best for, summary, or usage note">' + escapeHtml(pkg.note || "") + '</textarea></div></div><div style="display:grid;gap:8px">' + features.map(function(feature){
-        return '<input type="text" data-package-feature value="' + escapeHtml(feature) + '" placeholder="Feature">';
-      }).join("") + '</div><div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRemovePackage(' + index + ')">Remove Package</button></div></div>';
-    }).join("") + '</div><div style="margin-top:12px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddPackage()">+ Add Package</button></div></div><div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
+    }).join("") + '</div></div><div><div class="dp-sec-title" style="margin:16px 0 14px">Catalogue Sectors</div><div style="display:grid;gap:14px">' + sectorDrafts.map(function(sector, sectorIndex){
+      const packages = Array.isArray(sector.packages) && sector.packages.length ? sector.packages : [{ name: "Basic", price_inr: 0, price_usd: 0, delivery: "", revisions: "", duration: "", isPopular: false, features: [""] }];
+      return '<div data-sector-card style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)"><div class="service-admin-form-row"><div class="form-field"><label>Sector Title</label><input type="text" data-sector-title value="' + escapeHtml(sector.title || "") + '"></div><div class="form-field"><label>Sector Description</label><input type="text" data-sector-description value="' + escapeHtml(sector.description || "") + '"></div></div><div style="display:grid;gap:12px;margin-top:12px">' + packages.map(function(pkg, packageIndex){
+        const features = Array.isArray(pkg.features) && pkg.features.length ? pkg.features.slice(0, 12) : [""];
+        return '<div data-package-card style="border:1px solid var(--border2);border-radius:14px;padding:14px;background:rgba(255,255,255,.02)"><div class="service-admin-form-row"><div class="form-field"><label>Package Name</label><input type="text" data-package-name value="' + escapeHtml(pkg.name || "") + '"></div><div class="form-field"><label>Price (INR)</label><input type="number" min="0" step="100" data-package-price value="' + Number(pkg.price_inr || 0) + '"></div></div><div class="service-admin-form-row"><div class="form-field"><label>Price (USD)</label><input type="number" min="0" step="1" data-package-usd value="' + Number(pkg.price_usd || 0) + '"></div><div class="form-field"><label>Duration</label><input type="text" data-package-duration value="' + escapeHtml(pkg.duration || "") + '"></div></div><div class="service-admin-form-row"><div class="form-field"><label>Delivery</label><input type="text" data-package-delivery value="' + escapeHtml(pkg.delivery || pkg.delivery_time || "") + '"></div><div class="form-field"><label>Revisions</label><input type="text" data-package-revisions value="' + escapeHtml(pkg.revisions || "") + '"></div></div><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)"><input type="checkbox" data-package-popular ' + (pkg.isPopular ? 'checked' : '') + '> Most popular</label><div style="display:grid;gap:8px;margin-top:10px">' + features.map(function(feature){
+          return '<input type="text" data-package-feature value="' + escapeHtml(feature) + '" placeholder="Feature">';
+        }).join("") + '</div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddFeature(' + sectorIndex + ',' + packageIndex + ')">+ Add Feature</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRemovePackage(' + sectorIndex + ',' + packageIndex + ')">Remove Package</button></div></div>';
+      }).join("") + '</div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddPackage(' + sectorIndex + ')">+ Add Package</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRemoveSector(' + sectorIndex + ')">Remove Sector</button></div></div>';
+    }).join("") + '</div><div style="margin-top:12px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddSector()">+ Add Sector</button></div></div><div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
   }
 
   async function syncAdminServices(render, forceFallback) {
@@ -207,18 +215,26 @@ function adminServicesHotfixScript() {
       deliverables: Array.prototype.slice.call(document.querySelectorAll("[data-service-deliverable]")).map(function(input){
         return String(input.value || "").trim();
       }).filter(Boolean),
-      pricing_packages: Array.prototype.slice.call(document.querySelectorAll("[data-package-card]")).map(function(card){
+      sectors: Array.prototype.slice.call(document.querySelectorAll("[data-sector-card]")).map(function(sectorCard){
         return {
-          name: ((card.querySelector("[data-package-name]") || {}).value || "").trim(),
-          price_inr: Number(((card.querySelector("[data-package-price]") || {}).value || 0)),
-          delivery_time: ((card.querySelector("[data-package-delivery]") || {}).value || "").trim(),
-          revisions: ((card.querySelector("[data-package-revisions]") || {}).value || "").trim(),
-          note: ((card.querySelector("[data-package-note]") || {}).value || "").trim(),
-          features: Array.prototype.slice.call(card.querySelectorAll("[data-package-feature]")).map(function(input){
-            return String(input.value || "").trim();
-          }).filter(Boolean)
+          title: ((sectorCard.querySelector("[data-sector-title]") || {}).value || "").trim(),
+          description: ((sectorCard.querySelector("[data-sector-description]") || {}).value || "").trim(),
+          packages: Array.prototype.slice.call(sectorCard.querySelectorAll("[data-package-card]")).map(function(card){
+            return {
+              name: ((card.querySelector("[data-package-name]") || {}).value || "").trim(),
+              price_inr: Number(((card.querySelector("[data-package-price]") || {}).value || 0)),
+              price_usd: Number(((card.querySelector("[data-package-usd]") || {}).value || 0)),
+              delivery: ((card.querySelector("[data-package-delivery]") || {}).value || "").trim(),
+              revisions: ((card.querySelector("[data-package-revisions]") || {}).value || "").trim(),
+              duration: ((card.querySelector("[data-package-duration]") || {}).value || "").trim(),
+              isPopular: !!((card.querySelector("[data-package-popular]") || {}).checked),
+              features: Array.prototype.slice.call(card.querySelectorAll("[data-package-feature]")).map(function(input){
+                return String(input.value || "").trim();
+              }).filter(Boolean)
+            };
+          }).filter(function(item){ return item.name || item.price_inr || item.features.length; })
         };
-      }).filter(function(item){ return item.name || item.price_inr || item.features.length; })
+      }).filter(function(item){ return item.title || item.description || (Array.isArray(item.packages) && item.packages.length); })
     };
     state.saving = true;
     state.error = "";
@@ -253,17 +269,37 @@ function adminServicesHotfixScript() {
   window.__ymStandaloneServicesReload = function(){ return syncAdminServices(true, false); };
   window.__ymStandaloneServicesLoadDefaults = function(){ return syncAdminServices(true, true); };
   window.__ymStandaloneServicesSave = saveStandalone;
-  window.__ymStandaloneServicesAddPackage = function(){
+  window.__ymStandaloneServicesAddSector = function(){
     const current = getCurrentEntry();
     if (!current) return;
-    current.pricing_packages = Array.isArray(current.pricing_packages) ? current.pricing_packages : [];
-    current.pricing_packages.push({ name: "New Package", price_inr: 0, delivery_time: "", revisions: "", note: "", features: [""] });
+    current.sectors = Array.isArray(current.sectors) ? current.sectors : [];
+    current.sectors.push({ title: "New Sector", description: "", packages: [{ name: "Basic", price_inr: 0, price_usd: 0, delivery: "", revisions: "", duration: "", isPopular: false, features: [""] }] });
     renderStandalone();
   };
-  window.__ymStandaloneServicesRemovePackage = function(index){
+  window.__ymStandaloneServicesRemoveSector = function(index){
     const current = getCurrentEntry();
-    if (!current || !Array.isArray(current.pricing_packages)) return;
-    current.pricing_packages.splice(index, 1);
+    if (!current || !Array.isArray(current.sectors)) return;
+    current.sectors.splice(index, 1);
+    renderStandalone();
+  };
+  window.__ymStandaloneServicesAddPackage = function(sectorIndex){
+    const current = getCurrentEntry();
+    if (!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex]) return;
+    current.sectors[sectorIndex].packages = Array.isArray(current.sectors[sectorIndex].packages) ? current.sectors[sectorIndex].packages : [];
+    current.sectors[sectorIndex].packages.push({ name: "New Package", price_inr: 0, price_usd: 0, delivery: "", revisions: "", duration: "", isPopular: false, features: [""] });
+    renderStandalone();
+  };
+  window.__ymStandaloneServicesRemovePackage = function(sectorIndex, packageIndex){
+    const current = getCurrentEntry();
+    if (!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex] || !Array.isArray(current.sectors[sectorIndex].packages)) return;
+    current.sectors[sectorIndex].packages.splice(packageIndex, 1);
+    renderStandalone();
+  };
+  window.__ymStandaloneServicesAddFeature = function(sectorIndex, packageIndex){
+    const current = getCurrentEntry();
+    if (!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex] || !Array.isArray(current.sectors[sectorIndex].packages) || !current.sectors[sectorIndex].packages[packageIndex]) return;
+    current.sectors[sectorIndex].packages[packageIndex].features = Array.isArray(current.sectors[sectorIndex].packages[packageIndex].features) ? current.sectors[sectorIndex].packages[packageIndex].features : [];
+    current.sectors[sectorIndex].packages[packageIndex].features.push("");
     renderStandalone();
   };
   window.__ymStandaloneServicesSelect = function(slug){
@@ -592,6 +628,31 @@ const boardMemberSchema = new mongoose.Schema({
 
 const BoardMember = mongoose.model("BoardMember", boardMemberSchema);
 
+function inrToUsd(amount) {
+  return Math.max(0, Math.round(Number(amount || 0) / 83));
+}
+
+function createCataloguePackage(name, priceInr, options = {}) {
+  return {
+    name,
+    price_inr: Math.max(0, Number(priceInr || 0)),
+    price_usd: Math.max(0, Number(options.price_usd || inrToUsd(priceInr))),
+    delivery: String(options.delivery || "").trim(),
+    revisions: String(options.revisions || "").trim(),
+    duration: String(options.duration || "").trim(),
+    isPopular: Boolean(options.isPopular),
+    features: Array.isArray(options.features) ? options.features.map(item => String(item || "").trim()).filter(Boolean).slice(0, 12) : []
+  };
+}
+
+function createCatalogueSector(title, description, packages = []) {
+  return {
+    title: String(title || "").trim(),
+    description: String(description || "").trim(),
+    packages
+  };
+}
+
 const SERVICE_DEFAULTS = [
   {
     slug: "web-development",
@@ -610,29 +671,65 @@ const SERVICE_DEFAULTS = [
       "Form and lead capture setup",
       "Launch support and QA"
     ],
+    sectors: [
+      createCatalogueSector("School Websites", "Clean admission-first websites for schools that need trust, clarity, and enquiry flow.", [
+        createCataloguePackage("Basic", 4999, { delivery: "4-6 days", revisions: "1 round", duration: "4-5 pages", features: ["Home, about, academics, contact", "Mobile responsive layout", "Admission enquiry form", "WhatsApp integration", "Google Maps and contact block", "Basic SEO setup"] }),
+        createCataloguePackage("Standard", 8999, { delivery: "7-10 days", revisions: "2 rounds", duration: "6-8 pages", isPopular: true, features: ["Everything in Basic", "Faculty and facilities pages", "Gallery and announcements", "Downloadable forms section", "Photo optimization", "Admin-editable notices block"] }),
+        createCataloguePackage("Premium", 14999, { delivery: "12-16 days", revisions: "Unlimited", duration: "10+ pages", features: ["Everything in Standard", "Admission workflow pages", "Events and achievements section", "Custom UI system", "Advanced speed tuning", "Full admin panel"] })
+      ]),
+      createCatalogueSector("Tuition & Coaching Websites", "Lead-focused sites for institutes, trainers, and academy operators.", [
+        createCataloguePackage("Basic", 5999, { delivery: "4-6 days", revisions: "1 round", duration: "4-5 pages", features: ["Course showcase pages", "Lead form and CTA blocks", "Class timing section", "Student testimonial block", "WhatsApp click-to-chat", "Responsive design"] }),
+        createCataloguePackage("Standard", 9999, { delivery: "8-11 days", revisions: "2 rounds", duration: "6-8 pages", isPopular: true, features: ["Everything in Basic", "Faculty intro section", "Lead segmentation forms", "Results and gallery pages", "Basic admin updates", "SEO-ready page structure"] }),
+        createCataloguePackage("Premium", 16999, { delivery: "12-18 days", revisions: "Unlimited", duration: "10+ pages", features: ["Everything in Standard", "Student dashboard-ready flow", "Online batch listing", "Custom branding and sections", "Integrated enquiry CRM handoff", "Priority support"] })
+      ]),
+      createCatalogueSector("Business Websites", "Professional business sites for agencies, consultants, and local brands.", [
+        createCataloguePackage("Basic", 6999, { delivery: "5-7 days", revisions: "1 round", duration: "5 pages", features: ["Business profile pages", "Services overview", "Lead form and CTA", "Mobile responsive build", "Basic analytics", "Google business integration"] }),
+        createCataloguePackage("Standard", 12999, { delivery: "9-13 days", revisions: "2 rounds", duration: "8 pages", isPopular: true, features: ["Everything in Basic", "Case study or testimonial sections", "Custom contact funnels", "Blog-ready CMS", "Basic admin panel", "Conversion-focused page structure"] }),
+        createCataloguePackage("Premium", 24999, { delivery: "14-20 days", revisions: "Unlimited", duration: "12+ pages", features: ["Everything in Standard", "Custom UI direction", "Advanced landing sections", "CRM-ready forms", "Offer and campaign blocks", "Expanded admin control"] })
+      ]),
+      createCatalogueSector("E-Commerce Websites", "Online stores built for product display, enquiry, and checkout-ready growth.", [
+        createCataloguePackage("Basic", 14999, { delivery: "8-12 days", revisions: "1 round", duration: "Up to 25 products", features: ["Storefront setup", "Product pages", "Cart and checkout", "Payment gateway integration", "Mobile commerce layout", "Order email flow"] }),
+        createCataloguePackage("Standard", 27999, { delivery: "14-20 days", revisions: "2 rounds", duration: "Up to 80 products", isPopular: true, features: ["Everything in Basic", "Collection filtering", "Coupon setup", "Basic inventory workflow", "Admin dashboard", "Shipping rule setup"] }),
+        createCataloguePackage("Premium", 49999, { delivery: "20-28 days", revisions: "Unlimited", duration: "100+ products", features: ["Everything in Standard", "Custom storefront UI", "Upsell and cross-sell blocks", "Advanced catalog filters", "Marketing automation hooks", "Priority launch support"] })
+      ]),
+      createCatalogueSector("Portfolio Websites", "Simple, sharp portfolio sites for freelancers, creators, and personal brands.", [
+        createCataloguePackage("Basic", 3999, { delivery: "3-4 days", revisions: "1 round", duration: "Single-page", features: ["Single-page profile site", "Project gallery", "Contact CTA", "Mobile responsive", "Social links", "Fast deploy"] }),
+        createCataloguePackage("Standard", 7499, { delivery: "5-7 days", revisions: "2 rounds", duration: "4-5 pages", isPopular: true, features: ["Everything in Basic", "Case study pages", "Services and testimonials", "Contact form", "Resume download", "Basic SEO"] }),
+        createCataloguePackage("Premium", 11999, { delivery: "8-10 days", revisions: "Unlimited", duration: "6+ pages", features: ["Everything in Standard", "Custom animations", "Premium gallery layout", "Blog or writing section", "Lead capture CTA", "Priority polishing"] })
+      ]),
+      createCatalogueSector("Custom & AI-Powered Websites", "Custom platforms with automation, AI workflows, and business logic baked in.", [
+        createCataloguePackage("Basic", 24999, { delivery: "12-16 days", revisions: "1 round", duration: "Custom scope", features: ["Custom build foundation", "Dynamic content setup", "API-ready architecture", "Admin controls", "Core automation hooks", "Technical QA"] }),
+        createCataloguePackage("Standard", 44999, { delivery: "18-25 days", revisions: "2 rounds", duration: "Custom scope", isPopular: true, features: ["Everything in Basic", "AI assistant workflow", "Lead qualification automation", "CRM or Sheets sync", "Custom dashboard views", "Improved scalability"] }),
+        createCataloguePackage("Premium", 74999, { delivery: "25-35 days", revisions: "Unlimited", duration: "Advanced custom scope", features: ["Everything in Standard", "Multi-step AI flows", "Custom integrations", "Team roles and permissions", "Priority launch and support", "Ongoing optimisation handoff"] })
+      ])
+    ],
     pricing_packages: [
       {
         name: "Basic",
         price_inr: 4999,
-        delivery_time: "4-6 days",
+        price_usd: inrToUsd(4999),
+        delivery: "4-6 days",
         revisions: "1 round",
-        note: "Best for small businesses getting online fast.",
+        duration: "4-5 pages",
         features: ["4 pages","Template design","Mobile responsive","Contact form","WhatsApp chat button","Google Maps embed"]
       },
       {
         name: "Standard",
         price_inr: 9499,
-        delivery_time: "9-13 days",
+        price_usd: inrToUsd(9499),
+        delivery: "9-13 days",
         revisions: "2 rounds",
-        note: "Most popular for growing local businesses.",
+        duration: "6-8 pages",
+        isPopular: true,
         features: ["8 pages","Semi-custom branding","Booking or enquiry form","Gallery and testimonials","Pricing section","Basic admin panel"]
       },
       {
         name: "Premium",
         price_inr: 17999,
-        delivery_time: "16-22 days",
+        price_usd: inrToUsd(17999),
+        delivery: "16-22 days",
         revisions: "Unlimited",
-        note: "For brands that need a custom conversion-focused platform.",
+        duration: "10+ pages",
         features: ["12+ pages","100% custom UI","Online booking system","Service catalogue filters","Offer banners","Full admin panel"]
       }
     ]
@@ -654,29 +751,40 @@ const SERVICE_DEFAULTS = [
       "Presentation and deck design",
       "Design source files handoff"
     ],
+    sectors: [
+      createCatalogueSector("Graphic Design Packages", "Design support across brand, campaign, and launch needs with clean, editable asset delivery.", [
+        createCataloguePackage("Basic", 2000, { delivery: "2-3 days", revisions: "1 round", duration: "1 creative set", features: ["One branded creative set", "Template-led design", "Export-ready files", "Social post sizing", "Brand colour alignment", "Basic support"] }),
+        createCataloguePackage("Standard", 7999, { delivery: "4-6 days", revisions: "2 rounds", duration: "Multi-asset pack", isPopular: true, features: ["Multiple campaign assets", "Semi-custom design system", "Presentation or flyer support", "Print-ready exports", "Source file handoff", "Stronger brand consistency"] }),
+        createCataloguePackage("Premium", 15999, { delivery: "7-10 days", revisions: "Unlimited", duration: "Full campaign suite", features: ["Brand identity suite", "Custom visual language", "Launch campaign graphics", "Print and digital formats", "Design source files", "Priority support"] })
+      ])
+    ],
     pricing_packages: [
       {
         name: "Basic",
         price_inr: 2000,
-        delivery_time: "2-3 days",
+        price_usd: inrToUsd(2000),
+        delivery: "2-3 days",
         revisions: "1 round",
-        note: "Fast-turn visual support for single-brand needs.",
+        duration: "1 creative set",
         features: ["1 core creative set","Template-led design","Brand colour usage","Export-ready files","Social post sizing","Basic support"]
       },
       {
         name: "Standard",
         price_inr: 7999,
-        delivery_time: "4-6 days",
+        price_usd: inrToUsd(7999),
+        delivery: "4-6 days",
         revisions: "2 rounds",
-        note: "For brands building a consistent campaign presence.",
+        duration: "Multi-asset pack",
+        isPopular: true,
         features: ["Multi-asset pack","Semi-custom design system","Social and ad creatives","Presentation slides","Print-ready files","Source handoff"]
       },
       {
         name: "Premium",
         price_inr: 15999,
-        delivery_time: "7-10 days",
+        price_usd: inrToUsd(15999),
+        delivery: "7-10 days",
         revisions: "Unlimited",
-        note: "Full visual direction for launches and brand refreshes.",
+        duration: "Full campaign suite",
         features: ["Brand identity suite","Custom visual language","Campaign creative system","Print and digital formats","Design source files","Priority support"]
       }
     ]
@@ -698,29 +806,40 @@ const SERVICE_DEFAULTS = [
       "Publishing support",
       "Performance review summary"
     ],
+    sectors: [
+      createCatalogueSector("Social Media Management", "A consistent content engine for brands that need planning, execution, and reporting in one lane.", [
+        createCataloguePackage("Basic", 4000, { delivery: "5-7 days setup", revisions: "1 round", duration: "1 platform / month", features: ["One-platform content plan", "8 post ideas", "Caption support", "Basic design direction", "Publishing checklist", "Monthly summary"] }),
+        createCataloguePackage("Standard", 12000, { delivery: "7-10 days setup", revisions: "2 rounds", duration: "2 platforms / month", isPopular: true, features: ["Two-platform strategy", "Content calendar", "Reel concepts", "Caption writing", "Creative coordination", "Performance review"] }),
+        createCataloguePackage("Premium", 24000, { delivery: "10-14 days setup", revisions: "Unlimited", duration: "3+ platforms / month", features: ["Multi-platform system", "Campaign planning", "Advanced reporting", "Trend and hook research", "Publishing workflows", "Priority support"] })
+      ])
+    ],
     pricing_packages: [
       {
         name: "Basic",
         price_inr: 4000,
-        delivery_time: "5-7 days setup",
+        price_usd: inrToUsd(4000),
+        delivery: "5-7 days setup",
         revisions: "1 round",
-        note: "Ideal for consistent monthly posting on one platform.",
+        duration: "1 platform / month",
         features: ["1 platform plan","8 post ideas","Caption support","Basic design guidance","Publishing checklist","Monthly summary"]
       },
       {
         name: "Standard",
         price_inr: 12000,
-        delivery_time: "7-10 days setup",
+        price_usd: inrToUsd(12000),
+        delivery: "7-10 days setup",
         revisions: "2 rounds",
-        note: "Most popular for businesses growing through content.",
+        duration: "2 platforms / month",
+        isPopular: true,
         features: ["2 platform strategy","Content calendar","Reel concepts","Caption writing","Creative coordination","Performance review"]
       },
       {
         name: "Premium",
         price_inr: 24000,
-        delivery_time: "10-14 days setup",
+        price_usd: inrToUsd(24000),
+        delivery: "10-14 days setup",
         revisions: "Unlimited",
-        note: "For teams that want a full social content engine.",
+        duration: "3+ platforms / month",
         features: ["3+ platform system","Campaign planning","Advanced reporting","Trend and hook research","Publishing workflows","Priority support"]
       }
     ]
@@ -742,29 +861,60 @@ const SERVICE_DEFAULTS = [
       "Testing and guardrails",
       "Team onboarding guidance"
     ],
+    sectors: [
+      createCatalogueSector("AI Chatbots", "FAQ, lead capture, and customer-support chatbots tailored to your workflow.", [
+        createCataloguePackage("Basic", 7999, { delivery: "5-7 days", revisions: "1 round", duration: "Single assistant", features: ["Website or WhatsApp bot", "Up to 20 Q&A flows", "Lead capture setup", "Basic branding", "Google Sheets logging", "7 days support"] }),
+        createCataloguePackage("Standard", 14999, { delivery: "10-14 days", revisions: "2 rounds", duration: "Multi-flow assistant", isPopular: true, features: ["Multi-step conversations", "Natural language responses", "Lead qualification logic", "CRM or Sheets sync", "Follow-up automations", "Analytics dashboard"] }),
+        createCataloguePackage("Premium", 27999, { delivery: "18-25 days", revisions: "Unlimited", duration: "Advanced custom assistant", features: ["Custom trained assistant", "Unlimited intent flows", "CRM/email/Zapier integration", "Escalation routing", "Advanced analytics", "60 days support"] })
+      ]),
+      createCatalogueSector("Business Automation Systems", "Internal automations that remove repetitive manual work for ops and admin teams.", [
+        createCataloguePackage("Basic", 9999, { delivery: "6-8 days", revisions: "1 round", duration: "1 workflow", features: ["One business workflow automation", "Sheets or form integration", "Task/status notifications", "Basic dashboard", "Error checks", "Deployment support"] }),
+        createCataloguePackage("Standard", 18999, { delivery: "10-15 days", revisions: "2 rounds", duration: "2-3 workflows", isPopular: true, features: ["Multiple workflow automations", "CRM and email triggers", "Approval routing", "Status dashboard", "Role-aware notifications", "Documentation"] }),
+        createCataloguePackage("Premium", 34999, { delivery: "18-28 days", revisions: "Unlimited", duration: "Cross-team automations", features: ["Advanced workflow engine", "Custom integrations", "Ops dashboard", "Escalation flows", "Team onboarding", "Priority support"] })
+      ]),
+      createCatalogueSector("Lead Generation & Conversion AI", "AI systems that qualify, route, and nurture enquiries faster.", [
+        createCataloguePackage("Basic", 11999, { delivery: "7-10 days", revisions: "1 round", duration: "Single funnel", features: ["Lead capture assistant", "Qualification prompts", "Google Sheets sync", "Basic follow-up automation", "CRM-ready export", "Conversion notes"] }),
+        createCataloguePackage("Standard", 21999, { delivery: "12-18 days", revisions: "2 rounds", duration: "Multi-step funnel", isPopular: true, features: ["Lead routing logic", "Automated reminders", "Channel attribution logging", "CRM integration", "Sales handoff support", "Dashboard reporting"] }),
+        createCataloguePackage("Premium", 39999, { delivery: "20-30 days", revisions: "Unlimited", duration: "Advanced conversion engine", features: ["Custom AI lead scoring", "Channel-specific flows", "Email and WhatsApp follow-up", "Escalation routing", "Advanced analytics", "Priority optimization"] })
+      ]),
+      createCatalogueSector("AI Content & Marketing Automation", "Prompted content engines and campaign workflows for teams shipping regularly.", [
+        createCataloguePackage("Basic", 8999, { delivery: "5-7 days", revisions: "1 round", duration: "Single content workflow", features: ["AI prompt system", "Content idea generation", "Basic review flow", "Sheets tracking", "One publishing workflow", "Team walkthrough"] }),
+        createCataloguePackage("Standard", 16999, { delivery: "9-14 days", revisions: "2 rounds", duration: "Campaign workflow", isPopular: true, features: ["Campaign prompt library", "Approval workflow", "Asset tracking", "Publishing checklist", "Performance tracker", "Revision-ready setup"] }),
+        createCataloguePackage("Premium", 29999, { delivery: "16-24 days", revisions: "Unlimited", duration: "Full marketing automation", features: ["Multi-channel content engine", "Repurposing workflows", "Lead magnet automation", "CRM sync", "Reporting dashboard", "Priority support"] })
+      ]),
+      createCatalogueSector("Custom AI Solutions", "Custom AI work for unique internal tools, client products, or advanced team workflows.", [
+        createCataloguePackage("Basic", 19999, { delivery: "10-14 days", revisions: "1 round", duration: "Starter custom scope", features: ["Discovery and scoping", "One custom AI workflow", "Prototype build", "Basic integration", "Testing and guardrails", "Documentation"] }),
+        createCataloguePackage("Standard", 39999, { delivery: "18-25 days", revisions: "2 rounds", duration: "Mid custom scope", isPopular: true, features: ["Custom use-case mapping", "Multiple AI flows", "API integration", "Dashboard layer", "Role permissions", "Launch support"] }),
+        createCataloguePackage("Premium", 79999, { delivery: "28-40 days", revisions: "Unlimited", duration: "Advanced custom scope", features: ["End-to-end custom AI system", "Advanced integrations", "Scalable architecture", "Team onboarding", "Priority support", "Optimisation handoff"] })
+      ])
+    ],
     pricing_packages: [
       {
         name: "Basic",
         price_inr: 7999,
-        delivery_time: "5-7 days",
+        price_usd: inrToUsd(7999),
+        delivery: "5-7 days",
         revisions: "1 round",
-        note: "Entry-level AI chatbot or automation setup.",
+        duration: "Single assistant",
         features: ["1 platform chatbot","FAQ response flows","Up to 20 Q&A pairs","Lead capture","Google Sheets logging","7 days support"]
       },
       {
         name: "Standard",
         price_inr: 14999,
-        delivery_time: "10-14 days",
+        price_usd: inrToUsd(14999),
+        delivery: "10-14 days",
         revisions: "2 rounds",
-        note: "Most popular AI package for smart business automation.",
+        duration: "Multi-flow assistant",
+        isPopular: true,
         features: ["2 platform assistant","Natural language responses","Lead qualification","CRM or Sheets sync","Automated follow-ups","Analytics dashboard"]
       },
       {
         name: "Premium",
         price_inr: 27999,
-        delivery_time: "18-25 days",
+        price_usd: inrToUsd(27999),
+        delivery: "18-25 days",
         revisions: "Unlimited",
-        note: "Full AI assistant with custom training and integrations.",
+        duration: "Advanced custom assistant",
         features: ["3 platform AI assistant","Custom business training","Unlimited intent flows","CRM/email/Zapier integration","Sentiment routing","60 days support"]
       }
     ]
@@ -786,29 +936,60 @@ const SERVICE_DEFAULTS = [
       "Multiple export formats",
       "Revision-ready project files"
     ],
+    sectors: [
+      createCatalogueSector("Short-Form Content", "Reels, shorts, and TikTok-style edits focused on speed, hooks, and retention.", [
+        createCataloguePackage("Basic", 4999, { delivery: "3 working days", revisions: "1 round", duration: "3 videos / up to 60 sec", price_usd: 60, features: ["3 short-form videos", "Basic cuts and transitions", "Royalty-free music", "Simple text overlays", "1080p export", "Platform-ready formatting"] }),
+        createCataloguePackage("Standard", 9999, { delivery: "5 working days", revisions: "2 rounds", duration: "6 videos / up to 90 sec", price_usd: 120, isPopular: true, features: ["6 short-form videos", "Subtitles", "Sound design", "Text animations", "Multi-platform exports", "Higher retention pacing"] }),
+        createCataloguePackage("Premium", 18999, { delivery: "7 working days", revisions: "Unlimited", duration: "12 videos / advanced styling", price_usd: 229, features: ["12 short-form videos", "Cinematic pacing", "Styled subtitles", "Advanced colour grading", "Motion graphics", "Priority support"] })
+      ]),
+      createCatalogueSector("Long-Form Content", "YouTube, podcasts, and explainers edited for structure, pacing, and viewer retention.", [
+        createCataloguePackage("Basic", 7999, { delivery: "4-6 working days", revisions: "1 round", duration: "Up to 10 min", price_usd: 96, features: ["Single long-form edit", "Clean cut-down", "Basic audio cleanup", "Simple lower thirds", "1080p export", "Thumbnail frame suggestions"] }),
+        createCataloguePackage("Standard", 14999, { delivery: "6-8 working days", revisions: "2 rounds", duration: "Up to 20 min", price_usd: 181, isPopular: true, features: ["Everything in Basic", "Advanced pacing", "Subtitles", "Music mixing", "Section title cards", "YouTube-ready delivery"] }),
+        createCataloguePackage("Premium", 24999, { delivery: "8-12 working days", revisions: "Unlimited", duration: "Up to 30 min", price_usd: 301, features: ["Everything in Standard", "Motion graphics", "Colour polish", "B-roll integration", "Multi-camera sync", "Priority turnaround"] })
+      ]),
+      createCatalogueSector("Monthly Social Media Content Packs", "Recurring content packs for brands and creators who need volume each month.", [
+        createCataloguePackage("Basic", 11999, { delivery: "5-7 working days", revisions: "1 round", duration: "8 edits / month", price_usd: 145, features: ["8 edited videos", "Short-form formatting", "Captions", "Music and transitions", "Monthly delivery batch", "Basic creative consistency"] }),
+        createCataloguePackage("Standard", 21999, { delivery: "7-10 working days", revisions: "2 rounds", duration: "16 edits / month", price_usd: 265, isPopular: true, features: ["16 edited videos", "Hook optimisation", "Subtitles and branding", "Audio polish", "Batch delivery management", "Reel-first strategy support"] }),
+        createCataloguePackage("Premium", 34999, { delivery: "10-14 working days", revisions: "Unlimited", duration: "24 edits / month", price_usd: 422, features: ["24 edited videos", "Advanced visual system", "Motion graphics", "Repurposed cutdowns", "Priority scheduling", "High-volume creator support"] })
+      ]),
+      createCatalogueSector("Promotional & Advertisement Videos", "Campaign videos for launches, offers, and conversion-driven promotions.", [
+        createCataloguePackage("Basic", 8999, { delivery: "4-6 working days", revisions: "1 round", duration: "30-60 sec ad", price_usd: 108, features: ["Single promo video", "Text overlays", "Basic pacing", "Music syncing", "Offer CTA framing", "1080p export"] }),
+        createCataloguePackage("Standard", 16999, { delivery: "6-8 working days", revisions: "2 rounds", duration: "60-90 sec campaign edit", price_usd: 205, isPopular: true, features: ["Everything in Basic", "Brand graphics", "Faster cuts", "Sound design", "Multiple aspect ratios", "Ad-ready deliverables"] }),
+        createCataloguePackage("Premium", 29999, { delivery: "8-12 working days", revisions: "Unlimited", duration: "High-end promo package", price_usd: 361, features: ["Everything in Standard", "Advanced motion graphics", "Colour grading", "Voiceover alignment", "Launch assets export", "Priority revisions"] })
+      ]),
+      createCatalogueSector("Advanced & Cinematic Editing", "Premium edits for campaigns, storytelling, and high-finish brand pieces.", [
+        createCataloguePackage("Basic", 14999, { delivery: "5-7 working days", revisions: "1 round", duration: "Single cinematic edit", price_usd: 181, features: ["Narrative structure", "Colour correction", "Music and pacing", "Title cards", "1080p/4K export", "Creative polish"] }),
+        createCataloguePackage("Standard", 26999, { delivery: "8-10 working days", revisions: "2 rounds", duration: "Cinematic campaign edit", price_usd: 325, isPopular: true, features: ["Everything in Basic", "Advanced colour grade", "Sound design", "Motion text", "Stylised subtitles", "Higher-end polish"] }),
+        createCataloguePackage("Premium", 44999, { delivery: "10-14 working days", revisions: "Unlimited", duration: "Full premium package", price_usd: 542, features: ["Everything in Standard", "Complex motion graphics", "Multi-format exports", "Priority turnaround", "Creative direction support", "Premium finish"] })
+      ])
+    ],
     pricing_packages: [
       {
         name: "Basic",
         price_inr: 4999,
-        delivery_time: "3 working days",
+        price_usd: 60,
+        delivery: "3 working days",
         revisions: "1 round",
-        note: "Great for creators needing polished short-form content.",
+        duration: "3 videos / up to 60 sec",
         features: ["3 short-form videos","Up to 60 seconds each","Basic cuts and transitions","Royalty-free music","Simple text overlays","1080p export"]
       },
       {
         name: "Standard",
         price_inr: 9999,
-        delivery_time: "5 working days",
+        price_usd: 120,
+        delivery: "5 working days",
         revisions: "2 rounds",
-        note: "Most popular for trend-based brand and creator edits.",
+        duration: "6 videos / up to 90 sec",
+        isPopular: true,
         features: ["6 short-form videos","Up to 90 seconds each","Subtitles","Sound design","Text animations","Multi-platform formats"]
       },
       {
         name: "Premium",
         price_inr: 18999,
-        delivery_time: "7 working days",
+        price_usd: 229,
+        delivery: "7 working days",
         revisions: "Unlimited",
-        note: "High-retention cinematic editing for serious campaigns.",
+        duration: "12 videos / advanced styling",
         features: ["12 short-form videos","Cinematic pacing","Styled subtitles","Advanced colour grading","Motion graphics","Priority support"]
       }
     ]
@@ -830,29 +1011,40 @@ const SERVICE_DEFAULTS = [
       "Campaign content support",
       "Editing and proofreading"
     ],
+    sectors: [
+      createCatalogueSector("Content Writing Packages", "Clear website, campaign, and content-system writing with SEO-ready structure and revision room.", [
+        createCataloguePackage("Basic", 1500, { delivery: "2-3 days", revisions: "1 round", duration: "2 pages / short copy set", features: ["Up to 2 pages of copy", "Basic brand tone", "Service descriptions", "CTA refinement", "Editing pass", "Delivery-ready copy"] }),
+        createCataloguePackage("Standard", 6500, { delivery: "4-6 days", revisions: "2 rounds", duration: "Website + article support", isPopular: true, features: ["Website copy set", "Brand messaging direction", "Blog or article draft", "SEO-friendly structure", "Product descriptions", "Proofreading"] }),
+        createCataloguePackage("Premium", 14000, { delivery: "7-10 days", revisions: "Unlimited", duration: "Multi-page content system", features: ["Multi-page copy system", "Campaign messaging", "Long-form content", "Voice and tone guide", "Content engine planning", "Priority support"] })
+      ])
+    ],
     pricing_packages: [
       {
         name: "Basic",
         price_inr: 1500,
-        delivery_time: "2-3 days",
+        price_usd: inrToUsd(1500),
+        delivery: "2-3 days",
         revisions: "1 round",
-        note: "For fast copy needs and essential business pages.",
+        duration: "2 pages / short copy set",
         features: ["Up to 2 pages","Basic brand tone","Service descriptions","CTA refinement","Editing pass","Delivery-ready copy"]
       },
       {
         name: "Standard",
         price_inr: 6500,
-        delivery_time: "4-6 days",
+        price_usd: inrToUsd(6500),
+        delivery: "4-6 days",
         revisions: "2 rounds",
-        note: "Ideal for websites, campaigns, and blog support.",
+        duration: "Website + article support",
+        isPopular: true,
         features: ["Website copy set","Brand messaging direction","Blog/article draft","SEO-friendly structure","Product descriptions","Proofreading"]
       },
       {
         name: "Premium",
         price_inr: 14000,
-        delivery_time: "7-10 days",
+        price_usd: inrToUsd(14000),
+        delivery: "7-10 days",
         revisions: "Unlimited",
-        note: "A full content system for launches and ongoing growth.",
+        duration: "Multi-page content system",
         features: ["Multi-page copy system","Campaign messaging","Long-form content","Voice and tone guide","Content engine planning","Priority support"]
       }
     ]
@@ -868,6 +1060,23 @@ const adminAccountSchema = new mongoose.Schema({
 
 const AdminAccount = mongoose.model("AdminAccount", adminAccountSchema);
 
+const servicePackageSchema = new mongoose.Schema({
+  name:       { type: String, required: true },
+  price_inr:  { type: Number, default: 0 },
+  price_usd:  { type: Number, default: 0 },
+  delivery:   { type: String, default: "" },
+  revisions:  { type: String, default: "" },
+  duration:   { type: String, default: "" },
+  isPopular:  { type: Boolean, default: false },
+  features:   { type: [String], default: [] }
+}, { _id: false });
+
+const serviceSectorSchema = new mongoose.Schema({
+  title:       { type: String, required: true },
+  description: { type: String, default: "" },
+  packages:    { type: [servicePackageSchema], default: [] }
+}, { _id: false });
+
 const serviceSchema = new mongoose.Schema({
   slug:              { type: String, required: true, unique: true },
   name:              { type: String, required: true },
@@ -878,6 +1087,7 @@ const serviceSchema = new mongoose.Schema({
   pricing_min_inr:   { type: Number, default: 0 },
   pricing_max_inr:   { type: Number, default: 0 },
   deliverables:      { type: [String], default: [] },
+  sectors:           { type: [serviceSectorSchema], default: [] },
   pricing_packages:  { type: [mongoose.Schema.Types.Mixed], default: [] },
   updatedAt:         { type: Date, default: Date.now }
 }, { timestamps: false });
@@ -906,32 +1116,98 @@ function serviceFallback(slug) {
   return SERVICE_DEFAULTS.find(item => item.slug === slug) || null;
 }
 
-function normalizeServicePackages(items, fallbackPackages = []) {
+function normalizeSectorPackages(items, fallbackPackages = []) {
   const base = Array.isArray(fallbackPackages) ? fallbackPackages : [];
   const source = Array.isArray(items) && items.length ? items : base;
   return source.map((item, index) => {
     const fallback = base[index] || {};
     const featureSource = Array.isArray(item?.features) && item.features.length ? item.features : (fallback.features || []);
+    const priceInr = Math.max(0, Number(item?.price_inr ?? fallback.price_inr ?? 0));
     return {
       name: String(item?.name || fallback.name || `Package ${index + 1}`).trim(),
-      price_inr: Math.max(0, Number(item?.price_inr ?? fallback.price_inr ?? 0)),
-      delivery_time: String(item?.delivery_time || fallback.delivery_time || "").trim(),
+      price_inr: priceInr,
+      price_usd: Math.max(0, Number(item?.price_usd ?? fallback.price_usd ?? inrToUsd(priceInr))),
+      delivery: String(item?.delivery || item?.delivery_time || fallback.delivery || fallback.delivery_time || "").trim(),
       revisions: String(item?.revisions || fallback.revisions || "").trim(),
-      note: String(item?.note || fallback.note || "").trim(),
-      features: featureSource.map(feature => String(feature || "").trim()).filter(Boolean).slice(0, 8)
+      duration: String(item?.duration || item?.note || fallback.duration || fallback.note || "").trim(),
+      isPopular: Boolean(item?.isPopular ?? fallback.isPopular ?? false),
+      features: featureSource.map(feature => String(feature || "").trim()).filter(Boolean).slice(0, 12)
     };
   }).filter(item => item.name || item.price_inr || item.features.length);
+}
+
+function normalizeServicePackages(items, fallbackPackages = []) {
+  return normalizeSectorPackages(items, fallbackPackages);
+}
+
+function normalizeServiceSectors(items, fallbackSectors = []) {
+  const base = Array.isArray(fallbackSectors) ? fallbackSectors : [];
+  const source = Array.isArray(items) && items.length ? items : base;
+  return source.map((item, index) => {
+    const fallback = base[index] || {};
+    return {
+      title: String(item?.title || fallback.title || `Sector ${index + 1}`).trim(),
+      description: String(item?.description || fallback.description || "").trim(),
+      packages: normalizeSectorPackages(item?.packages, fallback.packages || [])
+    };
+  }).filter(item => item.title || item.description || item.packages.length);
+}
+
+function flattenSectorPackages(sectors = []) {
+  return sectors.flatMap(sector => Array.isArray(sector?.packages) ? sector.packages : []).slice(0, 18);
+}
+
+function derivePricingBoundsFromSectors(sectors = []) {
+  const prices = flattenSectorPackages(sectors).map(item => Number(item?.price_inr || 0)).filter(item => item > 0);
+  if (!prices.length) return { min: 0, max: 0 };
+  return {
+    min: Math.min(...prices),
+    max: Math.max(...prices)
+  };
+}
+
+function deriveDeliverablesFromSectors(sectors = []) {
+  const seen = new Set();
+  const values = [];
+  for (const sector of sectors) {
+    for (const pkg of Array.isArray(sector?.packages) ? sector.packages : []) {
+      for (const feature of Array.isArray(pkg?.features) ? pkg.features : []) {
+        const clean = String(feature || "").trim();
+        if (!clean) continue;
+        const key = clean.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        values.push(clean);
+        if (values.length >= 6) return values;
+      }
+    }
+  }
+  return values;
 }
 
 function normalizeServiceRecord(record) {
   const fallback = serviceFallback(record?.slug) || {};
   const merged = { ...fallback, ...(record || {}) };
+  merged.sectors = normalizeServiceSectors(
+    Array.isArray(merged.sectors) && merged.sectors.length
+      ? merged.sectors
+      : (Array.isArray(merged.pricing_packages) && merged.pricing_packages.length
+          ? [{ title: `${merged.name || fallback.name || "Service"} Packages`, description: merged.valueProp || fallback.valueProp || "", packages: merged.pricing_packages }]
+          : (fallback.sectors || [])),
+    fallback.sectors || []
+  );
+  merged.pricing_packages = flattenSectorPackages(merged.sectors);
+  const bounds = derivePricingBoundsFromSectors(merged.sectors);
+  const fallbackBounds = derivePricingBoundsFromSectors(fallback.sectors || []);
+  merged.pricing_min_inr = Math.max(0, Number(merged.pricing_min_inr ?? bounds.min ?? fallback.pricing_min_inr ?? fallbackBounds.min ?? 0)) || bounds.min || fallback.pricing_min_inr || fallbackBounds.min || 0;
+  merged.pricing_max_inr = Math.max(
+    merged.pricing_min_inr,
+    Number(merged.pricing_max_inr ?? bounds.max ?? fallback.pricing_max_inr ?? fallbackBounds.max ?? merged.pricing_min_inr)
+  ) || bounds.max || fallback.pricing_max_inr || fallbackBounds.max || merged.pricing_min_inr;
+  const derivedDeliverables = deriveDeliverablesFromSectors(merged.sectors);
   merged.deliverables = Array.isArray(merged.deliverables) && merged.deliverables.length
-    ? merged.deliverables
-    : (fallback.deliverables || []);
-  merged.pricing_packages = normalizeServicePackages(merged.pricing_packages, fallback.pricing_packages || []);
-  merged.pricing_min_inr = Math.max(0, Number(merged.pricing_min_inr ?? fallback.pricing_min_inr ?? 0));
-  merged.pricing_max_inr = Math.max(merged.pricing_min_inr, Number(merged.pricing_max_inr ?? fallback.pricing_max_inr ?? merged.pricing_min_inr));
+    ? merged.deliverables.slice(0, 6)
+    : (derivedDeliverables.length ? derivedDeliverables : (fallback.deliverables || [])).slice(0, 6);
   return merged;
 }
 
@@ -971,6 +1247,11 @@ function formatInr(value) {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
+function formatUsd(value) {
+  const amount = Number(value || 0);
+  return `$${amount.toLocaleString("en-US")}`;
+}
+
 function serviceMatchValue(raw) {
   return String(raw || "").trim().toLowerCase();
 }
@@ -1005,6 +1286,7 @@ function renderServicePageHtml(req, service, recentWork) {
   const deliverables = Array.isArray(service.deliverables) && service.deliverables.length
     ? service.deliverables.slice(0, 6)
     : (serviceFallback(service.slug)?.deliverables || []).slice(0, 6);
+  const sectors = Array.isArray(service.sectors) ? service.sectors : [];
   const quoteServiceName = escapeHtml(service.name);
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1061,15 +1343,20 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
 .pricing-card,.portfolio-wrap,.cta-card{background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:24px}
 .price-range{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(2rem,4vw,3.3rem);letter-spacing:-.05em;margin:10px 0}
 .pricing-note{font-size:13px;line-height:1.8;color:var(--muted)}
+.catalogue-sector{margin-top:18px}
+.catalogue-sector:first-child{margin-top:0}
+.catalogue-sector-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:16px}
+.catalogue-sector-copy{font-size:13px;line-height:1.8;color:var(--muted);max-width:54ch}
 .package-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .package-card{background:var(--panel);border:1px solid var(--border);border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:14px}
 .package-card.featured{border-color:rgba(232,197,71,.3);box-shadow:0 16px 42px rgba(0,0,0,.24)}
 .package-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .package-name{font-size:21px;font-weight:800;letter-spacing:-.04em}
 .package-price{font-family:"Space Grotesk",system-ui,sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.05em}
+.package-currency{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.package-usd{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
 .package-meta{display:flex;gap:8px;flex-wrap:wrap}
 .package-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--border);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.package-note{font-size:13px;line-height:1.75;color:var(--muted)}
 .package-features{display:grid;gap:10px}
 .package-feature{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--text)}
 .package-feature::before{content:"✓";color:var(--accent);font-weight:900}
@@ -1168,26 +1455,39 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
     <section class="section">
       <div class="section-head">
         <div><h2 class="section-title">Packages & Pricing</h2></div>
-        <div class="section-copy">Choose a package as a starting point. Final pricing can still shift based on exact scope, integrations, and content volume.</div>
+        <div class="section-copy">Each sector below pulls live from the service catalogue. Final pricing can still shift based on exact scope, integrations, and content volume.</div>
       </div>
-      <div class="package-grid">
-        ${(Array.isArray(service.pricing_packages) ? service.pricing_packages : []).map((item, index) => `<article class="package-card ${index === 1 ? "featured" : ""}">
-          <div class="package-head">
-            <div>
-              <div class="eyebrow">${escapeHtml(item.name || `Package ${index + 1}`)}</div>
-              <div class="package-price">${escapeHtml(formatInr(item.price_inr || 0))}</div>
+      ${sectors.map((sector, sectorIndex) => `<div class="catalogue-sector">
+        <div class="catalogue-sector-head">
+          <div>
+            <div class="eyebrow">Sector ${String(sectorIndex + 1).padStart(2, "0")}</div>
+            <h3 class="section-title" style="margin-top:10px;font-size:clamp(1.3rem,2vw,1.9rem)">${escapeHtml(sector.title || `Sector ${sectorIndex + 1}`)}</h3>
+          </div>
+          <div class="catalogue-sector-copy">${escapeHtml(sector.description || "")}</div>
+        </div>
+        <div class="package-grid">
+          ${(Array.isArray(sector.packages) ? sector.packages : []).map((item, packageIndex) => `<article class="package-card ${(item.isPopular || packageIndex === 1) ? "featured" : ""}">
+            <div class="package-head">
+              <div>
+                <div class="eyebrow">${escapeHtml(item.name || `Package ${packageIndex + 1}`)}</div>
+                <div class="package-currency">
+                  <div class="package-price">${escapeHtml(formatInr(item.price_inr || 0))}</div>
+                  <div class="package-usd">${escapeHtml(formatUsd(item.price_usd || 0))}</div>
+                </div>
+              </div>
+              ${(item.isPopular || packageIndex === 1) ? `<span class="package-chip" style="color:var(--accent);border-color:rgba(232,197,71,.22)">Most Popular</span>` : ``}
             </div>
-          </div>
-          <div class="package-meta">
-            ${item.delivery_time ? `<span class="package-chip">${escapeHtml(item.delivery_time)}</span>` : ``}
-            ${item.revisions ? `<span class="package-chip">${escapeHtml(item.revisions)}</span>` : ``}
-          </div>
-          ${item.note ? `<div class="package-note">${escapeHtml(item.note)}</div>` : ``}
-          <div class="package-features">
-            ${(Array.isArray(item.features) ? item.features : []).map(feature => `<div class="package-feature">${escapeHtml(feature)}</div>`).join("")}
-          </div>
-        </article>`).join("")}
-      </div>
+            <div class="package-meta">
+              ${item.delivery ? `<span class="package-chip">${escapeHtml(item.delivery)}</span>` : ``}
+              ${item.duration ? `<span class="package-chip">${escapeHtml(item.duration)}</span>` : ``}
+              ${item.revisions ? `<span class="package-chip">${escapeHtml(item.revisions)}</span>` : ``}
+            </div>
+            <div class="package-features">
+              ${(Array.isArray(item.features) ? item.features : []).map(feature => `<div class="package-feature">${escapeHtml(feature)}</div>`).join("")}
+            </div>
+          </article>`).join("")}
+        </div>
+      </div>`).join("")}
     </section>
 
     <section class="section">
@@ -1605,7 +1905,9 @@ app.put("/api/services/:slug", async (req, res) => {
         deliverables.push(defaultService.deliverables[deliverables.length] || `Deliverable ${deliverables.length + 1}`);
       }
     }
-    const pricingPackages = normalizeServicePackages(req.body?.pricing_packages, defaultService.pricing_packages || []);
+    const sectors = normalizeServiceSectors(req.body?.sectors, defaultService.sectors || []);
+    const pricingPackages = flattenSectorPackages(sectors);
+    const bounds = derivePricingBoundsFromSectors(sectors);
 
     const updates = {
       name: String(req.body?.name || defaultService.name).trim() || defaultService.name,
@@ -1613,9 +1915,10 @@ app.put("/api/services/:slug", async (req, res) => {
       valueProp: String(req.body?.valueProp || defaultService.valueProp || "").trim() || defaultService.valueProp,
       meta_description: String(req.body?.meta_description || defaultService.meta_description || "").trim() || defaultService.meta_description,
       og_image_url: String(req.body?.og_image_url || defaultService.og_image_url || "").trim() || defaultService.og_image_url,
-      pricing_min_inr: Math.max(0, Number(req.body?.pricing_min_inr || defaultService.pricing_min_inr || 0)),
-      pricing_max_inr: Math.max(0, Number(req.body?.pricing_max_inr || defaultService.pricing_max_inr || 0)),
+      pricing_min_inr: Math.max(0, Number(req.body?.pricing_min_inr || bounds.min || defaultService.pricing_min_inr || 0)),
+      pricing_max_inr: Math.max(0, Number(req.body?.pricing_max_inr || bounds.max || defaultService.pricing_max_inr || 0)),
       deliverables,
+      sectors,
       pricing_packages: pricingPackages,
       updatedAt: new Date()
     };
