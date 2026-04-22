@@ -463,6 +463,9 @@ canvas#revChart{max-height:220px}
       <div class="sb-item" id="nav-services" onclick="nav('services')">
         <div class="sb-il"><span class="sb-icon">◌</span><span class="sb-label">Services</span></div>
       </div>
+      <div class="sb-item" id="nav-packages" onclick="nav('packages')">
+        <div class="sb-il"><span class="sb-icon">◭</span><span class="sb-label">Packages & Pricing</span></div>
+      </div>
       <div class="sb-sec">Hiring</div>
       <div class="sb-item" id="nav-app-new" onclick="nav('app-new')">
         <div class="sb-il"><span class="sb-icon">⚡</span><span class="sb-label">New</span></div><span class="sb-count" id="cnt-app-new">0</span>
@@ -663,6 +666,9 @@ canvas#revChart{max-height:220px}
       <!-- SERVICES -->
       <div class="view" id="view-services">
         <div id="services-admin-content"></div>
+      </div>
+      <div class="view" id="view-packages">
+        <div id="packages-admin-content"></div>
       </div>
 
       <!-- HIRING VIEWS -->
@@ -956,8 +962,31 @@ let currentBoardEditId = null;
 let currentServiceSlug = "web-development";
 let revChart = null;
 
+function defaultSectorDraft(service){
+  return [{
+    title: `${service.name || "Service"} Packages`,
+    description: service.valueProp || "Package groups for this service.",
+    packages: [
+      {
+        name: "Basic",
+        price_inr: Number(service.pricing_min_inr || 0),
+        price_usd: Math.max(0, Math.round(Number(service.pricing_min_inr || 0) / 83)),
+        delivery: "",
+        revisions: "",
+        duration: "",
+        isPopular: false,
+        features: (Array.isArray(service.deliverables) ? service.deliverables : []).slice(0, 6)
+      }
+    ]
+  }];
+}
+
 function defaultServiceEntries(){
-  return SERVICE_CLIENT_DEFAULTS.map(item => ({ ...item, deliverables: [...item.deliverables] }));
+  return SERVICE_CLIENT_DEFAULTS.map(item => ({
+    ...item,
+    deliverables: [...item.deliverables],
+    sectors: defaultSectorDraft(item)
+  }));
 }
 
 function normalizeServiceEntries(items){
@@ -972,7 +1001,10 @@ function normalizeServiceEntries(items){
         ...item,
         deliverables: Array.isArray(item.deliverables) && item.deliverables.length
           ? item.deliverables
-          : (base.deliverables || [])
+          : (base.deliverables || []),
+        sectors: Array.isArray(item.sectors) && item.sectors.length
+          ? item.sectors
+          : (base.sectors || defaultSectorDraft(base))
       });
     });
   }
@@ -1011,7 +1043,10 @@ async function loadServicesData(options = {}){
   if (!silent) {
     serviceState.loading = true;
     serviceState.error = "";
-    if (render) renderServicesManager();
+    if (render) {
+      if (activeAdminView === "packages") renderPackagesPricingManager();
+      else renderServicesManager();
+    }
   }
 
   try{
@@ -1030,7 +1065,10 @@ async function loadServicesData(options = {}){
   }finally{
     if (!silent) {
       serviceState.loading = false;
-      if (render) renderServicesManager();
+      if (render) {
+        if (activeAdminView === "packages") renderPackagesPricingManager();
+        else renderServicesManager();
+      }
     }
   }
 }
@@ -1103,7 +1141,7 @@ function updateAllCounts(){
 
 /* ── NAV ── */
 const NAV_TITLE={
-  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',services:'Services',
+  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',services:'Services',packages:'Packages & Pricing',
   'app-new':'Hiring — New','app-reviewing':'Hiring — Reviewing','app-accepted':'Hiring — Accepted',
   'app-hired':'Hiring — Members','app-rejected':'Hiring — Rejected',
   'prj-new':'Projects — New','prj-reviewing':'Projects — Reviewing','prj-accepted':'Projects — Accepted',
@@ -1143,6 +1181,7 @@ function closeSidebar(){
 function renderAllViews(){
   safeAdminRender('board-manager', ()=>renderBoardManager());
   safeAdminRender('services-manager', ()=>renderServicesManager());
+  safeAdminRender('packages-manager', ()=>renderPackagesPricingManager());
   APP_STS.forEach(s=>safeAdminRender(`app-${s}`, ()=>renderView('app',s)));
   PRJ_STS.forEach(s=>safeAdminRender(`prj-${s}`, ()=>renderView('prj',s)));
 }
@@ -2384,7 +2423,7 @@ function renderServicesManager(){
         <div class="service-admin-head">
           <div>
             <div class="service-admin-title">Service list</div>
-            <div class="service-admin-sub">Choose a service to edit the deep-dive page, homepage pricing, and public quote content.</div>
+            <div class="service-admin-sub">Choose a service to edit the page content, SEO copy, and deliverables. Pricing lives in the separate Packages & Pricing section.</div>
           </div>
         </div>
         <div class="service-admin-list">
@@ -2392,7 +2431,7 @@ function renderServicesManager(){
             <button class="service-admin-item ${item.slug===current.slug?"active":""}" type="button" onclick="selectServiceSlug('${escapeHtml(item.slug)}')">
               <div class="service-admin-item-top">
                 <div class="service-admin-item-name">${escapeHtml(item.name||"Service")}</div>
-                <div class="service-admin-item-price">${escapeHtml(formatInrRange(item.pricing_min_inr,item.pricing_max_inr))}</div>
+                <div class="service-admin-item-price">${Array.isArray(item.sectors) ? item.sectors.length : 0} sectors</div>
               </div>
               <div class="service-admin-meta">
                 <span class="service-admin-pill">${escapeHtml(item.shortLabel||"Service")}</span>
@@ -2407,7 +2446,7 @@ function renderServicesManager(){
         <div class="service-admin-head">
           <div>
             <div class="service-admin-title">Edit ${escapeHtml(current.name||"service")}</div>
-            <div class="service-admin-sub">Changes publish to the homepage service section, the `/services/[slug]` page, and the mobile quote prompt.</div>
+            <div class="service-admin-sub">Changes publish to the homepage service section and the `/services/[slug]` page. Use Packages & Pricing for commercial package editing.</div>
           </div>
           <a class="btn-sm" href="/services/${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Page</a>
         </div>
@@ -2419,10 +2458,6 @@ function renderServicesManager(){
           </div>
           <div class="form-row full">
             <div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">${escapeHtml(current.valueProp||"")}</textarea></div>
-          </div>
-          <div class="service-admin-form-row">
-            <div class="form-field"><label>Pricing Min (INR)</label><input id="service-pricing-min" type="number" min="0" step="100" value="${Number(current.pricing_min_inr||0)}"></div>
-            <div class="form-field"><label>Pricing Max (INR)</label><input id="service-pricing-max" type="number" min="0" step="100" value="${Number(current.pricing_max_inr||0)}"></div>
           </div>
           <div class="form-row full">
             <div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">${escapeHtml(current.meta_description||"")}</textarea></div>
@@ -2441,7 +2476,7 @@ function renderServicesManager(){
               `).join("")}
             </div>
           </div>
-          <div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div>
+          <div class="service-admin-note">Package rows, prices, delivery, revisions, and sector groups are managed in the dedicated Packages & Pricing screen.</div>
           <div class="service-admin-actions">
             <button class="btn-sm" type="button" onclick="renderServicesManager()">Reset</button>
             <button class="btn-sm primary" type="button" onclick="saveServiceConfig()" ${serviceState.saving ? "disabled" : ""}>${serviceState.saving ? "Saving…" : "Save Service"}</button>
@@ -2462,7 +2497,8 @@ function formatINR(amount){
 
 function selectServiceSlug(slug){
   currentServiceSlug=slug;
-  renderServicesManager();
+  if (activeAdminView === "packages") renderPackagesPricingManager();
+  else renderServicesManager();
 }
 
 async function reloadServicesManager(){
@@ -2471,7 +2507,7 @@ async function reloadServicesManager(){
 
 async function refreshAdminData(){
   await loadAll();
-  if (activeAdminView === "services") {
+  if (activeAdminView === "services" || activeAdminView === "packages") {
     await reloadServicesManager();
   }
 }
@@ -2491,8 +2527,6 @@ async function saveServiceConfig(){
     valueProp:document.getElementById("service-value-prop")?.value.trim(),
     meta_description:document.getElementById("service-meta-description")?.value.trim(),
     og_image_url:document.getElementById("service-og-image")?.value.trim(),
-    pricing_min_inr:Number(document.getElementById("service-pricing-min")?.value||0),
-    pricing_max_inr:Number(document.getElementById("service-pricing-max")?.value||0),
     deliverables
   };
   serviceState.saving = true;
@@ -2523,6 +2557,217 @@ async function saveServiceConfig(){
   }finally{
     serviceState.saving = false;
     renderServicesManager();
+  }
+}
+
+function getPackageEditorSectors(current){
+  const sectors = Array.isArray(current?.sectors) && current.sectors.length ? current.sectors : defaultSectorDraft(current || {});
+  return sectors.map(sector => ({
+    ...sector,
+    packages: Array.isArray(sector.packages) && sector.packages.length ? sector.packages : [{ name:"Basic", price_inr:0, price_usd:0, delivery:"", revisions:"", duration:"", isPopular:false, features:[""] }]
+  }));
+}
+
+function renderPackagesPricingManager(){
+  const el=document.getElementById("packages-admin-content");
+  if(!el) return;
+  if(serviceState.loading && (!Array.isArray(serviceEntries) || !serviceEntries.length)){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">Loading packages</div><div class="empty-sub">Fetching the latest catalogue configuration from the backend.</div></div>`;
+    return;
+  }
+  const current=getCurrentServiceEntry();
+  if(!current){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">Packages unavailable</div><div class="empty-sub">${escapeHtml(serviceState.error || "We could not load the package list right now.")}</div></div>`;
+    return;
+  }
+  const sectors=getPackageEditorSectors(current);
+  el.innerHTML=`
+    <div class="view-hdr">
+      <span class="view-hdr-title">Packages & Pricing</span>
+      <span class="view-hdr-count">${serviceEntries.length} service lines${serviceState.saving ? " · saving…" : ""}</span>
+      <div class="vhdr-right">
+        <button class="btn-sm" type="button" onclick="reloadServicesManager()" ${serviceState.loading ? "disabled" : ""}>Refresh Catalogue</button>
+      </div>
+    </div>
+    <div class="service-admin-layout">
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Service list</div>
+            <div class="service-admin-sub">Select the service whose package matrix you want to edit.</div>
+          </div>
+        </div>
+        <div class="service-admin-list">
+          ${serviceEntries.map(item=>`
+            <button class="service-admin-item ${item.slug===current.slug?"active":""}" type="button" onclick="selectServiceSlug('${escapeHtml(item.slug)}');renderPackagesPricingManager()">
+              <div class="service-admin-item-top">
+                <div class="service-admin-item-name">${escapeHtml(item.name||"Service")}</div>
+                <div class="service-admin-item-price">${escapeHtml(formatInrRange(item.pricing_min_inr,item.pricing_max_inr))}</div>
+              </div>
+              <div class="service-admin-item-copy" style="margin-top:10px">${Array.isArray(item.sectors) ? item.sectors.length : 0} sectors · ${(Array.isArray(item.pricing_packages) ? item.pricing_packages.length : 0)} packages</div>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Edit ${escapeHtml(current.name||"service")} packages</div>
+            <div class="service-admin-sub">This is the commercial layer visitors see on the Packages & Pricing page and from each service page.</div>
+          </div>
+          <a class="btn-sm" href="/packages-pricing?service=${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Public Page</a>
+        </div>
+        <div class="service-admin-form">
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Pricing Min (INR)</label><input id="package-pricing-min" type="number" min="0" step="100" value="${Number(current.pricing_min_inr||0)}"></div>
+            <div class="form-field"><label>Pricing Max (INR)</label><input id="package-pricing-max" type="number" min="0" step="100" value="${Number(current.pricing_max_inr||0)}"></div>
+          </div>
+          <div style="display:grid;gap:14px">
+            ${sectors.map((sector,sectorIndex)=>`
+              <div data-sector-card style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)">
+                <div class="service-admin-form-row">
+                  <div class="form-field"><label>Sector Title</label><input type="text" data-sector-title value="${escapeHtml(sector.title||"")}"></div>
+                  <div class="form-field"><label>Sector Description</label><input type="text" data-sector-description value="${escapeHtml(sector.description||"")}"></div>
+                </div>
+                <div style="display:grid;gap:12px;margin-top:12px">
+                  ${sector.packages.map((pkg,packageIndex)=>{
+                    const features=(Array.isArray(pkg.features)&&pkg.features.length?pkg.features:[""]);
+                    return `
+                      <div data-package-card style="border:1px solid var(--border2);border-radius:14px;padding:14px;background:rgba(255,255,255,.02)">
+                        <div class="service-admin-form-row">
+                          <div class="form-field"><label>Package Name</label><input type="text" data-package-name value="${escapeHtml(pkg.name||"")}"></div>
+                          <div class="form-field"><label>Price (INR)</label><input type="number" min="0" step="100" data-package-price value="${Number(pkg.price_inr||0)}"></div>
+                        </div>
+                        <div class="service-admin-form-row">
+                          <div class="form-field"><label>Price (USD)</label><input type="number" min="0" step="1" data-package-usd value="${Number(pkg.price_usd||0)}"></div>
+                          <div class="form-field"><label>Duration</label><input type="text" data-package-duration value="${escapeHtml(pkg.duration||"")}"></div>
+                        </div>
+                        <div class="service-admin-form-row">
+                          <div class="form-field"><label>Delivery</label><input type="text" data-package-delivery value="${escapeHtml(pkg.delivery||pkg.delivery_time||"")}"></div>
+                          <div class="form-field"><label>Revisions</label><input type="text" data-package-revisions value="${escapeHtml(pkg.revisions||"")}"></div>
+                        </div>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)"><input type="checkbox" data-package-popular ${pkg.isPopular ? "checked" : ""}> Most popular</label>
+                        <div style="display:grid;gap:8px;margin-top:10px">
+                          ${features.map(feature=>`<input type="text" data-package-feature value="${escapeHtml(feature)}" placeholder="Feature">`).join("")}
+                        </div>
+                        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px">
+                          <button class="btn-sm" type="button" onclick="addPackageFeature(${sectorIndex},${packageIndex})">+ Add Feature</button>
+                          <button class="btn-sm" type="button" onclick="removePackageRow(${sectorIndex},${packageIndex})">Remove Package</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join("")}
+                </div>
+                <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px">
+                  <button class="btn-sm" type="button" onclick="addPackageRow(${sectorIndex})">+ Add Package</button>
+                  <button class="btn-sm" type="button" onclick="removeSectorRow(${sectorIndex})">Remove Sector</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+          <div style="margin-top:12px"><button class="btn-sm" type="button" onclick="addSectorRow()">+ Add Sector</button></div>
+          <div class="service-admin-actions">
+            <button class="btn-sm" type="button" onclick="renderPackagesPricingManager()">Reset</button>
+            <button class="btn-sm primary" type="button" onclick="savePackagesPricingConfig()" ${serviceState.saving ? "disabled" : ""}>${serviceState.saving ? "Saving…" : "Save Packages"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function addSectorRow(){
+  const current=getCurrentServiceEntry();
+  if(!current) return;
+  current.sectors = Array.isArray(current.sectors) ? current.sectors : [];
+  current.sectors.push({ title:"New Sector", description:"", packages:[{ name:"Basic", price_inr:0, price_usd:0, delivery:"", revisions:"", duration:"", isPopular:false, features:[""] }] });
+  renderPackagesPricingManager();
+}
+
+function removeSectorRow(sectorIndex){
+  const current=getCurrentServiceEntry();
+  if(!current || !Array.isArray(current.sectors)) return;
+  current.sectors.splice(sectorIndex,1);
+  renderPackagesPricingManager();
+}
+
+function addPackageRow(sectorIndex){
+  const current=getCurrentServiceEntry();
+  if(!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex]) return;
+  current.sectors[sectorIndex].packages = Array.isArray(current.sectors[sectorIndex].packages) ? current.sectors[sectorIndex].packages : [];
+  current.sectors[sectorIndex].packages.push({ name:"New Package", price_inr:0, price_usd:0, delivery:"", revisions:"", duration:"", isPopular:false, features:[""] });
+  renderPackagesPricingManager();
+}
+
+function removePackageRow(sectorIndex,packageIndex){
+  const current=getCurrentServiceEntry();
+  if(!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex] || !Array.isArray(current.sectors[sectorIndex].packages)) return;
+  current.sectors[sectorIndex].packages.splice(packageIndex,1);
+  renderPackagesPricingManager();
+}
+
+function addPackageFeature(sectorIndex,packageIndex){
+  const current=getCurrentServiceEntry();
+  if(!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex] || !Array.isArray(current.sectors[sectorIndex].packages) || !current.sectors[sectorIndex].packages[packageIndex]) return;
+  current.sectors[sectorIndex].packages[packageIndex].features = Array.isArray(current.sectors[sectorIndex].packages[packageIndex].features) ? current.sectors[sectorIndex].packages[packageIndex].features : [];
+  current.sectors[sectorIndex].packages[packageIndex].features.push("");
+  renderPackagesPricingManager();
+}
+
+async function savePackagesPricingConfig(){
+  if(!currentAdminToken){
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+  const current=getCurrentServiceEntry();
+  if(!current) return;
+  const payload={
+    pricing_min_inr:Number(document.getElementById("package-pricing-min")?.value||0),
+    pricing_max_inr:Number(document.getElementById("package-pricing-max")?.value||0),
+    sectors:[...document.querySelectorAll('[data-sector-card]')].map(sectorCard=>({
+      title:sectorCard.querySelector('[data-sector-title]')?.value.trim()||"",
+      description:sectorCard.querySelector('[data-sector-description]')?.value.trim()||"",
+      packages:[...sectorCard.querySelectorAll('[data-package-card]')].map(card=>({
+        name:card.querySelector('[data-package-name]')?.value.trim()||"",
+        price_inr:Number(card.querySelector('[data-package-price]')?.value||0),
+        price_usd:Number(card.querySelector('[data-package-usd]')?.value||0),
+        delivery:card.querySelector('[data-package-delivery]')?.value.trim()||"",
+        revisions:card.querySelector('[data-package-revisions]')?.value.trim()||"",
+        duration:card.querySelector('[data-package-duration]')?.value.trim()||"",
+        isPopular:!!card.querySelector('[data-package-popular]')?.checked,
+        features:[...card.querySelectorAll('[data-package-feature]')].map(input=>input.value.trim()).filter(Boolean)
+      })).filter(item=>item.name || item.price_inr || item.features.length)
+    })).filter(item=>item.title || item.description || item.packages.length)
+  };
+  serviceState.saving = true;
+  serviceState.error = "";
+  renderPackagesPricingManager();
+  try{
+    const response=await fetch(`${API}/api/services/${current.slug}`,{
+      method:"PUT",
+      headers:adminAuthHeaders({"Content-Type":"application/json"}),
+      body:JSON.stringify(payload)
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      serviceState.error = data.error || "Could not save packages";
+      showToast(data.error||"Could not save packages");
+      return;
+    }
+    const updated={...data,id:data._id||data.id};
+    serviceEntries=serviceEntries.map(item=>item.slug===updated.slug?updated:item);
+    currentServiceSlug=updated.slug;
+    serviceState.ready = true;
+    serviceState.error = "";
+    renderPackagesPricingManager();
+    showToast("Packages updated");
+  }catch{
+    serviceState.error = "Could not save packages";
+    showToast("Could not save packages");
+  }finally{
+    serviceState.saving = false;
+    renderPackagesPricingManager();
   }
 }
 
@@ -3197,7 +3442,7 @@ const ADMIN_SESSION_KEY = "ym_admin_session";
 const ADMIN_REMEMBER_KEY = "ym_admin_remember";
 const ADMIN_USERNAME_KEY = "ym_admin_username";
 const ADMIN_PAGE_SET = new Set([
-  "overview", "revenue", "comm", "chat", "board", "services",
+  "overview", "revenue", "comm", "chat", "board", "services", "packages",
   "app-new", "app-reviewing", "app-hired", "app-rejected",
   "prj-new", "prj-reviewing", "prj-accepted", "prj-assigning",
   "prj-assigned", "prj-inprogress", "prj-completed", "prj-rejected"
@@ -3246,14 +3491,15 @@ function sanitizeAdminPage(page) {
 function getAdminPageFromLocation() {
   const pathname = String(window.location.pathname || "").replace(/\/+$/, "");
   if (pathname === "/admin/services") return "services";
+  if (pathname === "/admin/packages-pricing") return "packages";
   const hash = String(window.location.hash || "").replace(/^#/, "");
   return sanitizeAdminPage(hash.startsWith("admin-") ? hash.slice(6) : "overview");
 }
 
 function setAdminHistory(page, mode = "push") {
   const cleanPage = sanitizeAdminPage(page);
-  const basePath = cleanPage === "services" ? "/admin/services" : "/admin";
-  const hash = cleanPage === "services" ? "" : `#admin-${cleanPage}`;
+  const basePath = cleanPage === "services" ? "/admin/services" : cleanPage === "packages" ? "/admin/packages-pricing" : "/admin";
+  const hash = cleanPage === "services" || cleanPage === "packages" ? "" : `#admin-${cleanPage}`;
   const url = `${basePath}${window.location.search}${hash}`;
   const state = { panel: "admin", page: cleanPage };
   if (mode === "replace") history.replaceState(state, "", url);
@@ -3488,7 +3734,7 @@ nav = function(page, options = {}) {
   const cleanPage = sanitizeAdminPage(page);
   activeAdminView = cleanPage;
   baseAdminNav(cleanPage);
-  if (cleanPage === "services") {
+  if (cleanPage === "services" || cleanPage === "packages") {
     loadServicesData({ render: true });
   }
   if (currentAdmin) {

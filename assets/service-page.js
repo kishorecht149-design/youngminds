@@ -252,7 +252,7 @@
           <div class="hero-copy">${escapeHtml(service.valueProp || "")}</div>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/#forms">Ready to start? Hire us</a>
-            <a class="btn btn-ghost" href="/#forms">Use calculator</a>
+            <a class="btn btn-ghost" href="/packages-pricing/?service=${encodeURIComponent(slug)}">Packages & Pricing</a>
           </div>
         </div>
         <div class="hero-side">
@@ -307,8 +307,8 @@
           <div class="section-card">
             <span class="eyebrow">Pricing Range</span>
             <div class="price-range">${escapeHtml(formatInr(service.pricing_min_inr || 0))} - ${escapeHtml(formatInr(service.pricing_max_inr || 0))}</div>
-            <div class="pricing-note">Final price depends on scope - use the calculator for an estimate.</div>
-            <div style="margin-top:18px"><a class="btn btn-primary" href="/#forms">Open pricing calculator</a></div>
+            <div class="pricing-note">Final price depends on scope. Review packages and pricing first, then we can tailor the exact scope.</div>
+            <div style="margin-top:18px"><a class="btn btn-primary" href="/packages-pricing/?service=${encodeURIComponent(slug)}">Open packages & pricing</a></div>
           </div>
           <div class="section-card">
             <span class="eyebrow">Why Teams Choose This</span>

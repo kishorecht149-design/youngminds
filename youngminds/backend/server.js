@@ -60,6 +60,7 @@ function adminServicesHotfixScript() {
   function currentAdminPage() {
     const pathname = String(window.location.pathname || "").replace(/\\/+$/, "");
     if (pathname === "/admin/services") return "services";
+    if (pathname === "/admin/packages-pricing") return "packages";
     return String(window.activeAdminView || "");
   }
 
@@ -151,21 +152,12 @@ function adminServicesHotfixScript() {
     }
 
     const deliverables = Array.isArray(current.deliverables) ? current.deliverables.slice(0, 6) : [];
-    const sectorDrafts = getSectorDrafts(current);
     while (deliverables.length < 6) deliverables.push("");
-    mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page, homepage pricing, and public quote content.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
-      return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(formatINR(item.pricing_min_inr) + " - " + formatINR(item.pricing_max_inr)) + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
-    }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section, the /services/[slug] page, and the mobile quote prompt.</div></div><a class="btn-sm" href="/services/' + escapeHtml(current.slug) + '" target="_blank" rel="noopener">Open Page</a></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="service-admin-form-row"><div class="form-field"><label>Pricing Min (INR)</label><input id="service-pricing-min" type="number" min="0" step="100" value="' + Number(current.pricing_min_inr || 0) + '"></div><div class="form-field"><label>Pricing Max (INR)</label><input id="service-pricing-max" type="number" min="0" step="100" value="' + Number(current.pricing_max_inr || 0) + '"></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
+    mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page copy and public messaging. Packages and pricing now live on their own page.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
+      return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(String(Array.isArray(item.sectors) ? item.sectors.length : 0) + " sectors") + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
+    }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section and the /services/[slug] page. Use the dedicated Packages & Pricing screen for sectors, packages, and price cards.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn-sm" href="/services/' + escapeHtml(current.slug) + '" target="_blank" rel="noopener">Open Page</a><a class="btn-sm" href="/admin/packages-pricing" rel="noopener">Packages & Pricing</a></div></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
       return '<div class="service-admin-deliverable"><div class="service-admin-deliverable-num">' + String(index + 1).padStart(2, "0") + '</div><div class="form-field" style="margin:0;flex:1"><label>Deliverable ' + (index + 1) + '</label><input type="text" data-service-deliverable value="' + escapeHtml(item) + '"></div></div>';
-    }).join("") + '</div></div><div><div class="dp-sec-title" style="margin:16px 0 14px">Catalogue Sectors</div><div style="display:grid;gap:14px">' + sectorDrafts.map(function(sector, sectorIndex){
-      const packages = Array.isArray(sector.packages) && sector.packages.length ? sector.packages : [{ name: "Basic", price_inr: 0, price_usd: 0, delivery: "", revisions: "", duration: "", isPopular: false, features: [""] }];
-      return '<div data-sector-card style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)"><div class="service-admin-form-row"><div class="form-field"><label>Sector Title</label><input type="text" data-sector-title value="' + escapeHtml(sector.title || "") + '"></div><div class="form-field"><label>Sector Description</label><input type="text" data-sector-description value="' + escapeHtml(sector.description || "") + '"></div></div><div style="display:grid;gap:12px;margin-top:12px">' + packages.map(function(pkg, packageIndex){
-        const features = Array.isArray(pkg.features) && pkg.features.length ? pkg.features.slice(0, 12) : [""];
-        return '<div data-package-card style="border:1px solid var(--border2);border-radius:14px;padding:14px;background:rgba(255,255,255,.02)"><div class="service-admin-form-row"><div class="form-field"><label>Package Name</label><input type="text" data-package-name value="' + escapeHtml(pkg.name || "") + '"></div><div class="form-field"><label>Price (INR)</label><input type="number" min="0" step="100" data-package-price value="' + Number(pkg.price_inr || 0) + '"></div></div><div class="service-admin-form-row"><div class="form-field"><label>Price (USD)</label><input type="number" min="0" step="1" data-package-usd value="' + Number(pkg.price_usd || 0) + '"></div><div class="form-field"><label>Duration</label><input type="text" data-package-duration value="' + escapeHtml(pkg.duration || "") + '"></div></div><div class="service-admin-form-row"><div class="form-field"><label>Delivery</label><input type="text" data-package-delivery value="' + escapeHtml(pkg.delivery || pkg.delivery_time || "") + '"></div><div class="form-field"><label>Revisions</label><input type="text" data-package-revisions value="' + escapeHtml(pkg.revisions || "") + '"></div></div><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted3)"><input type="checkbox" data-package-popular ' + (pkg.isPopular ? 'checked' : '') + '> Most popular</label><div style="display:grid;gap:8px;margin-top:10px">' + features.map(function(feature){
-          return '<input type="text" data-package-feature value="' + escapeHtml(feature) + '" placeholder="Feature">';
-        }).join("") + '</div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddFeature(' + sectorIndex + ',' + packageIndex + ')">+ Add Feature</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRemovePackage(' + sectorIndex + ',' + packageIndex + ')">Remove Package</button></div></div>';
-      }).join("") + '</div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddPackage(' + sectorIndex + ')">+ Add Package</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRemoveSector(' + sectorIndex + ')">Remove Sector</button></div></div>';
-    }).join("") + '</div><div style="margin-top:12px"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesAddSector()">+ Add Sector</button></div></div><div class="service-admin-note">Final price depends on scope, so the public page still points visitors to the calculator while showing this range.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
+    }).join("") + '</div></div><div class="service-admin-note">Keep package tables, sectors, and price ranges in the separate Packages & Pricing screen so service content stays simple and easier to edit.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
   }
 
   async function syncAdminServices(render, forceFallback) {
@@ -210,31 +202,9 @@ function adminServicesHotfixScript() {
       valueProp: document.getElementById("service-value-prop") ? document.getElementById("service-value-prop").value.trim() : "",
       meta_description: document.getElementById("service-meta-description") ? document.getElementById("service-meta-description").value.trim() : "",
       og_image_url: document.getElementById("service-og-image") ? document.getElementById("service-og-image").value.trim() : "",
-      pricing_min_inr: Number((document.getElementById("service-pricing-min") || {}).value || 0),
-      pricing_max_inr: Number((document.getElementById("service-pricing-max") || {}).value || 0),
       deliverables: Array.prototype.slice.call(document.querySelectorAll("[data-service-deliverable]")).map(function(input){
         return String(input.value || "").trim();
-      }).filter(Boolean),
-      sectors: Array.prototype.slice.call(document.querySelectorAll("[data-sector-card]")).map(function(sectorCard){
-        return {
-          title: ((sectorCard.querySelector("[data-sector-title]") || {}).value || "").trim(),
-          description: ((sectorCard.querySelector("[data-sector-description]") || {}).value || "").trim(),
-          packages: Array.prototype.slice.call(sectorCard.querySelectorAll("[data-package-card]")).map(function(card){
-            return {
-              name: ((card.querySelector("[data-package-name]") || {}).value || "").trim(),
-              price_inr: Number(((card.querySelector("[data-package-price]") || {}).value || 0)),
-              price_usd: Number(((card.querySelector("[data-package-usd]") || {}).value || 0)),
-              delivery: ((card.querySelector("[data-package-delivery]") || {}).value || "").trim(),
-              revisions: ((card.querySelector("[data-package-revisions]") || {}).value || "").trim(),
-              duration: ((card.querySelector("[data-package-duration]") || {}).value || "").trim(),
-              isPopular: !!((card.querySelector("[data-package-popular]") || {}).checked),
-              features: Array.prototype.slice.call(card.querySelectorAll("[data-package-feature]")).map(function(input){
-                return String(input.value || "").trim();
-              }).filter(Boolean)
-            };
-          }).filter(function(item){ return item.name || item.price_inr || item.features.length; })
-        };
-      }).filter(function(item){ return item.title || item.description || (Array.isArray(item.packages) && item.packages.length); })
+      }).filter(Boolean)
     };
     state.saving = true;
     state.error = "";
@@ -269,39 +239,6 @@ function adminServicesHotfixScript() {
   window.__ymStandaloneServicesReload = function(){ return syncAdminServices(true, false); };
   window.__ymStandaloneServicesLoadDefaults = function(){ return syncAdminServices(true, true); };
   window.__ymStandaloneServicesSave = saveStandalone;
-  window.__ymStandaloneServicesAddSector = function(){
-    const current = getCurrentEntry();
-    if (!current) return;
-    current.sectors = Array.isArray(current.sectors) ? current.sectors : [];
-    current.sectors.push({ title: "New Sector", description: "", packages: [{ name: "Basic", price_inr: 0, price_usd: 0, delivery: "", revisions: "", duration: "", isPopular: false, features: [""] }] });
-    renderStandalone();
-  };
-  window.__ymStandaloneServicesRemoveSector = function(index){
-    const current = getCurrentEntry();
-    if (!current || !Array.isArray(current.sectors)) return;
-    current.sectors.splice(index, 1);
-    renderStandalone();
-  };
-  window.__ymStandaloneServicesAddPackage = function(sectorIndex){
-    const current = getCurrentEntry();
-    if (!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex]) return;
-    current.sectors[sectorIndex].packages = Array.isArray(current.sectors[sectorIndex].packages) ? current.sectors[sectorIndex].packages : [];
-    current.sectors[sectorIndex].packages.push({ name: "New Package", price_inr: 0, price_usd: 0, delivery: "", revisions: "", duration: "", isPopular: false, features: [""] });
-    renderStandalone();
-  };
-  window.__ymStandaloneServicesRemovePackage = function(sectorIndex, packageIndex){
-    const current = getCurrentEntry();
-    if (!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex] || !Array.isArray(current.sectors[sectorIndex].packages)) return;
-    current.sectors[sectorIndex].packages.splice(packageIndex, 1);
-    renderStandalone();
-  };
-  window.__ymStandaloneServicesAddFeature = function(sectorIndex, packageIndex){
-    const current = getCurrentEntry();
-    if (!current || !Array.isArray(current.sectors) || !current.sectors[sectorIndex] || !Array.isArray(current.sectors[sectorIndex].packages) || !current.sectors[sectorIndex].packages[packageIndex]) return;
-    current.sectors[sectorIndex].packages[packageIndex].features = Array.isArray(current.sectors[sectorIndex].packages[packageIndex].features) ? current.sectors[sectorIndex].packages[packageIndex].features : [];
-    current.sectors[sectorIndex].packages[packageIndex].features.push("");
-    renderStandalone();
-  };
   window.__ymStandaloneServicesSelect = function(slug){
     state.slug = slug;
     renderStandalone();
@@ -386,10 +323,11 @@ function sendShellFile(res, fileName) {
 
 app.get("/admin",  (req, res) => sendShellFile(res, "n.html"));
 app.get("/admin/services",  (req, res) => sendShellFile(res, "n.html"));
+app.get("/admin/packages-pricing",  (req, res) => sendShellFile(res, "n.html"));
 app.get("/member", (req, res) => sendShellFile(res, "s.html"));
 app.get("/portal/projects", (req, res) => sendShellFile(res, "s.html"));
 app.get("/hire",   (req, res) => sendShellFile(res, "p.html"));
-app.get("/pricing-calculator", (req, res) => res.redirect("/hire#forms"));
+app.get("/pricing-calculator", (req, res) => res.redirect("/packages-pricing"));
 app.use("/static", express.static(rootDir));
 app.use("/uploads", express.static(uploadsDir));
 
@@ -1402,7 +1340,7 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
         <p>${escapeHtml(service.valueProp || "")}</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
           <a class="btn btn-primary" href="/hire">Ready to start? Hire us</a>
-          <a class="btn btn-ghost" href="/pricing-calculator">Use calculator</a>
+          <a class="btn btn-ghost" href="/packages-pricing?service=${encodeURIComponent(service.slug || "")}">Packages & Pricing</a>
         </div>
       </div>
       <div class="hero-kpis">
@@ -1442,8 +1380,8 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
         <div class="pricing-card">
           <div class="eyebrow">Pricing Range</div>
           <div class="price-range">${escapeHtml(formatInr(service.pricing_min_inr))} – ${escapeHtml(formatInr(service.pricing_max_inr))}</div>
-          <div class="pricing-note">Final price depends on scope — use calculator for estimate.</div>
-          <div style="margin-top:18px"><a class="btn btn-primary" href="/pricing-calculator">Open pricing calculator</a></div>
+          <div class="pricing-note">Final price depends on scope. Review packages and pricing first, then we can tailor the exact scope.</div>
+          <div style="margin-top:18px"><a class="btn btn-primary" href="/packages-pricing?service=${encodeURIComponent(service.slug || "")}">Open packages & pricing</a></div>
         </div>
         <div class="portfolio-wrap">
           <div class="eyebrow">Why Teams Choose This</div>
@@ -1546,6 +1484,93 @@ async function submitQuickLead(){
   }catch(err){status.textContent=err.message||'Could not submit right now.';}
 }
 </script>
+</body>
+</html>`;
+}
+
+function renderPackagesPricingPageHtml(req, services, activeSlug = "") {
+  const normalizedServices = (Array.isArray(services) ? services : []).map(item => normalizeServiceRecord(item));
+  const filters = normalizedServices.map(item => `
+    <a class="filter-chip ${item.slug === activeSlug ? "active" : ""}" href="/packages-pricing${item.slug ? `?service=${encodeURIComponent(item.slug)}` : ""}">${escapeHtml(item.name || "Service")}</a>
+  `).join("");
+  const filteredServices = activeSlug
+    ? normalizedServices.filter(item => item.slug === activeSlug)
+    : normalizedServices;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Packages & Pricing | YoungMinds Agency</title>
+<meta name="description" content="Explore YoungMinds Agency service packages and pricing across web development, AI, video editing, social media, design, and content.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070808;--bg2:#101214;--panel:#0f1112;--text:#f4f4f4;--muted:#9a9fa6;--border:rgba(255,255,255,.09);--accent:#e8c547;--accent-soft:rgba(232,197,71,.12);--shadow:0 18px 60px rgba(0,0,0,.35)}
+*{box-sizing:border-box}body{margin:0;font-family:"DM Sans",system-ui,sans-serif;background:radial-gradient(circle at top right,rgba(232,197,71,.08),transparent 26%),linear-gradient(180deg,#060707,#0d0f11 35%,#060707);color:var(--text)}a{text-decoration:none;color:inherit}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(7,8,8,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1180px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800}.brand-dot{width:26px;height:26px;border-radius:8px;background:var(--accent);color:#000;display:grid;place-items:center;font-size:12px}
+.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:12px 18px;border:1px solid var(--border);font-weight:700}.btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.shell{max-width:1180px;margin:0 auto;padding:28px 22px 90px}
+.hero{padding:30px 0 16px}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+h1{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(2.2rem,5vw,4.2rem);line-height:.96;letter-spacing:-.05em;margin:18px 0 12px}.hero-copy{font-size:15px;line-height:1.8;color:var(--muted);max-width:58ch}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 8px}.filter-chip{display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.02);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.filter-chip.active,.filter-chip:hover{color:var(--text);border-color:rgba(232,197,71,.34);background:rgba(232,197,71,.08)}
+.service-block{margin-top:28px}.service-head{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}.service-title{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(1.8rem,3vw,2.5rem);letter-spacing:-.04em}.service-copy{font-size:14px;line-height:1.8;color:var(--muted);max-width:46ch}
+.sector{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:24px;padding:22px;box-shadow:var(--shadow)}.sector:first-child{margin-top:0}.sector-head{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}.sector-title{font-size:1.3rem;font-weight:800;letter-spacing:-.03em}.sector-copy{font-size:13px;line-height:1.8;color:var(--muted);max-width:50ch}
+.package-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.package-card{background:#141618;border:1px solid var(--border);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px}.package-card.featured{border-color:rgba(232,197,71,.3);box-shadow:0 16px 42px rgba(0,0,0,.24)}.package-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.package-price{font-family:"Space Grotesk",system-ui,sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.05em}.package-usd{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.package-currency{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.package-meta{display:flex;gap:8px;flex-wrap:wrap}.chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--border);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.chip.popular{color:var(--accent);border-color:rgba(232,197,71,.24)}.package-features{display:grid;gap:10px}.package-feature{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65}.package-feature::before{content:"✓";color:var(--accent);font-weight:900}
+@media (max-width:980px){.package-grid{grid-template-columns:1fr}} @media (max-width:700px){.topbar-inner,.shell{padding-left:16px;padding-right:16px}.top-actions .btn-primary{display:none}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner"><a class="brand" href="/"><span class="brand-dot">Y</span><span>YoungMinds Agency</span></a><div class="top-actions"><a class="btn" href="/#services">Services</a><a class="btn btn-primary" href="/hire">Hire Us</a></div></div></div>
+<main class="shell">
+  <section class="hero">
+    <span class="eyebrow">Packages & Pricing</span>
+    <h1>Choose the right package before we scope the work.</h1>
+    <div class="hero-copy">Services explain what we do. Packages & pricing makes the commercial side easy to compare. Filter by service, review sector-specific packages, then move to hire when you're ready.</div>
+    <div class="filters"><a class="filter-chip ${!activeSlug ? "active" : ""}" href="/packages-pricing">All Services</a>${filters}</div>
+  </section>
+  ${filteredServices.map(service => `
+    <section class="service-block">
+      <div class="service-head">
+        <div>
+          <div class="eyebrow">${escapeHtml(service.shortLabel || "Service")}</div>
+          <div class="service-title">${escapeHtml(service.name || "Service")}</div>
+        </div>
+        <div class="service-copy">${escapeHtml(service.valueProp || "")}</div>
+      </div>
+      ${(Array.isArray(service.sectors) ? service.sectors : []).map(sector => `
+        <div class="sector">
+          <div class="sector-head">
+            <div class="sector-title">${escapeHtml(sector.title || "Sector")}</div>
+            <div class="sector-copy">${escapeHtml(sector.description || "")}</div>
+          </div>
+          <div class="package-grid">
+            ${(Array.isArray(sector.packages) ? sector.packages : []).map((pkg, index) => `
+              <article class="package-card ${(pkg.isPopular || index === 1) ? "featured" : ""}">
+                <div class="package-head">
+                  <div>
+                    <div class="eyebrow">${escapeHtml(pkg.name || `Package ${index + 1}`)}</div>
+                    <div class="package-currency"><div class="package-price">${escapeHtml(formatInr(pkg.price_inr || 0))}</div><div class="package-usd">${escapeHtml(formatUsd(pkg.price_usd || 0))}</div></div>
+                  </div>
+                  ${(pkg.isPopular || index === 1) ? `<span class="chip popular">Most Popular</span>` : ``}
+                </div>
+                <div class="package-meta">
+                  ${pkg.delivery ? `<span class="chip">${escapeHtml(pkg.delivery)}</span>` : ``}
+                  ${pkg.duration ? `<span class="chip">${escapeHtml(pkg.duration)}</span>` : ``}
+                  ${pkg.revisions ? `<span class="chip">${escapeHtml(pkg.revisions)}</span>` : ``}
+                </div>
+                <div class="package-features">${(Array.isArray(pkg.features) ? pkg.features : []).map(feature => `<div class="package-feature">${escapeHtml(feature)}</div>`).join("")}</div>
+              </article>
+            `).join("")}
+          </div>
+        </div>
+      `).join("")}
+    </section>
+  `).join("")}
+</main>
 </body>
 </html>`;
 }
@@ -1893,30 +1918,37 @@ app.put("/api/services/:slug", async (req, res) => {
     }
 
     const defaultService = serviceFallback(slug);
-    const deliverablesRaw = Array.isArray(req.body?.deliverables)
-      ? req.body.deliverables
-      : String(req.body?.deliverables || "").split(/\n|,/);
+    const currentService = await getServiceRecord(slug) || normalizeServiceRecord({ ...defaultService });
+    const hasDeliverablesInput = Array.isArray(req.body?.deliverables) || typeof req.body?.deliverables === "string";
+    const deliverablesRaw = hasDeliverablesInput
+      ? (Array.isArray(req.body?.deliverables) ? req.body.deliverables : String(req.body?.deliverables || "").split(/\n|,/))
+      : (currentService.deliverables || defaultService.deliverables || []);
     const deliverables = deliverablesRaw
       .map(item => String(item || "").trim())
       .filter(Boolean)
       .slice(0, 6);
     if (deliverables.length < 6) {
+      const deliverableFallback = currentService.deliverables || defaultService.deliverables || [];
       while (deliverables.length < 6) {
-        deliverables.push(defaultService.deliverables[deliverables.length] || `Deliverable ${deliverables.length + 1}`);
+        deliverables.push(deliverableFallback[deliverables.length] || `Deliverable ${deliverables.length + 1}`);
       }
     }
-    const sectors = normalizeServiceSectors(req.body?.sectors, defaultService.sectors || []);
+    const hasSectorsInput = Array.isArray(req.body?.sectors);
+    const sectors = hasSectorsInput
+      ? normalizeServiceSectors(req.body?.sectors, currentService.sectors || defaultService.sectors || [])
+      : normalizeServiceSectors(currentService.sectors, defaultService.sectors || []);
     const pricingPackages = flattenSectorPackages(sectors);
     const bounds = derivePricingBoundsFromSectors(sectors);
+    const hasField = field => Object.prototype.hasOwnProperty.call(req.body || {}, field);
 
     const updates = {
-      name: String(req.body?.name || defaultService.name).trim() || defaultService.name,
-      shortLabel: String(req.body?.shortLabel || defaultService.shortLabel || "").trim() || defaultService.shortLabel,
-      valueProp: String(req.body?.valueProp || defaultService.valueProp || "").trim() || defaultService.valueProp,
-      meta_description: String(req.body?.meta_description || defaultService.meta_description || "").trim() || defaultService.meta_description,
-      og_image_url: String(req.body?.og_image_url || defaultService.og_image_url || "").trim() || defaultService.og_image_url,
-      pricing_min_inr: Math.max(0, Number(req.body?.pricing_min_inr || bounds.min || defaultService.pricing_min_inr || 0)),
-      pricing_max_inr: Math.max(0, Number(req.body?.pricing_max_inr || bounds.max || defaultService.pricing_max_inr || 0)),
+      name: String(hasField("name") ? req.body?.name : (currentService.name || defaultService.name)).trim() || currentService.name || defaultService.name,
+      shortLabel: String(hasField("shortLabel") ? req.body?.shortLabel : (currentService.shortLabel || defaultService.shortLabel || "")).trim() || currentService.shortLabel || defaultService.shortLabel,
+      valueProp: String(hasField("valueProp") ? req.body?.valueProp : (currentService.valueProp || defaultService.valueProp || "")).trim() || currentService.valueProp || defaultService.valueProp,
+      meta_description: String(hasField("meta_description") ? req.body?.meta_description : (currentService.meta_description || defaultService.meta_description || "")).trim() || currentService.meta_description || defaultService.meta_description,
+      og_image_url: String(hasField("og_image_url") ? req.body?.og_image_url : (currentService.og_image_url || defaultService.og_image_url || "")).trim() || currentService.og_image_url || defaultService.og_image_url,
+      pricing_min_inr: Math.max(0, Number(hasField("pricing_min_inr") ? req.body?.pricing_min_inr : (currentService.pricing_min_inr || bounds.min || defaultService.pricing_min_inr || 0))),
+      pricing_max_inr: Math.max(0, Number(hasField("pricing_max_inr") ? req.body?.pricing_max_inr : (currentService.pricing_max_inr || bounds.max || defaultService.pricing_max_inr || 0))),
       deliverables,
       sectors,
       pricing_packages: pricingPackages,
@@ -2311,6 +2343,16 @@ app.get("/services/:slug", async (req, res) => {
     res.send(renderServicePageHtml(req, service, recentWork));
   } catch (err) {
     res.status(500).send("Could not load service page");
+  }
+});
+
+app.get("/packages-pricing", async (req, res) => {
+  try {
+    const services = await getServiceRecords();
+    const activeSlug = SERVICE_SLUGS.includes(String(req.query?.service || "").trim()) ? String(req.query.service).trim() : "";
+    res.send(renderPackagesPricingPageHtml(req, services, activeSlug));
+  } catch (err) {
+    res.status(500).send("Could not load packages page");
   }
 });
 
