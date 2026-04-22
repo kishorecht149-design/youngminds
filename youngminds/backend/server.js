@@ -153,9 +153,9 @@ function adminServicesHotfixScript() {
 
     const deliverables = Array.isArray(current.deliverables) ? current.deliverables.slice(0, 6) : [];
     while (deliverables.length < 6) deliverables.push("");
-    mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page copy and public messaging. Packages and pricing now live on their own page.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
+    mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesCreate()" ' + (state.saving ? 'disabled' : '') + '>+ Add Service</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page copy and public messaging. Packages and pricing now live on their own page.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
       return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(String(Array.isArray(item.sectors) ? item.sectors.length : 0) + " sectors") + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
-    }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section and the /services/[slug] page. Use the dedicated Packages & Pricing screen for sectors, packages, and price cards.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn-sm" href="/services/' + escapeHtml(current.slug) + '" target="_blank" rel="noopener">Open Page</a><a class="btn-sm" href="/admin/packages-pricing" rel="noopener">Packages & Pricing</a></div></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
+    }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section and the /services/[slug] page. Use the dedicated Packages & Pricing screen for sectors, packages, and price cards.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn-sm" href="' + ('https://youngmindsagency.vercel.app' + (['web-development','graphic-design','social-media','ai-solutions','video-editing','content-writing'].indexOf(current.slug) !== -1 ? ('/services/' + encodeURIComponent(current.slug) + '/') : ('/packages-pricing/?service=' + encodeURIComponent(current.slug || '')))) + '" target="_blank" rel="noopener">Open Page</a><a class="btn-sm" href="/admin/packages-pricing" rel="noopener">Packages & Pricing</a></div></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
       return '<div class="service-admin-deliverable"><div class="service-admin-deliverable-num">' + String(index + 1).padStart(2, "0") + '</div><div class="form-field" style="margin:0;flex:1"><label>Deliverable ' + (index + 1) + '</label><input type="text" data-service-deliverable value="' + escapeHtml(item) + '"></div></div>';
     }).join("") + '</div></div><div class="service-admin-note">Keep package tables, sectors, and price ranges in the separate Packages & Pricing screen so service content stays simple and easier to edit.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
   }
@@ -239,6 +239,34 @@ function adminServicesHotfixScript() {
   window.__ymStandaloneServicesReload = function(){ return syncAdminServices(true, false); };
   window.__ymStandaloneServicesLoadDefaults = function(){ return syncAdminServices(true, true); };
   window.__ymStandaloneServicesSave = saveStandalone;
+  window.__ymStandaloneServicesCreate = async function(){
+    const token = getAdminToken();
+    if (!token) {
+      if (typeof window.showToast === "function") window.showToast("Admin session expired. Please sign in again.");
+      return;
+    }
+    const name = window.prompt("Enter the new service name");
+    if (!name || !String(name).trim()) return;
+    try {
+      const response = await fetch(window.location.origin + "/api/services", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({ name: String(name).trim() })
+      });
+      const data = await response.json().catch(function(){ return {}; });
+      if (!response.ok) throw new Error(data.error || "Could not create service");
+      state.entries = ensureEntries(state.entries.concat([data]));
+      window.serviceEntries = state.entries.slice();
+      state.slug = data.slug || state.slug;
+      if (typeof window.showToast === "function") window.showToast("Service added");
+      renderStandalone();
+    } catch (err) {
+      if (typeof window.showToast === "function") window.showToast(err && err.message ? err.message : "Could not create service");
+    }
+  };
   window.__ymStandaloneServicesSelect = function(slug){
     state.slug = slug;
     renderStandalone();
@@ -1054,6 +1082,47 @@ function serviceFallback(slug) {
   return SERVICE_DEFAULTS.find(item => item.slug === slug) || null;
 }
 
+function slugifyServiceName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function titleFromSlug(slug) {
+  return String(slug || "")
+    .split("-")
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ") || "Service";
+}
+
+function createEmptyServiceRecord(input = {}) {
+  const slug = slugifyServiceName(input.slug || input.name || "");
+  const title = String(input.name || titleFromSlug(slug)).trim() || "Service";
+  const shortLabel = String(input.shortLabel || title.split(/\s+/).slice(0, 2).join(" ")).trim() || "Service";
+  const sectorTitle = `${title} Packages`;
+  const defaultSector = createCatalogueSector(sectorTitle, `Package options for ${title.toLowerCase()}.`, [
+    createCataloguePackage("Basic", 0, { delivery: "", revisions: "", duration: "", features: [""] }),
+    createCataloguePackage("Standard", 0, { delivery: "", revisions: "", duration: "", isPopular: true, features: [""] }),
+    createCataloguePackage("Premium", 0, { delivery: "", revisions: "", duration: "", features: [""] })
+  ]);
+  return {
+    slug,
+    name: title,
+    shortLabel,
+    valueProp: String(input.valueProp || `Custom ${title.toLowerCase()} support built around your exact scope.`).trim(),
+    meta_description: String(input.meta_description || `YoungMinds Agency offers ${title.toLowerCase()} services with sector-specific packages and pricing.`).trim(),
+    og_image_url: String(input.og_image_url || "/static/assets/logo-ym.jpg").trim(),
+    pricing_min_inr: 0,
+    pricing_max_inr: 0,
+    deliverables: ["Discovery and planning", "Scope mapping", "Execution workflow", "Delivery handoff", "Revision support", "Launch guidance"],
+    sectors: [defaultSector],
+    pricing_packages: flattenSectorPackages([defaultSector])
+  };
+}
+
 function normalizeSectorPackages(items, fallbackPackages = []) {
   const base = Array.isArray(fallbackPackages) ? fallbackPackages : [];
   const source = Array.isArray(items) && items.length ? items : base;
@@ -1154,7 +1223,7 @@ async function getServiceRecords() {
     return SERVICE_DEFAULTS.map(item => normalizeServiceRecord({ ...item }));
   }
 
-  const records = await Promise.all(SERVICE_DEFAULTS.map(async item => {
+  const seededRecords = await Promise.all(SERVICE_DEFAULTS.map(async item => {
     const doc = await Service.findOneAndUpdate(
       { slug: item.slug },
       { $setOnInsert: { ...item, updatedAt: new Date() } },
@@ -1162,21 +1231,32 @@ async function getServiceRecords() {
     );
     return normalizeServiceRecord(doc.toObject ? doc.toObject() : { ...doc });
   }));
-
-  return records.sort((a, b) => SERVICE_SLUGS.indexOf(a.slug) - SERVICE_SLUGS.indexOf(b.slug));
+  const extraDocs = await Service.find({ slug: { $nin: SERVICE_SLUGS } }).sort({ updatedAt: -1, name: 1 });
+  const extraRecords = extraDocs.map(doc => normalizeServiceRecord(doc.toObject ? doc.toObject() : { ...doc }));
+  return [...seededRecords, ...extraRecords].sort((a, b) => {
+    const aIndex = SERVICE_SLUGS.indexOf(a.slug);
+    const bIndex = SERVICE_SLUGS.indexOf(b.slug);
+    if (aIndex === -1 && bIndex === -1) return String(a.name || "").localeCompare(String(b.name || ""));
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
 }
 
 async function getServiceRecord(slug) {
-  if (!SERVICE_SLUGS.includes(slug)) return null;
+  if (!slug) return null;
   if (mongoose.connection.readyState !== 1) {
     const fallback = serviceFallback(slug);
     return fallback ? normalizeServiceRecord({ ...fallback }) : null;
   }
-  const doc = await Service.findOneAndUpdate(
-    { slug },
-    { $setOnInsert: { ...serviceFallback(slug), updatedAt: new Date() } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+  const fallback = serviceFallback(slug);
+  const doc = fallback
+    ? await Service.findOneAndUpdate(
+        { slug },
+        { $setOnInsert: { ...fallback, updatedAt: new Date() } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      )
+    : await Service.findOne({ slug });
   return doc ? normalizeServiceRecord(doc?.toObject ? doc.toObject() : doc) : null;
 }
 
@@ -1388,44 +1468,6 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
           <div class="pricing-note" style="margin-top:16px">YoungMinds keeps specialist-led execution, fast communication, and clear handoff standards in every service line. You get focused delivery instead of generic agency sprawl.</div>
         </div>
       </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <div><h2 class="section-title">Packages & Pricing</h2></div>
-        <div class="section-copy">Each sector below pulls live from the service catalogue. Final pricing can still shift based on exact scope, integrations, and content volume.</div>
-      </div>
-      ${sectors.map((sector, sectorIndex) => `<div class="catalogue-sector">
-        <div class="catalogue-sector-head">
-          <div>
-            <div class="eyebrow">Sector ${String(sectorIndex + 1).padStart(2, "0")}</div>
-            <h3 class="section-title" style="margin-top:10px;font-size:clamp(1.3rem,2vw,1.9rem)">${escapeHtml(sector.title || `Sector ${sectorIndex + 1}`)}</h3>
-          </div>
-          <div class="catalogue-sector-copy">${escapeHtml(sector.description || "")}</div>
-        </div>
-        <div class="package-grid">
-          ${(Array.isArray(sector.packages) ? sector.packages : []).map((item, packageIndex) => `<article class="package-card ${(item.isPopular || packageIndex === 1) ? "featured" : ""}">
-            <div class="package-head">
-              <div>
-                <div class="eyebrow">${escapeHtml(item.name || `Package ${packageIndex + 1}`)}</div>
-                <div class="package-currency">
-                  <div class="package-price">${escapeHtml(formatInr(item.price_inr || 0))}</div>
-                  <div class="package-usd">${escapeHtml(formatUsd(item.price_usd || 0))}</div>
-                </div>
-              </div>
-              ${(item.isPopular || packageIndex === 1) ? `<span class="package-chip" style="color:var(--accent);border-color:rgba(232,197,71,.22)">Most Popular</span>` : ``}
-            </div>
-            <div class="package-meta">
-              ${item.delivery ? `<span class="package-chip">${escapeHtml(item.delivery)}</span>` : ``}
-              ${item.duration ? `<span class="package-chip">${escapeHtml(item.duration)}</span>` : ``}
-              ${item.revisions ? `<span class="package-chip">${escapeHtml(item.revisions)}</span>` : ``}
-            </div>
-            <div class="package-features">
-              ${(Array.isArray(item.features) ? item.features : []).map(feature => `<div class="package-feature">${escapeHtml(feature)}</div>`).join("")}
-            </div>
-          </article>`).join("")}
-        </div>
-      </div>`).join("")}
     </section>
 
     <section class="section">
@@ -1907,17 +1949,35 @@ app.get("/api/services/:slug", async (req, res) => {
   }
 });
 
+app.post("/api/services", async (req, res) => {
+  try {
+    const adminSession = await requireAdminSession(req, res);
+    if (!adminSession) return;
+
+    const draft = createEmptyServiceRecord(req.body || {});
+    if (!draft.slug) {
+      return res.status(400).json({ error: "Service name is required" });
+    }
+
+    const existing = await getServiceRecord(draft.slug);
+    if (existing) {
+      return res.status(409).json({ error: "A service with this slug already exists" });
+    }
+
+    const doc = await Service.create({ ...draft, updatedAt: new Date() });
+    res.status(201).json(normalizeServiceRecord(doc.toObject ? doc.toObject() : doc));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.put("/api/services/:slug", async (req, res) => {
   try {
     const adminSession = await requireAdminSession(req, res);
     if (!adminSession) return;
 
     const slug = req.params.slug;
-    if (!SERVICE_SLUGS.includes(slug)) {
-      return res.status(404).json({ error: "Service not found" });
-    }
-
-    const defaultService = serviceFallback(slug);
+    const defaultService = serviceFallback(slug) || createEmptyServiceRecord({ slug });
     const currentService = await getServiceRecord(slug) || normalizeServiceRecord({ ...defaultService });
     const hasDeliverablesInput = Array.isArray(req.body?.deliverables) || typeof req.body?.deliverables === "string";
     const deliverablesRaw = hasDeliverablesInput
@@ -2278,6 +2338,11 @@ const projectSchema = new mongoose.Schema({
   city:              String,
   source:            String,
   service:           String,
+  serviceSlug:       String,
+  serviceSector:     String,
+  packageName:       String,
+  quotedPriceInr:    Number,
+  quotedPriceLabel:  String,
   budget:            String,
   timeline:          String,
   description:       String,
@@ -2302,7 +2367,24 @@ const Project = mongoose.model("Project", projectSchema);
 // ── POST ──
 app.post("/api/projects", async (req, res) => {
   try {
-    const doc = new Project({ ...req.body, type: "project", status: "new" });
+    const serviceSlug = String(req.body?.serviceSlug || slugifyServiceName(req.body?.service || "")).trim();
+    const service = await getServiceRecord(serviceSlug);
+    const selectedSector = (Array.isArray(service?.sectors) ? service.sectors : []).find(item => item.title === String(req.body?.serviceSector || "").trim());
+    const selectedPackage = (Array.isArray(selectedSector?.packages) ? selectedSector.packages : []).find(item => item.name === String(req.body?.packageName || "").trim());
+    const quotedPriceInr = Math.max(0, Number(req.body?.quotedPriceInr || selectedPackage?.price_inr || 0));
+    const payload = {
+      ...req.body,
+      type: "project",
+      status: "new",
+      service: String(req.body?.service || service?.name || "").trim(),
+      serviceSlug,
+      serviceSector: String(req.body?.serviceSector || selectedSector?.title || "").trim(),
+      packageName: String(req.body?.packageName || selectedPackage?.name || "").trim(),
+      quotedPriceInr,
+      quotedPriceLabel: String(req.body?.quotedPriceLabel || (quotedPriceInr ? formatInr(quotedPriceInr) : "")).trim(),
+      budget: String(req.body?.budget || (quotedPriceInr ? formatInr(quotedPriceInr) : "")).trim()
+    };
+    const doc = new Project(payload);
     await doc.save();
     res.status(201).json(doc);
   } catch (err) {
@@ -2349,7 +2431,7 @@ app.get("/services/:slug", async (req, res) => {
 app.get("/packages-pricing", async (req, res) => {
   try {
     const services = await getServiceRecords();
-    const activeSlug = SERVICE_SLUGS.includes(String(req.query?.service || "").trim()) ? String(req.query.service).trim() : "";
+    const activeSlug = String(req.query?.service || "").trim();
     res.send(renderPackagesPricingPageHtml(req, services, activeSlug));
   } catch (err) {
     res.status(500).send("Could not load packages page");
@@ -2374,7 +2456,7 @@ app.put("/api/projects/:id", async (req, res) => {
     const allowed = ["status","notes","paymentAdvance","paymentFinal","paymentStatus",
                      "assignedMemberIds","assignedGroupId","deadlineAt","progressPercent",
                      "briefPdfUrl","briefPdfName","deliveryStage","lastSubmissionAt",
-                     "title","clientName"];
+                     "title","clientName","service","serviceSlug","serviceSector","packageName","quotedPriceInr","quotedPriceLabel","budget","timeline","description"];
     const updates = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
 

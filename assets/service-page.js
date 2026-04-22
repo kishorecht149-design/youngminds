@@ -320,16 +320,6 @@
       <section class="section">
         <div class="section-card">
           <div class="section-head">
-            <div><h2 class="section-title">Packages & Pricing</h2></div>
-            <div class="section-copy">Each sector below is rendered from the live catalogue data for this service.</div>
-          </div>
-          ${renderCatalogue(service)}
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-card">
-          <div class="section-head">
             <div><h2 class="section-title">Recent Work</h2></div>
             <div class="section-copy">A quick look at recent project records that match this service area.</div>
           </div>

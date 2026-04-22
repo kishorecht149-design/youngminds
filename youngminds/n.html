@@ -522,6 +522,8 @@ canvas#revChart{max-height:220px}
       <div class="tb-r">
         <div id="api-dot" class="api-dot" title="Checking..."></div>
         <span id="api-ts" class="api-ts"></span>
+        <a class="tb-btn" href="https://youngmindsagency.vercel.app/" target="_blank" rel="noopener">Public Website</a>
+        <a class="tb-btn" href="/member" target="_blank" rel="noopener">Member Portal</a>
         <div class="tb-user" id="admin-user-chip">👤 admin</div>
         <button class="tb-btn" type="button" onclick="openAdminCredentialsModal()">Credentials</button>
         <button class="tb-btn" onclick="refreshAdminData()">↻ Refresh</button>
@@ -992,10 +994,12 @@ function defaultServiceEntries(){
 function normalizeServiceEntries(items){
   const defaults = defaultServiceEntries();
   const map = new Map(defaults.map(item => [item.slug, item]));
+  const order = defaults.map(item => item.slug);
   if (Array.isArray(items)) {
     items.forEach(item => {
       if (!item || !item.slug) return;
       const base = map.get(item.slug) || {};
+      if (!map.has(item.slug)) order.push(item.slug);
       map.set(item.slug, {
         ...base,
         ...item,
@@ -1008,7 +1012,7 @@ function normalizeServiceEntries(items){
       });
     });
   }
-  return defaults.map(item => map.get(item.slug) || item);
+  return order.map(slug => map.get(slug)).filter(Boolean);
 }
 
 async function loadArray(path, options = {}){
@@ -2415,6 +2419,7 @@ function renderServicesManager(){
       <span class="view-hdr-title">Services</span>
       <span class="view-hdr-count">${serviceEntries.length} service lines${serviceState.saving ? " · saving…" : ""}</span>
       <div class="vhdr-right">
+        <button class="btn-sm primary" type="button" onclick="createServiceEntry()" ${serviceState.saving ? "disabled" : ""}>+ Add Service</button>
         <button class="btn-sm" type="button" onclick="reloadServicesManager()" ${serviceState.loading ? "disabled" : ""}>Refresh Services</button>
       </div>
     </div>
@@ -2448,7 +2453,7 @@ function renderServicesManager(){
             <div class="service-admin-title">Edit ${escapeHtml(current.name||"service")}</div>
             <div class="service-admin-sub">Changes publish to the homepage service section and the `/services/[slug]` page. Use Packages & Pricing for commercial package editing.</div>
           </div>
-          <a class="btn-sm" href="/services/${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Page</a>
+          <a class="btn-sm" href="https://youngmindsagency.vercel.app${['web-development','graphic-design','social-media','ai-solutions','video-editing','content-writing'].includes(current.slug) ? `/services/${escapeHtml(current.slug)}/` : `/packages-pricing/?service=${escapeHtml(current.slug)}`}" target="_blank" rel="noopener">Open Page</a>
         </div>
         ${serviceState.error ? `<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">${escapeHtml(serviceState.error)}</div>` : ``}
         <div class="service-admin-form">
@@ -2503,6 +2508,36 @@ function selectServiceSlug(slug){
 
 async function reloadServicesManager(){
   await loadServicesData({ render: true });
+}
+
+async function createServiceEntry(){
+  if(!currentAdminToken){
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+  const name = window.prompt("Enter the new service name");
+  if(!name || !name.trim()) return;
+  try{
+    const response = await fetch(`${API}/api/services`, {
+      method:"POST",
+      headers:adminAuthHeaders({"Content-Type":"application/json"}),
+      body:JSON.stringify({ name: name.trim() })
+    });
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok){
+      showToast(data.error || "Could not create service");
+      return;
+    }
+    const created = { ...data, id:data._id||data.id||data.slug };
+    serviceEntries = normalizeServiceEntries([...(Array.isArray(serviceEntries)?serviceEntries:[]), created]).map(item=>({ ...item, id:item._id||item.id||item.slug }));
+    currentServiceSlug = created.slug;
+    showToast("Service added");
+    if(activeAdminView === "packages") renderPackagesPricingManager();
+    else renderServicesManager();
+  }catch{
+    showToast("Could not create service");
+  }
 }
 
 async function refreshAdminData(){
@@ -2615,7 +2650,7 @@ function renderPackagesPricingManager(){
             <div class="service-admin-title">Edit ${escapeHtml(current.name||"service")} packages</div>
             <div class="service-admin-sub">This is the commercial layer visitors see on the Packages & Pricing page and from each service page.</div>
           </div>
-          <a class="btn-sm" href="/packages-pricing?service=${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Public Page</a>
+          <a class="btn-sm" href="https://youngmindsagency.vercel.app/packages-pricing/?service=${escapeHtml(current.slug)}" target="_blank" rel="noopener">Open Public Page</a>
         </div>
         <div class="service-admin-form">
           <div class="service-admin-form-row">
@@ -3009,6 +3044,9 @@ openRecord = function(elOrRec){
         <div class="dp-sec-title">Project</div>
         <div class="dp-grid">
           <div><div class="dp-label">Service</div><div class="dp-val">${escapeHtml(rec.service || "—")}</div></div>
+          <div><div class="dp-label">Sector</div><div class="dp-val">${escapeHtml(rec.serviceSector || "—")}</div></div>
+          <div><div class="dp-label">Package</div><div class="dp-val">${escapeHtml(rec.packageName || "—")}</div></div>
+          <div><div class="dp-label">Estimated Price</div><div class="dp-val">${escapeHtml(rec.quotedPriceLabel || rec.budget || "—")}</div></div>
           <div><div class="dp-label">Budget</div><div class="dp-val">${escapeHtml(rec.budget || "—")}</div></div>
           <div><div class="dp-label">Timeline</div><div class="dp-val">${escapeHtml(rec.timeline || "—")}</div></div>
           <div><div class="dp-label">Payment Status</div><div class="dp-val">${escapeHtml(rec.paymentStatus || "pending")}</div></div>

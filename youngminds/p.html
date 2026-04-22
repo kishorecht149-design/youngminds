@@ -521,17 +521,17 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
       <!-- C2 -->
       <div class="spane" id="cp-2">
         <div class="sp-title">Your project</div><div class="sp-sub">Tell us what you need.</div>
-        <div class="skill-grid">
-          <label class="sk-opt" id="csv-1"><input type="radio" name="csv" value="Web Development" onchange="selSk('csv',6)"><span class="sk-icon">WEB</span><span class="sk-lbl">Website</span></label>
-          <label class="sk-opt" id="csv-2"><input type="radio" name="csv" value="Graphic Design" onchange="selSk('csv',6)"><span class="sk-icon">DSN</span><span class="sk-lbl">Design</span></label>
-          <label class="sk-opt" id="csv-3"><input type="radio" name="csv" value="Content Writing" onchange="selSk('csv',6)"><span class="sk-icon">WRT</span><span class="sk-lbl">Content</span></label>
-          <label class="sk-opt" id="csv-4"><input type="radio" name="csv" value="AI Solution" onchange="selSk('csv',6)"><span class="sk-icon">AUT</span><span class="sk-lbl">AI Tools</span></label>
-          <label class="sk-opt" id="csv-5"><input type="radio" name="csv" value="Social Media" onchange="selSk('csv',6)"><span class="sk-icon">SOC</span><span class="sk-lbl">Social</span></label>
-          <label class="sk-opt" id="csv-6"><input type="radio" name="csv" value="Multiple" onchange="selSk('csv',6)"><span class="sk-icon">MIX</span><span class="sk-lbl">Multiple</span></label>
+        <div class="frow">
+          <div class="fg"><label>Service *</label><select id="cservice" onchange="syncClientServiceSelection()"></select></div>
+          <div class="fg"><label>Sector *</label><select id="csector" onchange="syncClientSectorSelection()"></select></div>
         </div>
         <div class="frow">
-          <div class="fg"><label>Budget *</label><select id="cbg"><option value="">Select</option><option>Under ₹5,000</option><option>₹5,000–₹15,000</option><option>₹15,000–₹30,000</option><option>₹30,000–₹50,000</option><option>₹50,000+</option></select></div>
+          <div class="fg"><label>Package *</label><select id="cpackage" onchange="syncClientPackageSelection()"></select></div>
+          <div class="fg"><label>Package price</label><input id="cprice" type="text" readonly placeholder="Select a package"></div>
+        </div>
+        <div class="frow">
           <div class="fg"><label>Timeline</label><select id="ctl"><option value="">Select</option><option>ASAP (1 week)</option><option>2–4 weeks</option><option>1–2 months</option><option>No deadline</option></select></div>
+          <div class="fg"><label>Budget</label><input id="cbg" type="text" readonly placeholder="Auto-filled from package"></div>
         </div>
         <div class="fg"><label>Project description *</label><textarea id="cds" placeholder="Describe your goals, requirements, references..."></textarea></div>
         <div class="snav"><button class="btn-back" onclick="cGo(1)">← Back</button><button class="btn-next" onclick="cGo(3)">Continue →</button></div>
@@ -617,13 +617,34 @@ function toggleMobileNav(){
   const panel=document.getElementById('navPanel');
   if(!panel)return;
   panel.classList.toggle('open');
-  document.body.classList.toggle('nav-open',panel.classList.contains('open'));
+  setBodyScrollLock(panel.classList.contains('open'));
 }
 function closeMobileNav(){
   const panel=document.getElementById('navPanel');
   if(!panel)return;
   panel.classList.remove('open');
-  document.body.classList.remove('nav-open');
+  setBodyScrollLock(false);
+}
+
+let lockedScrollY = 0;
+function setBodyScrollLock(locked){
+  document.body.classList.toggle('nav-open',locked);
+  if(locked){
+    lockedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.position='fixed';
+    document.body.style.top=`-${lockedScrollY}px`;
+    document.body.style.left='0';
+    document.body.style.right='0';
+    document.body.style.width='100%';
+  }else{
+    const top = document.body.style.top;
+    document.body.style.position='';
+    document.body.style.top='';
+    document.body.style.left='';
+    document.body.style.right='';
+    document.body.style.width='';
+    window.scrollTo(0, Math.abs(parseInt(top || `-${lockedScrollY}`, 10)) || lockedScrollY);
+  }
 }
 
 function escapeHtml(value){
@@ -656,6 +677,7 @@ const SERVICE_FALLBACKS = [
   { slug:'video-editing', name:'Video Editing', valueProp:'Fast-moving edits for reels, explainers, and campaign content that feel current and watchable.', pricing_min_inr:2500, deliverables:['Short-form reel editing','Motion graphics support'] },
   { slug:'content-writing', name:'Content Writing', valueProp:'Clear, persuasive writing for websites, campaigns, and content engines that need a stronger voice.', pricing_min_inr:1500, deliverables:['Website and landing copy','Blog and article writing'] }
 ];
+const STATIC_SERVICE_SLUGS = new Set(['web-development','graphic-design','social-media','ai-solutions','video-editing','content-writing']);
 const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
 let boardCarouselIndex = 0;
 let boardCarouselTimer = null;
@@ -664,6 +686,13 @@ let serviceEntries = [];
 
 function appUrl(path){
   return `${APP_ORIGIN}${path}`;
+}
+
+function serviceDetailUrl(item){
+  const slug = item?.slug || '';
+  return STATIC_SERVICE_SLUGS.has(slug)
+    ? appUrl(`/services/${slug}`)
+    : appUrl(`/packages-pricing/?service=${encodeURIComponent(slug)}`);
 }
 
 function stopBoardCarousel(){
@@ -770,10 +799,10 @@ function renderServices(entries){
   const table=document.getElementById('servicesTable');
   if(!nav||!table)return;
   const items=entries.length?entries:SERVICE_FALLBACKS;
-  nav.innerHTML=items.map(item=>`<a class="svc-link" href="${appUrl(`/services/${item.slug}`)}">${escapeHtml(item.name||'Service')}</a>`).join('');
+  nav.innerHTML=items.map(item=>`<a class="svc-link" href="${serviceDetailUrl(item)}">${escapeHtml(item.name||'Service')}</a>`).join('');
   table.innerHTML=items.map((item,index)=>`
     <div class="svc-row">
-      <a class="svc-row-link" href="${appUrl(`/services/${item.slug}`)}">
+      <a class="svc-row-link" href="${serviceDetailUrl(item)}">
         <div class="svc-card-top">
           <span class="svc-num">Service ${String(index+1).padStart(2,'0')}</span>
           <span class="svc-price">${formatInr(item.pricing_min_inr)}+</span>
@@ -789,14 +818,80 @@ function renderServices(entries){
   `).join('');
 }
 
+function getCatalogueServices(){
+  const items = Array.isArray(serviceEntries) && serviceEntries.length ? serviceEntries : SERVICE_FALLBACKS;
+  return items.map(item=>{
+    const sectors = Array.isArray(item.sectors) && item.sectors.length
+      ? item.sectors
+      : [{ title: `${item.name || 'Service'} Packages`, description: item.valueProp || "", packages: [{ name:"Custom Quote", price_inr:Number(item.pricing_min_inr||0), price_usd:0, delivery:"", revisions:"", duration:"", isPopular:true, features:Array.isArray(item.deliverables)?item.deliverables:[] }] }];
+    return { ...item, sectors };
+  });
+}
+
+function getSelectedCatalogueService(){
+  const slug = document.getElementById('cservice')?.value || "";
+  return getCatalogueServices().find(item=>item.slug===slug) || getCatalogueServices()[0] || null;
+}
+
+function getSelectedCatalogueSector(){
+  const service = getSelectedCatalogueService();
+  const title = document.getElementById('csector')?.value || "";
+  return (Array.isArray(service?.sectors)?service.sectors:[]).find(item=>item.title===title) || (service?.sectors||[])[0] || null;
+}
+
+function getSelectedCataloguePackage(){
+  const sector = getSelectedCatalogueSector();
+  const name = document.getElementById('cpackage')?.value || "";
+  return (Array.isArray(sector?.packages)?sector.packages:[]).find(item=>item.name===name) || (sector?.packages||[])[0] || null;
+}
+
+function syncClientServiceSelection(){
+  const service = getSelectedCatalogueService();
+  const sectorSelect = document.getElementById('csector');
+  if(!sectorSelect) return;
+  const sectors = Array.isArray(service?.sectors) ? service.sectors : [];
+  sectorSelect.innerHTML = sectors.map(item=>`<option value="${escapeHtml(item.title||'Sector')}">${escapeHtml(item.title||'Sector')}</option>`).join('');
+  syncClientSectorSelection();
+}
+
+function syncClientSectorSelection(){
+  const sector = getSelectedCatalogueSector();
+  const packageSelect = document.getElementById('cpackage');
+  if(!packageSelect) return;
+  const packages = Array.isArray(sector?.packages) ? sector.packages : [];
+  packageSelect.innerHTML = packages.map(item=>`<option value="${escapeHtml(item.name||'Package')}">${escapeHtml(item.name||'Package')}</option>`).join('');
+  syncClientPackageSelection();
+}
+
+function syncClientPackageSelection(){
+  const pkg = getSelectedCataloguePackage();
+  const priceLabel = pkg && Number(pkg.price_inr || 0) > 0 ? formatInr(pkg.price_inr) : 'Custom quote';
+  const priceInput = document.getElementById('cprice');
+  const budgetInput = document.getElementById('cbg');
+  if(priceInput) priceInput.value = priceLabel;
+  if(budgetInput) budgetInput.value = priceLabel;
+}
+
+function syncClientCatalogueForm(){
+  const serviceSelect = document.getElementById('cservice');
+  if(!serviceSelect) return;
+  const services = getCatalogueServices();
+  const currentValue = serviceSelect.value;
+  serviceSelect.innerHTML = services.map(item=>`<option value="${escapeHtml(item.slug||'')}">${escapeHtml(item.name||'Service')}</option>`).join('');
+  if(currentValue && services.some(item=>item.slug===currentValue)) serviceSelect.value = currentValue;
+  syncClientServiceSelection();
+}
+
 async function loadServices(){
   try{
     const response=await fetch(`${API}/api/services`);
     const data=response.ok?await response.json():[];
     serviceEntries=Array.isArray(data)?data:[];
     renderServices(serviceEntries);
+    syncClientCatalogueForm();
   }catch{
     renderServices(SERVICE_FALLBACKS);
+    syncClientCatalogueForm();
   }
 }
 
@@ -875,8 +970,7 @@ function cGo(t){
   if(t>cS){
     if(cS===1&&(!gv('cnm')||!gv('cph'))){alert('Please fill required fields (*).');return}
     if(cS===2){
-      if(!document.querySelector('input[name="csv"]:checked')){alert('Please select a service.');return}
-      if(!gv('cbg')){alert('Please select a budget.');return}
+      if(!gv('cservice')||!gv('csector')||!gv('cpackage')){alert('Please select service, sector, and package.');return}
       if(!gv('cds')){alert('Please describe your project.');return}
       buildCRv();
     }
@@ -887,20 +981,31 @@ function cGo(t){
   updStp('cstp','cfill',t,3);
 }
 function buildCRv(){
-  const sv=document.querySelector('input[name="csv"]:checked');
-  document.getElementById('crv').innerHTML=`<div><div class="rv-lbl">Name</div><div class="rv-val">${gv('cnm')}</div></div><div><div class="rv-lbl">WhatsApp</div><div class="rv-val">${gv('cph')}</div></div><div><div class="rv-lbl">Service</div><div class="rv-val">${sv?sv.value:'—'}</div></div><div><div class="rv-lbl">Budget</div><div class="rv-val">${gv('cbg')}</div></div>`;
+  const service = getSelectedCatalogueService();
+  document.getElementById('crv').innerHTML=`<div><div class="rv-lbl">Name</div><div class="rv-val">${gv('cnm')}</div></div><div><div class="rv-lbl">WhatsApp</div><div class="rv-val">${gv('cph')}</div></div><div><div class="rv-lbl">Service</div><div class="rv-val">${service?.name||'—'}</div></div><div><div class="rv-lbl">Sector</div><div class="rv-val">${gv('csector')||'—'}</div></div><div><div class="rv-lbl">Package</div><div class="rv-val">${gv('cpackage')||'—'}</div></div><div><div class="rv-lbl">Estimated Price</div><div class="rv-val">${gv('cprice')||'—'}</div></div>`;
 }
 async function submitClient(){
   if(!document.getElementById('cag').checked){ alert('Please agree to the terms.'); return; }
-  const sv = document.querySelector('input[name="csv"]:checked');
-  if(!sv){ alert('Please select a service.'); return; }
+  const service = getSelectedCatalogueService();
+  const sector = getSelectedCatalogueSector();
+  const pkg = getSelectedCataloguePackage();
+  if(!service || !sector || !pkg){ alert('Please select service, sector, and package.'); return; }
   const btn = document.querySelector('#cp-3 .btn-sub');
   if(btn){ btn.disabled=true; btn.textContent='Sending...'; }
   const data = {
     type: 'project', status: 'new',
     name: gv('cnm'), business: gv('cbz'), phone: gv('cph'), email: gv('cem'),
-    city: gv('cct'), source: gv('crf'), service: sv.value,
-    budget: gv('cbg'), timeline: gv('ctl'), description: gv('cds'), notes: gv('cnt')
+    city: gv('cct'), source: gv('crf'),
+    service: service.name,
+    serviceSlug: service.slug,
+    serviceSector: sector.title,
+    packageName: pkg.name,
+    quotedPriceInr: Number(pkg.price_inr || 0),
+    quotedPriceLabel: gv('cprice'),
+    budget: gv('cbg'),
+    timeline: gv('ctl'),
+    description: gv('cds'),
+    notes: gv('cnt')
   };
   try {
     const url = API + '/api/projects';
