@@ -451,107 +451,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   animation: doc-slide 0.5s ease forwards;
   opacity: 0;
 }
-
-/* PARALLAX HERO */
-.hero {
-  height: 100vh;
-  min-height: 100vh;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  background: var(--bg);
-}
-.px-layer {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  will-change: transform, opacity;
-}
-.px-layer-5 {
-  pointer-events: auto;
-  align-items: center;
-  padding: 0 80px;
-}
-.hero-content {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  position: relative;
-  z-index: 10;
-}
-.px-layer-1 {
-  filter: blur(2px);
-}
-.geom-shape {
-  position: absolute;
-  border: 1px solid rgba(255, 215, 0, 0.05);
-  border-radius: 50%;
-}
-.px-layer-2 {
-  filter: blur(1.5px);
-  background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-.px-layer-3 {
-  filter: blur(1px);
-  font-size: 32vw;
-  font-weight: 900;
-  color: rgba(255, 215, 0, 0.02);
-  user-select: none;
-  line-height: 1;
-  letter-spacing: -0.05em;
-}
-.px-layer-4 {
-  filter: blur(0.5px);
-}
-.px-layer-6 {
-  filter: blur(0px);
-}
-.px-badge {
-  position: absolute;
-  background: rgba(255, 215, 0, 0.06);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  color: var(--accent);
-  padding: 10px 20px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 800;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-  backdrop-filter: blur(8px);
-}
-.badge-1 { top: 15%; right: 10%; transform: rotate(6deg); }
-.badge-2 { bottom: 20%; left: 8%; transform: rotate(-8deg); }
-.badge-3 { top: 40%; right: 15%; transform: rotate(-4deg); }
-
-.hero-features-container {
-  padding: 0 80px 88px;
-  background: var(--bg);
-  position: relative;
-  z-index: 20;
-}
-
-@media(max-width:860px){
-  .hero-features-container { padding: 0 24px 60px; }
-  .px-layer-5 { padding: 0 24px; }
-}
-@media(max-width:480px){
-  .hero-features-container { padding: 0 20px 50px; }
-  .px-layer-5 { padding: 0 20px; }
-  .px-layer { filter: none !important; }
-  .px-layer-1, .px-layer-2, .px-layer-3 { display: none !important; }
-  .badge-3 { display: none; }
-  .badge-1 { top: 10%; right: 5%; font-size: 10px; padding: 6px 12px; }
-  .badge-2 { bottom: 15%; left: 5%; font-size: 10px; padding: 6px 12px; }
-}
 </style>
-
 
 </head>
 <body>
@@ -574,28 +474,8 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   </div>
 </nav>
 
-<section class="hero" id="hero-section">
-  <!-- Layer 1: Geometric -->
-  <div class="px-layer px-layer-1" id="px-layer-1">
-    <div class="geom-shape" style="width: 60vw; height: 60vw; top: -10%; left: -10%;"></div>
-    <div class="geom-shape" style="width: 40vw; height: 40vw; bottom: -5%; right: -5%;"></div>
-  </div>
-  
-  <!-- Layer 2: Dots Grid -->
-  <div class="px-layer px-layer-2" id="px-layer-2"></div>
-  
-  <!-- Layer 3: 2025 -->
-  <div class="px-layer px-layer-3" id="px-layer-3">2025</div>
-  
-  <!-- Layer 4: Gradient Card -->
-  <div class="px-layer px-layer-4" id="px-layer-4">
-    <div class="hero-glow"></div>
-  </div>
-  
-  <!-- Layer 5: Main Content -->
-  <div class="px-layer px-layer-5" id="px-layer-5">
-    <div class="hero-content">
-
+<section class="hero">
+  <div class="hero-glow"></div>
   <div class="hero-badge"><span class="hero-badge-pill">NEW</span> Now accepting client projects and hiring members</div>
   <h1 class="hero-h1">Built by Young Minds.<br><span class="">Driven by Big Vision.</span></h1>
   <p class="hero-sub">YoungMinds helps local businesses, startups, and creators get websites, branding, content, and product support from a focused student team that cares about execution, not noise.</p>
@@ -603,21 +483,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
     <button class="cta-primary" type="button" onclick="openFormsTab('client')">Hire our team</button>
     <button class="cta-secondary" type="button" onclick="openFormsTab('join')">Apply to join →</button>
   </div>
-  
-    </div>
-  </div>
-  
-  <!-- Layer 6: Badges -->
-  <div class="px-layer px-layer-6" id="px-layer-6">
-    <div class="px-badge badge-1">Now Hiring</div>
-    <div class="px-badge badge-2">48h Response</div>
-    <div class="px-badge badge-3">Specialist Led</div>
-  </div>
-</section>
-
-<!-- Features extracted from hero -->
-<div class="hero-features-container">
-<div class="hero-features">
+  <div class="hero-features">
     <div class="feature-card">
       <div class="fc-icon"><svg class="anim-icon icon-pace" viewBox="0 0 24 24" width="16" height="16" style="margin-right:4px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/></svg>Pace</div>
       <div class="fc-title">Quick turnaround</div>
@@ -639,8 +505,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
       <div class="fc-desc">Strong delivery without the heavy agency overhead that bloats most quotes.</div>
     </div>
   </div>
-
-</div>
+</section>
 
 <div class="strip reveal">
   <span class="strip-label">Serving businesses across</span>
@@ -1300,44 +1165,6 @@ async function sendLandingAi(){
   if(askBtn)askBtn.disabled=false;
   appendAiBubble('landingAiBody','assistant',reply||landingAiReply(text));
 }
-
-// PARALLAX CONTROLLER
-let pxScrollY = window.scrollY;
-let pxTicking = false;
-
-function updateParallax() {
-  const section = document.getElementById('hero-section');
-  if(!section) return;
-  const rect = section.getBoundingClientRect();
-  const sectionBottom = rect.bottom;
-  
-  if (sectionBottom > 0) {
-    const progress = Math.min(1, Math.max(0, pxScrollY / (window.innerHeight * 1.2)));
-    const baseOpacity = 1 - progress;
-    
-    const speeds = { 1: 0.05, 2: 0.15, 3: 0.30, 4: 0.50, 5: 0.80, 6: 1.10 };
-    
-    for (let i = 1; i <= 6; i++) {
-      const layer = document.getElementById('px-layer-' + i);
-      if (layer) {
-        const yPos = pxScrollY * speeds[i];
-        layer.style.transform = `translate3d(0, ${yPos}px, 0)`;
-        layer.style.opacity = Math.max(0, baseOpacity);
-      }
-    }
-  }
-  pxTicking = false;
-}
-
-window.addEventListener('scroll', () => {
-  pxScrollY = window.scrollY;
-  if (!pxTicking) {
-    window.requestAnimationFrame(updateParallax);
-    pxTicking = true;
-  }
-});
-setTimeout(updateParallax, 50);
-
 </script>
 </body>
 </html>
