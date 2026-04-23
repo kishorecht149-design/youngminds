@@ -964,6 +964,10 @@ let currentBoardEditId = null;
 let currentServiceSlug = "web-development";
 let revChart = null;
 
+function isCoreServiceSlug(slug){
+  return new Set(defaultServiceEntries().map(item => item.slug)).has(String(slug || "").trim());
+}
+
 function defaultSectorDraft(service){
   return [{
     title: `${service.name || "Service"} Packages`,
@@ -2484,8 +2488,10 @@ function renderServicesManager(){
           <div class="service-admin-note">Package rows, prices, delivery, revisions, and sector groups are managed in the dedicated Packages & Pricing screen.</div>
           <div class="service-admin-actions">
             <button class="btn-sm" type="button" onclick="renderServicesManager()">Reset</button>
+            <button class="btn-sm" type="button" onclick="deleteServiceEntry()" ${serviceState.saving || isCoreServiceSlug(current.slug) ? "disabled" : ""}>Delete Service</button>
             <button class="btn-sm primary" type="button" onclick="saveServiceConfig()" ${serviceState.saving ? "disabled" : ""}>${serviceState.saving ? "Saving…" : "Save Service"}</button>
           </div>
+          ${isCoreServiceSlug(current.slug) ? `<div class="service-admin-note">Core services stay locked so the public catalogue always keeps the main agency service lines intact.</div>` : ``}
         </div>
       </div>
     </div>
@@ -2537,6 +2543,47 @@ async function createServiceEntry(){
     else renderServicesManager();
   }catch{
     showToast("Could not create service");
+  }
+}
+
+async function deleteServiceEntry(){
+  if(!currentAdminToken){
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+  const current = getCurrentServiceEntry();
+  if(!current) return;
+  if(isCoreServiceSlug(current.slug)){
+    showToast("Core services cannot be deleted");
+    return;
+  }
+  const confirmed = window.confirm(`Delete ${current.name || "this service"}? This removes it from the admin list and public catalogue.`);
+  if(!confirmed) return;
+  serviceState.saving = true;
+  serviceState.error = "";
+  renderServicesManager();
+  try{
+    const response = await fetch(`${API}/api/services/${current.slug}`, {
+      method:"DELETE",
+      headers:adminAuthHeaders()
+    });
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok){
+      serviceState.error = data.error || "Could not delete service";
+      showToast(data.error || "Could not delete service");
+      return;
+    }
+    serviceEntries = normalizeServiceEntries((Array.isArray(serviceEntries)?serviceEntries:[]).filter(item=>item.slug!==current.slug)).map(item=>({ ...item, id:item._id||item.id||item.slug }));
+    currentServiceSlug = serviceEntries[0]?.slug || "web-development";
+    serviceState.ready = true;
+    showToast("Service deleted");
+  }catch{
+    serviceState.error = "Could not delete service";
+    showToast("Could not delete service");
+  }finally{
+    serviceState.saving = false;
+    renderServicesManager();
   }
 }
 

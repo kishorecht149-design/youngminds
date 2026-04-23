@@ -126,6 +126,10 @@ function adminServicesHotfixScript() {
     return state.entries[0];
   }
 
+  function isCoreServiceSlug(slug) {
+    return ['web-development','graphic-design','social-media','ai-solutions','video-editing','content-writing'].indexOf(String(slug || '').trim()) !== -1;
+  }
+
   function getSectorDrafts(current) {
     const sectors = Array.isArray(current && current.sectors) ? current.sectors.slice(0, 8) : [];
     if (sectors.length) return sectors;
@@ -157,7 +161,7 @@ function adminServicesHotfixScript() {
       return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(String(Array.isArray(item.sectors) ? item.sectors.length : 0) + " sectors") + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
     }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section and the /services/[slug] page. Use the dedicated Packages & Pricing screen for sectors, packages, and price cards.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn-sm" href="' + ('https://youngmindsagency.vercel.app' + (['web-development','graphic-design','social-media','ai-solutions','video-editing','content-writing'].indexOf(current.slug) !== -1 ? ('/services/' + encodeURIComponent(current.slug) + '/') : ('/packages-pricing/?service=' + encodeURIComponent(current.slug || '')))) + '" target="_blank" rel="noopener">Open Page</a><a class="btn-sm" href="/admin/packages-pricing" rel="noopener">Packages & Pricing</a></div></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
       return '<div class="service-admin-deliverable"><div class="service-admin-deliverable-num">' + String(index + 1).padStart(2, "0") + '</div><div class="form-field" style="margin:0;flex:1"><label>Deliverable ' + (index + 1) + '</label><input type="text" data-service-deliverable value="' + escapeHtml(item) + '"></div></div>';
-    }).join("") + '</div></div><div class="service-admin-note">Keep package tables, sectors, and price ranges in the separate Packages & Pricing screen so service content stays simple and easier to edit.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div></div></div></div>';
+    }).join("") + '</div></div><div class="service-admin-note">Keep package tables, sectors, and price ranges in the separate Packages & Pricing screen so service content stays simple and easier to edit.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesDelete()" ' + ((state.saving || isCoreServiceSlug(current.slug)) ? 'disabled' : '') + '>Delete Service</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div>' + (isCoreServiceSlug(current.slug) ? '<div class="service-admin-note">Core services stay locked so the main catalogue never loses the agency service foundation.</div>' : '') + '</div></div></div></div>';
   }
 
   async function syncAdminServices(render, forceFallback) {
@@ -265,6 +269,43 @@ function adminServicesHotfixScript() {
       renderStandalone();
     } catch (err) {
       if (typeof window.showToast === "function") window.showToast(err && err.message ? err.message : "Could not create service");
+    }
+  };
+  window.__ymStandaloneServicesDelete = async function(){
+    const current = getCurrentEntry();
+    const token = getAdminToken();
+    if (!current) return;
+    if (!token) {
+      if (typeof window.showToast === "function") window.showToast("Admin session expired. Please sign in again.");
+      return;
+    }
+    if (isCoreServiceSlug(current.slug)) {
+      if (typeof window.showToast === "function") window.showToast("Core services cannot be deleted");
+      return;
+    }
+    if (!window.confirm("Delete " + (current.name || "this service") + "? This removes it from the admin list and public catalogue.")) return;
+    state.saving = true;
+    state.error = "";
+    renderStandalone();
+    try {
+      const response = await fetch(window.location.origin + "/api/services/" + encodeURIComponent(current.slug), {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      });
+      const data = await response.json().catch(function(){ return {}; });
+      if (!response.ok) throw new Error(data.error || "Could not delete service");
+      state.entries = ensureEntries(state.entries.filter(function(item){ return item.slug !== current.slug; }));
+      window.serviceEntries = state.entries.slice();
+      state.slug = state.entries[0] ? state.entries[0].slug : 'web-development';
+      if (typeof window.showToast === "function") window.showToast("Service deleted");
+    } catch (err) {
+      state.error = err && err.message ? err.message : "Could not delete service";
+      if (typeof window.showToast === "function") window.showToast(state.error);
+    } finally {
+      state.saving = false;
+      renderStandalone();
     }
   };
   window.__ymStandaloneServicesSelect = function(slug){
@@ -1722,6 +1763,48 @@ function sanitizeBoardMember(doc) {
   return obj;
 }
 
+function compactBoardBio(value) {
+  const clean = String(value || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  return clean.length > 220 ? `${clean.slice(0, 217).trim()}...` : clean;
+}
+
+async function buildPublicBoardMembers() {
+  const hiredMembers = await Application.find({
+    status: { $in: ["hired", "inwork", "accepted"] }
+  }).sort({ timestamp: 1, name: 1 });
+  const overrides = await BoardMember.find({ active: true }).sort({ order: 1, createdAt: 1 });
+  const overrideMap = new Map(
+    overrides.map(item => {
+      const entry = sanitizeBoardMember(item);
+      return [String(entry.name || "").trim().toLowerCase(), entry];
+    }).filter(item => item[0])
+  );
+
+  if (!hiredMembers.length) {
+    return overrides.map(sanitizeBoardMember);
+  }
+
+  return hiredMembers.map((member, index) => {
+    const override = overrideMap.get(String(member.name || "").trim().toLowerCase()) || null;
+    const fallbackSkills = normalizeBoardSkills([
+      member.skill,
+      member.experience,
+      member.college
+    ].filter(Boolean));
+    return {
+      id: override?._id || member._id,
+      name: String(override?.name || member.name || "YoungMinds Member").trim(),
+      designation: String(override?.designation || member.skill || "YoungMinds Member").trim(),
+      skills: normalizeBoardSkills((override?.skills && override.skills.length ? override.skills : fallbackSkills)),
+      bio: compactBoardBio(override?.bio || member.why || member.achievementTitle || `${member.name || "This member"} is part of the YoungMinds team.`),
+      photo: String(override?.photo || member.profilePic || "").trim(),
+      order: Number.isFinite(Number(override?.order)) ? Number(override.order) : index,
+      active: true
+    };
+  }).sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.name || "").localeCompare(String(b.name || "")));
+}
+
 // Allowed next-status transitions for applications
 const APP_TRANSITIONS = {
   new:       ["reviewing", "rejected"],
@@ -1864,8 +1947,8 @@ app.delete("/api/applications/:id", async (req, res) => {
 ══════════════════════════════════════════ */
 app.get("/api/board-members", async (req, res) => {
   try {
-    const list = await BoardMember.find({ active: true }).sort({ order: 1, createdAt: 1 });
-    res.json(list.map(sanitizeBoardMember));
+    const list = await buildPublicBoardMembers();
+    res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1966,6 +2049,31 @@ app.post("/api/services", async (req, res) => {
 
     const doc = await Service.create({ ...draft, updatedAt: new Date() });
     res.status(201).json(normalizeServiceRecord(doc.toObject ? doc.toObject() : doc));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/services/:slug", async (req, res) => {
+  try {
+    const adminSession = await requireAdminSession(req, res);
+    if (!adminSession) return;
+
+    const slug = String(req.params.slug || "").trim();
+    if (!slug) {
+      return res.status(400).json({ error: "Service slug is required" });
+    }
+
+    if (SERVICE_SLUGS.includes(slug)) {
+      return res.status(400).json({ error: "Core services cannot be deleted" });
+    }
+
+    const deleted = await Service.findOneAndDelete({ slug });
+    if (!deleted) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.json({ ok: true, slug });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
