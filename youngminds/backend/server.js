@@ -624,6 +624,7 @@ const Application = mongoose.model("Application", applicationSchema);
    SCHEMA: BOARD OF MEMBERS
 ══════════════════════════════════════════ */
 const boardMemberSchema = new mongoose.Schema({
+  applicationId: { type: String, default: "" },
   name:        { type: String, required: true },
   designation: { type: String, default: "" },
   skills:      { type: [String], default: [] },
@@ -1769,40 +1770,38 @@ function compactBoardBio(value) {
   return clean.length > 220 ? `${clean.slice(0, 217).trim()}...` : clean;
 }
 
-async function buildPublicBoardMembers() {
-  const hiredMembers = await Application.find({
-    status: { $in: ["hired", "inwork", "accepted"] }
-  }).sort({ timestamp: 1, name: 1 });
-  const overrides = await BoardMember.find({ active: true }).sort({ order: 1, createdAt: 1 });
-  const overrideMap = new Map(
-    overrides.map(item => {
-      const entry = sanitizeBoardMember(item);
-      return [String(entry.name || "").trim().toLowerCase(), entry];
-    }).filter(item => item[0])
-  );
+function hydrateBoardEntry(entry, member) {
+  const safeEntry = sanitizeBoardMember(entry);
+  const fallbackSkills = member ? normalizeBoardSkills([
+    member.skill,
+    member.experience,
+    member.college
+  ].filter(Boolean)) : [];
+  return {
+    ...safeEntry,
+    applicationId: String(safeEntry.applicationId || member?._id || "").trim(),
+    name: String(safeEntry.name || member?.name || "YoungMinds Member").trim(),
+    designation: String(safeEntry.designation || member?.skill || "YoungMinds Member").trim(),
+    skills: normalizeBoardSkills((safeEntry.skills && safeEntry.skills.length ? safeEntry.skills : fallbackSkills)),
+    bio: compactBoardBio(safeEntry.bio || member?.why || member?.achievementTitle || `${member?.name || "This member"} is part of the YoungMinds team.`),
+    photo: String(safeEntry.photo || member?.profilePic || "").trim()
+  };
+}
 
-  if (!hiredMembers.length) {
-    return overrides.map(sanitizeBoardMember);
-  }
-
-  return hiredMembers.map((member, index) => {
-    const override = overrideMap.get(String(member.name || "").trim().toLowerCase()) || null;
-    const fallbackSkills = normalizeBoardSkills([
-      member.skill,
-      member.experience,
-      member.college
-    ].filter(Boolean));
-    return {
-      id: override?._id || member._id,
-      name: String(override?.name || member.name || "YoungMinds Member").trim(),
-      designation: String(override?.designation || member.skill || "YoungMinds Member").trim(),
-      skills: normalizeBoardSkills((override?.skills && override.skills.length ? override.skills : fallbackSkills)),
-      bio: compactBoardBio(override?.bio || member.why || member.achievementTitle || `${member.name || "This member"} is part of the YoungMinds team.`),
-      photo: String(override?.photo || member.profilePic || "").trim(),
-      order: Number.isFinite(Number(override?.order)) ? Number(override.order) : index,
-      active: true
-    };
-  }).sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.name || "").localeCompare(String(b.name || "")));
+async function buildBoardEntries(includeDrafts = false) {
+  const query = includeDrafts ? {} : { active: true };
+  const entries = await BoardMember.find(query).sort({ order: 1, createdAt: 1 });
+  const linkedIds = entries.map(item => String(item.applicationId || "").trim()).filter(Boolean);
+  const linkedMembers = linkedIds.length
+    ? await Application.find({ _id: { $in: linkedIds } })
+    : [];
+  const memberMap = new Map(linkedMembers.map(member => [String(member._id), member]));
+  return entries.map((entry, index) => {
+    const member = memberMap.get(String(entry.applicationId || "").trim()) || null;
+    const hydrated = hydrateBoardEntry(entry, member);
+    if (!Number.isFinite(Number(hydrated.order))) hydrated.order = index;
+    return hydrated;
+  });
 }
 
 // Allowed next-status transitions for applications
@@ -1947,7 +1946,7 @@ app.delete("/api/applications/:id", async (req, res) => {
 ══════════════════════════════════════════ */
 app.get("/api/board-members", async (req, res) => {
   try {
-    const list = await buildPublicBoardMembers();
+    const list = await buildBoardEntries(false);
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1956,8 +1955,8 @@ app.get("/api/board-members", async (req, res) => {
 
 app.get("/api/board-members/admin", async (req, res) => {
   try {
-    const list = await BoardMember.find().sort({ order: 1, createdAt: 1 });
-    res.json(list.map(sanitizeBoardMember));
+    const list = await buildBoardEntries(true);
+    res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1967,6 +1966,7 @@ app.post("/api/board-members", async (req, res) => {
   try {
     if (!req.body.name) return res.status(400).json({ error: "name is required" });
     const doc = await BoardMember.create({
+      applicationId: String(req.body.applicationId || "").trim(),
       name: String(req.body.name || "").trim(),
       designation: String(req.body.designation || "").trim(),
       skills: normalizeBoardSkills(req.body.skills),
@@ -1984,6 +1984,7 @@ app.post("/api/board-members", async (req, res) => {
 app.put("/api/board-members/:id", async (req, res) => {
   try {
     const updates = {};
+    if (req.body.applicationId !== undefined) updates.applicationId = String(req.body.applicationId || "").trim();
     if (req.body.name !== undefined) updates.name = String(req.body.name || "").trim();
     if (req.body.designation !== undefined) updates.designation = String(req.body.designation || "").trim();
     if (req.body.skills !== undefined) updates.skills = normalizeBoardSkills(req.body.skills);

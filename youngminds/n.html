@@ -2293,6 +2293,30 @@ function boardEditEntry(){
   return boardEntries.find(item => String(item.id || item._id) === String(currentBoardEditId)) || null;
 }
 
+function boardLinkedApplication(entry){
+  const applicationId = String(entry?.applicationId || "").trim();
+  if(!applicationId) return null;
+  return apps.find(item => String(item.id || item._id) === applicationId) || null;
+}
+
+function boardEntryByApplicationId(applicationId){
+  return boardEntries.find(item => String(item.applicationId || "").trim() === String(applicationId || "").trim()) || null;
+}
+
+function boardDraftFromApplication(member){
+  const skills = [member?.skill, member?.experience, member?.college].filter(Boolean);
+  return {
+    applicationId: String(member?.id || member?._id || ""),
+    name: member?.name || "",
+    designation: member?.skill || "YoungMinds Member",
+    skills,
+    photo: member?.profilePic || "",
+    bio: member?.why || member?.achievementTitle || "",
+    order: boardEntries.length,
+    active: true
+  };
+}
+
 function boardPhotoMarkup(entry){
   const name = entry?.name || "YoungMinds";
   if (entry?.photo) {
@@ -2306,79 +2330,132 @@ function renderBoardManager(){
   if (!el) return;
   const current = boardEditEntry();
   if (currentBoardEditId && !current) currentBoardEditId = null;
-  const formEntry = current || { name:"", designation:"", skills:[], photo:"", bio:"", order:boardEntries.length, active:true };
+  const formEntry = current || { applicationId:"", name:"", designation:"", skills:[], photo:"", bio:"", order:boardEntries.length, active:true };
   const liveCount = boardEntries.filter(item => item.active !== false).length;
+  const hiredMembers = apps.filter(item => ["hired","inwork","accepted"].includes(item.status));
 
   el.innerHTML = `
     <div class="view-hdr">
       <span class="view-hdr-title">Board of Members</span>
-      <span class="view-hdr-count">${boardEntries.length} entr${boardEntries.length === 1 ? "y" : "ies"} · <span style="color:var(--green)">${liveCount} live</span></span>
+      <span class="view-hdr-count">${boardEntries.length} entr${boardEntries.length === 1 ? "y" : "ies"} · <span style="color:var(--green)">${liveCount} live</span> · ${hiredMembers.length} hired members available</span>
     </div>
     <div class="board-admin-layout">
       <div class="board-admin-card">
         <div class="board-admin-head">
           <div>
-            <div class="board-admin-title">${current ? "Edit member card" : "Add member card"}</div>
-            <div class="board-admin-sub">This controls the public Board of Members section on the YoungMinds homepage.</div>
+            <div class="board-admin-title">Hired members</div>
+            <div class="board-admin-sub">Choose who appears publicly. Add from the hired list first, then refine the board card details.</div>
           </div>
-          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">New</button>` : ``}
         </div>
-        <div class="form-row">
-          <div class="form-field"><label>Name</label><input id="board-name" type="text" placeholder="Member name" value="${escapeHtml(formEntry.name || "")}"></div>
-          <div class="form-field"><label>Designation</label><input id="board-designation" type="text" placeholder="Founder, Designer, Web Developer..." value="${escapeHtml(formEntry.designation || "")}"></div>
+        ${hiredMembers.length === 0 ? `
+          <div class="empty" style="padding:32px 18px">
+            <div class="empty-icon">◫</div>
+            <div class="empty-title">No hired members yet</div>
+            <div class="empty-sub">Hire or accept members first, then add the right ones to the public board from here.</div>
+          </div>
+        ` : `
+          <div class="board-admin-list">
+            ${hiredMembers.map(member=>{
+              const linked = boardEntryByApplicationId(member.id || member._id);
+              const active = linked?.active !== false;
+              return `
+                <div class="board-admin-item">
+                  ${member.profilePic ? `<img src="${escapeHtml(member.profilePic)}" alt="${escapeHtml(member.name || "YoungMinds member")}" class="board-admin-thumb" style="object-fit:cover" onerror="this.outerHTML='<div class=&quot;board-admin-thumb&quot;>${escapeHtml((member.name || "Y").charAt(0).toUpperCase())}</div>'">` : `<div class="board-admin-thumb">${escapeHtml((member.name || "Y").charAt(0).toUpperCase())}</div>`}
+                  <div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                      <div class="board-admin-name">${escapeHtml(member.name || "YoungMinds Member")}</div>
+                      <span class="board-status-pill ${linked ? (active ? "live" : "draft") : "draft"}">${linked ? (active ? "On board" : "Draft card") : "Not on board"}</span>
+                    </div>
+                    <div class="board-admin-role">${escapeHtml(member.skill || "Team Member")}</div>
+                    <div class="board-admin-bio">${escapeHtml(member.why || member.achievementTitle || member.email || "Ready to be added to the public board.")}</div>
+                  </div>
+                  <div class="board-admin-actions">
+                    ${linked
+                      ? `<button class="btn-sm" type="button" onclick="editBoardMember('${escapeHtml(String(linked.id || linked._id || ""))}')">Edit Card</button>`
+                      : `<button class="btn-sm primary" type="button" onclick="addHiredMemberToBoard('${escapeHtml(String(member.id || member._id || ""))}')">Add to Board</button>`}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        `}
+      </div>
+      <div class="board-admin-card">
+        <div class="board-admin-head">
+          <div>
+            <div class="board-admin-title">${current ? "Edit board card" : "Select a board card"}</div>
+            <div class="board-admin-sub">Board cards are curated public profiles. Use this panel to refine name, role, photo, skills, intro, and visibility.</div>
+          </div>
+          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">Close</button>` : ``}
         </div>
-        <div class="form-row">
-          <div class="form-field"><label>Photo URL</label><input id="board-photo" type="text" placeholder="https://..." value="${escapeHtml(formEntry.photo || "")}"></div>
-          <div class="form-field"><label>Display Order</label><input id="board-order" type="number" min="0" step="1" value="${Number.isFinite(Number(formEntry.order)) ? Number(formEntry.order) : 0}"></div>
-        </div>
-        <div class="form-row full">
-          <div class="form-field"><label>Skills</label><input id="board-skills" type="text" placeholder="Web Development, UI Design, Content" value="${escapeHtml(Array.isArray(formEntry.skills) ? formEntry.skills.join(", ") : "")}"></div>
-        </div>
-        <div class="form-row full">
-          <div class="form-field"><label>Short Intro</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
-        </div>
-        <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-          <button class="btn-sm primary" type="button" onclick="saveBoardMember()">${current ? "Update member" : "Add member"}</button>
-          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">Cancel</button>` : ``}
-        </div>
+        ${!current ? `
+          <div class="empty" style="padding:32px 18px">
+            <div class="empty-icon">◫</div>
+            <div class="empty-title">Pick a board card to edit</div>
+            <div class="empty-sub">Add someone from the hired members list, or choose an existing card from the published list below.</div>
+          </div>
+        ` : `
+          <input id="board-application-id" type="hidden" value="${escapeHtml(formEntry.applicationId || "")}">
+          <div class="form-row">
+            <div class="form-field"><label>Name</label><input id="board-name" type="text" placeholder="Member name" value="${escapeHtml(formEntry.name || "")}"></div>
+            <div class="form-field"><label>Designation</label><input id="board-designation" type="text" placeholder="Founder, Designer, Web Developer..." value="${escapeHtml(formEntry.designation || "")}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Profile Pic URL</label><input id="board-photo" type="text" placeholder="https://..." value="${escapeHtml(formEntry.photo || "")}"></div>
+            <div class="form-field"><label>Display Order</label><input id="board-order" type="number" min="0" step="1" value="${Number.isFinite(Number(formEntry.order)) ? Number(formEntry.order) : 0}"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Skills</label><input id="board-skills" type="text" placeholder="Web Development, UI Design, Content" value="${escapeHtml(Array.isArray(formEntry.skills) ? formEntry.skills.join(", ") : "")}"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Short Intro</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
+          </div>
+          <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+            <button class="btn-sm primary" type="button" onclick="saveBoardMember()">Update Card</button>
+            <button class="btn-sm" type="button" onclick="deleteBoardMember('${escapeHtml(String(formEntry.id || formEntry._id || ""))}')">Delete Card</button>
+          </div>
+        `}
       </div>
       <div class="board-admin-card">
         <div class="board-admin-head">
           <div>
             <div class="board-admin-title">Published list</div>
-            <div class="board-admin-sub">Reorder or switch entries to draft anytime. Empty list will show “Board will be updated soon” publicly.</div>
+            <div class="board-admin-sub">This is the curated order used on the public site. Empty state will show “Board will be updated soon.”</div>
           </div>
         </div>
         ${boardEntries.length === 0 ? `
           <div class="empty" style="padding:32px 18px">
             <div class="empty-icon">◫</div>
-            <div class="empty-title">No board members yet</div>
-            <div class="empty-sub">Add your first member card from the form on the left.</div>
+            <div class="empty-title">No board cards yet</div>
+            <div class="empty-sub">Add the right people from the hired list to start shaping the public board.</div>
           </div>
         ` : `
           <div class="board-admin-list">
-            ${boardEntries.map(entry => `
-              <div class="board-admin-item">
-                ${boardPhotoMarkup(entry)}
-                <div>
-                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-                    <div class="board-admin-name">${escapeHtml(entry.name || "YoungMinds Member")}</div>
-                    <span class="board-status-pill ${entry.active !== false ? "live" : "draft"}">${entry.active !== false ? "Live" : "Draft"}</span>
+            ${boardEntries.map(entry => {
+              const linkedMember = boardLinkedApplication(entry);
+              return `
+                <div class="board-admin-item">
+                  ${boardPhotoMarkup(entry)}
+                  <div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                      <div class="board-admin-name">${escapeHtml(entry.name || "YoungMinds Member")}</div>
+                      <span class="board-status-pill ${entry.active !== false ? "live" : "draft"}">${entry.active !== false ? "Live" : "Draft"}</span>
+                    </div>
+                    <div class="board-admin-role">${escapeHtml(entry.designation || "Team Member")}</div>
+                    <div class="board-admin-bio">${escapeHtml(entry.bio || "No intro added yet.")}</div>
+                    <div class="board-admin-skills">
+                      ${(Array.isArray(entry.skills) && entry.skills.length ? entry.skills : ["YoungMinds"]).slice(0,6).map(skill => `<span class="board-admin-skill">${escapeHtml(skill)}</span>`).join("")}
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:10px">Order: <strong style="color:var(--text)">${Number.isFinite(Number(entry.order)) ? Number(entry.order) : 0}</strong>${linkedMember ? ` · Linked to ${escapeHtml(linkedMember.name || "member")}` : ""}</div>
                   </div>
-                  <div class="board-admin-role">${escapeHtml(entry.designation || "Team Member")}</div>
-                  <div class="board-admin-bio">${escapeHtml(entry.bio || "No intro added yet.")}</div>
-                  <div class="board-admin-skills">
-                    ${(Array.isArray(entry.skills) && entry.skills.length ? entry.skills : ["YoungMinds"]).slice(0,6).map(skill => `<span class="board-admin-skill">${escapeHtml(skill)}</span>`).join("")}
+                  <div class="board-admin-actions">
+                    <button class="btn-sm" type="button" onclick="editBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Edit</button>
+                    <button class="btn-sm" type="button" onclick="deleteBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Delete</button>
                   </div>
-                  <div style="font-size:11px;color:var(--muted);margin-top:10px">Order: <strong style="color:var(--text)">${Number.isFinite(Number(entry.order)) ? Number(entry.order) : 0}</strong></div>
                 </div>
-                <div class="board-admin-actions">
-                  <button class="btn-sm" type="button" onclick="editBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Edit</button>
-                  <button class="btn-sm" type="button" onclick="deleteBoardMember('${escapeHtml(String(entry.id || entry._id || ""))}')">Delete</button>
-                </div>
-              </div>
-            `).join("")}
+              `;
+            }).join("")}
           </div>
         `}
       </div>
@@ -2394,6 +2471,37 @@ function editBoardMember(id){
 function cancelBoardEdit(){
   currentBoardEditId = null;
   renderBoardManager();
+}
+
+async function addHiredMemberToBoard(memberId){
+  const member = apps.find(item => String(item.id || item._id) === String(memberId));
+  if(!member){
+    showToast("Could not find that hired member");
+    return;
+  }
+  const existing = boardEntryByApplicationId(memberId);
+  if(existing){
+    currentBoardEditId = existing.id || existing._id;
+    renderBoardManager();
+    showToast("That member already has a board card");
+    return;
+  }
+  const payload = boardDraftFromApplication(member);
+  try {
+    const response = await fetch(`${API}/api/board-members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("create failed");
+    const created = await response.json();
+    currentBoardEditId = created.id || created._id;
+    await loadAll();
+    nav("board");
+    showToast("Member added to board");
+  } catch {
+    showToast("Could not add member to board");
+  }
 }
 
 function getCurrentServiceEntry(){
@@ -2855,6 +2963,7 @@ async function savePackagesPricingConfig(){
 
 async function saveBoardMember(){
   const payload = {
+    applicationId: document.getElementById("board-application-id")?.value.trim(),
     name: document.getElementById("board-name")?.value.trim(),
     designation: document.getElementById("board-designation")?.value.trim(),
     photo: document.getElementById("board-photo")?.value.trim(),

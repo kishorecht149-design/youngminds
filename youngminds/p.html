@@ -103,6 +103,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .stat-l{font-size:13px;color:var(--muted);margin-top:8px;font-weight:500}
 
 .board-carousel{position:relative;margin-top:34px}
+.board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:34px}
 .board-window{overflow:hidden}
 .board-track{display:flex;gap:18px;transition:transform .65s ease;will-change:transform}
 .board-slide{flex:0 0 clamp(228px,22vw,280px)}
@@ -120,6 +121,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .board-empty-title{font-size:18px;font-weight:800;letter-spacing:-0.4px;margin-bottom:8px}
 .board-empty-sub{font-size:14px;color:var(--muted);line-height:1.7}
 .board-rail{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:14px}
+.board-controls{display:flex;align-items:center;gap:10px}
+.board-nav-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--text);font-size:16px;transition:all .2s}
+.board-nav-btn:hover{border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.08);color:var(--accent)}
+.board-nav-btn:disabled{opacity:.35;cursor:not-allowed}
 .board-progress{flex:1;height:2px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden}
 .board-progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),#fff1a6);border-radius:999px;transition:width .35s ease}
 .board-count{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted3);white-space:nowrap}
@@ -334,6 +339,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .hero-features{grid-template-columns:1fr}
   .preview-main{padding:20px}
   .pm-stats{flex-direction:column;gap:14px}
+  .board-grid{grid-template-columns:1fr}
   .board-slide{flex-basis:min(78vw,280px)}
   .svc-table{grid-template-columns:1fr}
   .svc-row-link{padding:20px}
@@ -750,33 +756,30 @@ function boardMetrics(){
 function updateBoardProgress(){
   const fill=document.getElementById('boardProgressFill');
   const count=document.getElementById('boardCount');
+  const prev=document.getElementById('boardPrev');
+  const next=document.getElementById('boardNext');
   if(fill && boardCarouselCount){
-    fill.style.width=`${((boardCarouselIndex % boardCarouselCount)+1)/boardCarouselCount*100}%`;
+    fill.style.width=`${(Math.min(boardCarouselIndex,boardCarouselCount-1)+1)/boardCarouselCount*100}%`;
   }
   if(count && boardCarouselCount){
-    count.textContent=`${String((boardCarouselIndex % boardCarouselCount)+1).padStart(2,'0')} / ${String(boardCarouselCount).padStart(2,'0')}`;
+    count.textContent=`${String(Math.min(boardCarouselIndex,boardCarouselCount-1)+1).padStart(2,'0')} / ${String(boardCarouselCount).padStart(2,'0')}`;
   }
+  if(prev) prev.disabled = boardCarouselIndex <= 0;
+  if(next) next.disabled = boardCarouselIndex >= boardCarouselCount - 1;
 }
 
 function goBoardSlide(index,animate=true){
   const metrics=boardMetrics();
   if(!metrics||!boardCarouselCount)return;
-  boardCarouselIndex=index;
+  boardCarouselIndex=Math.max(0,Math.min(index,boardCarouselCount-1));
   metrics.track.style.transition=animate?'transform .65s ease':'none';
   metrics.track.style.transform=`translateX(-${metrics.step*boardCarouselIndex}px)`;
   updateBoardProgress();
 }
 
-function startBoardCarousel(){
-  stopBoardCarousel();
-  if(boardCarouselCount<=1)return;
-  boardCarouselTimer=setInterval(()=>{
-    goBoardSlide(boardCarouselIndex+1,true);
-    if(boardCarouselIndex===boardCarouselCount){
-      window.setTimeout(()=>goBoardSlide(0,false),700);
-    }
-  },3200);
-}
+function startBoardCarousel(){ stopBoardCarousel(); }
+function prevBoardSlide(){ goBoardSlide(boardCarouselIndex-1,true); }
+function nextBoardSlide(){ goBoardSlide(boardCarouselIndex+1,true); }
 
 function renderBoardMembers(entries){
   const host=document.getElementById('boardMembers');
@@ -788,10 +791,28 @@ function renderBoardMembers(entries){
   }
   boardCarouselIndex=0;
   boardCarouselCount=entries.length;
-  const renderedEntries=entries.length>1?[...entries, entries[0]]:entries;
-  host.innerHTML=`<div class="board-carousel" onmouseenter="stopBoardCarousel()" onmouseleave="startBoardCarousel()" ontouchstart="stopBoardCarousel()" ontouchend="startBoardCarousel()">
+  if(entries.length<=3){
+    host.innerHTML=`<div class="board-grid">${entries.map(member=>{
+      const skills=(Array.isArray(member.skills)?member.skills:[]).slice(0,6);
+      const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
+      return `<article class="board-card">
+        <div class="board-photo">
+          ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
+          <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
+        </div>
+        <div class="board-body">
+          <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
+          <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
+          <div class="board-bio">${escapeHtml(member.bio||'Working across projects, delivery, and execution inside YoungMinds.')}</div>
+          <div class="board-skills">${skills.length?skills.map(skill=>`<span class="board-skill">${escapeHtml(skill)}</span>`).join(''):`<span class="board-skill">YoungMinds</span>`}</div>
+        </div>
+      </article>`;
+    }).join('')}</div>`;
+    return;
+  }
+  host.innerHTML=`<div class="board-carousel">
     <div class="board-window">
-      <div class="board-track" id="boardTrack">${renderedEntries.map(member=>{
+      <div class="board-track" id="boardTrack">${entries.map(member=>{
     const skills=(Array.isArray(member.skills)?member.skills:[]).slice(0,6);
     const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
     return `<div class="board-slide"><article class="board-card">
@@ -808,10 +829,9 @@ function renderBoardMembers(entries){
     </article></div>`;
   }).join('')}</div>
     </div>
-    ${entries.length>1?`<div class="board-rail"><div class="board-progress"><div class="board-progress-fill" id="boardProgressFill"></div></div><div class="board-count" id="boardCount">01 / ${String(entries.length).padStart(2,'0')}</div></div>`:''}
+    <div class="board-rail"><div class="board-progress"><div class="board-progress-fill" id="boardProgressFill"></div></div><div class="board-controls"><button class="board-nav-btn" id="boardPrev" type="button" onclick="prevBoardSlide()" aria-label="Previous board member">←</button><button class="board-nav-btn" id="boardNext" type="button" onclick="nextBoardSlide()" aria-label="Next board member">→</button><div class="board-count" id="boardCount">01 / ${String(entries.length).padStart(2,'0')}</div></div></div>
   </div>`;
   goBoardSlide(0,false);
-  startBoardCarousel();
 }
 
 window.addEventListener('resize',()=>{ if(boardCarouselCount) goBoardSlide(boardCarouselIndex===boardCarouselCount?0:boardCarouselIndex,false); });
