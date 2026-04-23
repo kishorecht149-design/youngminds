@@ -2304,14 +2304,13 @@ function boardEntryByApplicationId(applicationId){
 }
 
 function boardDraftFromApplication(member){
-  const skills = [member?.skill, member?.experience, member?.college].filter(Boolean);
   return {
     applicationId: String(member?.id || member?._id || ""),
     name: member?.name || "",
     designation: member?.skill || "YoungMinds Member",
-    skills,
-    photo: member?.profilePic || "",
-    bio: member?.why || member?.achievementTitle || "",
+    skills: [],
+    photo: "",
+    bio: "",
     order: boardEntries.length,
     active: true
   };
@@ -2367,7 +2366,7 @@ function renderBoardManager(){
                       <span class="board-status-pill ${linked ? (active ? "live" : "draft") : "draft"}">${linked ? (active ? "On board" : "Draft card") : "Not on board"}</span>
                     </div>
                     <div class="board-admin-role">${escapeHtml(member.skill || "Team Member")}</div>
-                    <div class="board-admin-bio">${escapeHtml(member.why || member.achievementTitle || member.email || "Ready to be added to the public board.")}</div>
+                    <div class="board-admin-bio">${linked ? "Already linked to a curated board card." : "Starts with name and designation only. Add photo, bio, and any other public details manually."}</div>
                   </div>
                   <div class="board-admin-actions">
                     ${linked
@@ -2405,10 +2404,10 @@ function renderBoardManager(){
             <div class="form-field"><label>Display Order</label><input id="board-order" type="number" min="0" step="1" value="${Number.isFinite(Number(formEntry.order)) ? Number(formEntry.order) : 0}"></div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>Skills</label><input id="board-skills" type="text" placeholder="Web Development, UI Design, Content" value="${escapeHtml(Array.isArray(formEntry.skills) ? formEntry.skills.join(", ") : "")}"></div>
+            <div class="form-field"><label>About / Bio</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>Short Intro</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
+            <div class="service-admin-note">Public board cards use the hired member only for name and designation. Photo and about text are curated here manually.</div>
           </div>
           <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
@@ -2444,9 +2443,6 @@ function renderBoardManager(){
                     </div>
                     <div class="board-admin-role">${escapeHtml(entry.designation || "Team Member")}</div>
                     <div class="board-admin-bio">${escapeHtml(entry.bio || "No intro added yet.")}</div>
-                    <div class="board-admin-skills">
-                      ${(Array.isArray(entry.skills) && entry.skills.length ? entry.skills : ["YoungMinds"]).slice(0,6).map(skill => `<span class="board-admin-skill">${escapeHtml(skill)}</span>`).join("")}
-                    </div>
                     <div style="font-size:11px;color:var(--muted);margin-top:10px">Order: <strong style="color:var(--text)">${Number.isFinite(Number(entry.order)) ? Number(entry.order) : 0}</strong>${linkedMember ? ` · Linked to ${escapeHtml(linkedMember.name || "member")}` : ""}</div>
                   </div>
                   <div class="board-admin-actions">
@@ -2967,7 +2963,7 @@ async function saveBoardMember(){
     name: document.getElementById("board-name")?.value.trim(),
     designation: document.getElementById("board-designation")?.value.trim(),
     photo: document.getElementById("board-photo")?.value.trim(),
-    skills: document.getElementById("board-skills")?.value.trim(),
+    skills: [],
     bio: document.getElementById("board-bio")?.value.trim(),
     order: Number(document.getElementById("board-order")?.value || 0),
     active: !!document.getElementById("board-active")?.checked

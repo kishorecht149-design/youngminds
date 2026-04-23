@@ -1772,19 +1772,14 @@ function compactBoardBio(value) {
 
 function hydrateBoardEntry(entry, member) {
   const safeEntry = sanitizeBoardMember(entry);
-  const fallbackSkills = member ? normalizeBoardSkills([
-    member.skill,
-    member.experience,
-    member.college
-  ].filter(Boolean)) : [];
   return {
     ...safeEntry,
     applicationId: String(safeEntry.applicationId || member?._id || "").trim(),
     name: String(safeEntry.name || member?.name || "YoungMinds Member").trim(),
     designation: String(safeEntry.designation || member?.skill || "YoungMinds Member").trim(),
-    skills: normalizeBoardSkills((safeEntry.skills && safeEntry.skills.length ? safeEntry.skills : fallbackSkills)),
-    bio: compactBoardBio(safeEntry.bio || member?.why || member?.achievementTitle || `${member?.name || "This member"} is part of the YoungMinds team.`),
-    photo: String(safeEntry.photo || member?.profilePic || "").trim()
+    skills: normalizeBoardSkills(safeEntry.skills || []),
+    bio: compactBoardBio(safeEntry.bio || ""),
+    photo: String(safeEntry.photo || "").trim()
   };
 }
 

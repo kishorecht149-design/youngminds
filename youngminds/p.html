@@ -777,7 +777,14 @@ function goBoardSlide(index,animate=true){
   updateBoardProgress();
 }
 
-function startBoardCarousel(){ stopBoardCarousel(); }
+function startBoardCarousel(){
+  stopBoardCarousel();
+  if(boardCarouselCount<=3)return;
+  boardCarouselTimer=setInterval(()=>{
+    const nextIndex = boardCarouselIndex >= boardCarouselCount - 1 ? 0 : boardCarouselIndex + 1;
+    goBoardSlide(nextIndex,true);
+  },5200);
+}
 function prevBoardSlide(){ goBoardSlide(boardCarouselIndex-1,true); }
 function nextBoardSlide(){ goBoardSlide(boardCarouselIndex+1,true); }
 
@@ -793,7 +800,6 @@ function renderBoardMembers(entries){
   boardCarouselCount=entries.length;
   if(entries.length<=3){
     host.innerHTML=`<div class="board-grid">${entries.map(member=>{
-      const skills=(Array.isArray(member.skills)?member.skills:[]).slice(0,6);
       const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
       return `<article class="board-card">
         <div class="board-photo">
@@ -803,17 +809,15 @@ function renderBoardMembers(entries){
         <div class="board-body">
           <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
           <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
-          <div class="board-bio">${escapeHtml(member.bio||'Working across projects, delivery, and execution inside YoungMinds.')}</div>
-          <div class="board-skills">${skills.length?skills.map(skill=>`<span class="board-skill">${escapeHtml(skill)}</span>`).join(''):`<span class="board-skill">YoungMinds</span>`}</div>
+          ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
         </div>
       </article>`;
     }).join('')}</div>`;
     return;
   }
-  host.innerHTML=`<div class="board-carousel">
+  host.innerHTML=`<div class="board-carousel" onmouseenter="stopBoardCarousel()" onmouseleave="startBoardCarousel()" onfocusin="stopBoardCarousel()" onfocusout="startBoardCarousel()" ontouchstart="stopBoardCarousel()">
     <div class="board-window">
       <div class="board-track" id="boardTrack">${entries.map(member=>{
-    const skills=(Array.isArray(member.skills)?member.skills:[]).slice(0,6);
     const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
     return `<div class="board-slide"><article class="board-card">
       <div class="board-photo">
@@ -823,8 +827,7 @@ function renderBoardMembers(entries){
       <div class="board-body">
         <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
         <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
-        <div class="board-bio">${escapeHtml(member.bio||'Working across projects, delivery, and execution inside YoungMinds.')}</div>
-        <div class="board-skills">${skills.length?skills.map(skill=>`<span class="board-skill">${escapeHtml(skill)}</span>`).join(''):`<span class="board-skill">YoungMinds</span>`}</div>
+        ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
       </div>
     </article></div>`;
   }).join('')}</div>
@@ -832,6 +835,7 @@ function renderBoardMembers(entries){
     <div class="board-rail"><div class="board-progress"><div class="board-progress-fill" id="boardProgressFill"></div></div><div class="board-controls"><button class="board-nav-btn" id="boardPrev" type="button" onclick="prevBoardSlide()" aria-label="Previous board member">←</button><button class="board-nav-btn" id="boardNext" type="button" onclick="nextBoardSlide()" aria-label="Next board member">→</button><div class="board-count" id="boardCount">01 / ${String(entries.length).padStart(2,'0')}</div></div></div>
   </div>`;
   goBoardSlide(0,false);
+  startBoardCarousel();
 }
 
 window.addEventListener('resize',()=>{ if(boardCarouselCount) goBoardSlide(boardCarouselIndex===boardCarouselCount?0:boardCarouselIndex,false); });
