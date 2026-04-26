@@ -51,7 +51,7 @@ app.use(express.urlencoded({ extended: true, limit: "80mb" }));
 /* ══════════════════════════════════════════
    SERVE FRONTEND FILES
 ══════════════════════════════════════════ */
-const rootDir = path.join(__dirname, "..");
+const rootDir = path.join(__dirname, "../..");
 const uploadsDir = path.join(rootDir, "uploads");
 const submissionUploadsDir = path.join(uploadsDir, "project-submissions");
 const FRONTEND_BUILD_TAG = "services-fix-2026-04-21";
@@ -397,14 +397,14 @@ function sendShellFile(res, fileName) {
   return res.sendFile(fullPath);
 }
 
-app.get("/admin",  (req, res) => sendShellFile(res, "n.html"));
-app.get("/admin/services",  (req, res) => sendShellFile(res, "n.html"));
-app.get("/admin/packages-pricing",  (req, res) => sendShellFile(res, "n.html"));
-app.get("/admin/interviews",  (req, res) => sendShellFile(res, "n.html"));
-app.get("/member", (req, res) => sendShellFile(res, "s.html"));
-app.get("/portal/projects", (req, res) => sendShellFile(res, "s.html"));
-app.get("/interview", (req, res) => sendShellFile(res, "interview.html"));
-app.get("/hire",   (req, res) => sendShellFile(res, "p.html"));
+app.get("/admin",  (req, res) => sendShellFile(res, "youngminds/n.html"));
+app.get("/admin/services",  (req, res) => sendShellFile(res, "youngminds/n.html"));
+app.get("/admin/packages-pricing",  (req, res) => sendShellFile(res, "youngminds/n.html"));
+app.get("/admin/interviews",  (req, res) => sendShellFile(res, "youngminds/n.html"));
+app.get("/member", (req, res) => sendShellFile(res, "youngminds/s.html"));
+app.get("/portal/projects", (req, res) => sendShellFile(res, "youngminds/s.html"));
+app.get("/interview", (req, res) => sendShellFile(res, "youngminds/interview.html"));
+app.get("/hire",   (req, res) => sendShellFile(res, "index.html"));
 app.get("/pricing-calculator", (req, res) => res.redirect("/packages-pricing"));
 app.use("/static", express.static(rootDir));
 app.use("/assets", express.static(path.join(rootDir, "assets")));
@@ -413,7 +413,7 @@ app.use("/uploads", express.static(uploadsDir));
 /* ══════════════════════════════════════════
    HEALTH CHECK
 ══════════════════════════════════════════ */
-app.get("/", (req, res) => sendShellFile(res, "p.html"));
+app.get("/", (req, res) => sendShellFile(res, "index.html"));
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
