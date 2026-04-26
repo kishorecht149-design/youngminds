@@ -418,7 +418,11 @@ app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
     ts: new Date().toISOString(),
-    db: mongoose.connection.readyState === 1 ? "connected" : "disconnected"
+    db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    ai_keys: {
+      openai: !!process.env.OPENAI_API_KEY,
+      gemini: !!process.env.GEMINI_API_KEY
+    }
   });
 });
 
