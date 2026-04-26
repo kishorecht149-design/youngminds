@@ -625,6 +625,12 @@ const applicationSchema = new mongoose.Schema({
   // Password reset
   resetToken:   String,
   resetExpiry:  Date,
+  // Interview fields
+  interviewPassword:      String,
+  interviewSessionNonce:  String,
+  interviewAssignedAt:    Date,
+  interviewLastResetBy:   String,
+  interviewLastLoginAt:   Date,
 }, { strict: false, timestamps: false });
 
 const Application = mongoose.model("Application", applicationSchema);
