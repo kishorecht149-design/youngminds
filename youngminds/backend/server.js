@@ -1325,7 +1325,10 @@ function hydrateAttemptExam(exam, attempt) {
 function getAttemptAnswerMap(attempt) {
   const map = new Map();
   (Array.isArray(attempt?.answers) ? attempt.answers : []).forEach((answer) => {
-    const val = (answer.selectedIndex != null) ? Number(answer.selectedIndex) : (answer.answerText || "");
+    // Prioritize answerText if it's a non-empty string, otherwise use selectedIndex
+    const val = (typeof answer.answerText === "string" && answer.answerText.trim().length > 0)
+      ? answer.answerText
+      : (answer.selectedIndex != null && answer.selectedIndex !== -1 ? Number(answer.selectedIndex) : "");
     map.set(Number(answer.questionIndex), val);
   });
   return map;
