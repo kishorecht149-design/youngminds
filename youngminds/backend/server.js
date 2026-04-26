@@ -1277,6 +1277,7 @@ function sanitizeInterviewExam(exam) {
     assignedCandidateIds: Array.isArray(exam?.assignedCandidateIds) ? exam.assignedCandidateIds.map(String) : [],
     questionCount: Array.isArray(exam?.questions) ? exam.questions.length : 0,
     questions: Array.isArray(exam?.questions) ? exam.questions.map((question) => ({
+      type: question?.type || "mcq",
       prompt: question?.prompt || "",
       options: Array.isArray(question?.options) ? question.options : [],
       correctIndex: Number(question?.correctIndex || 0),
@@ -2667,7 +2668,7 @@ app.post("/api/interviews/exams", async (req, res) => {
     const slugBase = slugify(body.slug || title);
     const slug = slugBase;
     const questions = normalizeInterviewQuestions(body.questions);
-    if (!questions.length) return res.status(400).json({ error: "Add at least one valid MCQ" });
+    if (!questions.length) return res.status(400).json({ error: "Add at least one question (MCQ or Descriptive)" });
 
     const exam = await InterviewExam.create({
       title,
@@ -2704,7 +2705,7 @@ app.put("/api/interviews/exams/:id", async (req, res) => {
 
     const body = req.body || {};
     const questions = normalizeInterviewQuestions(body.questions);
-    if (!questions.length) return res.status(400).json({ error: "Add at least one valid MCQ" });
+    if (!questions.length) return res.status(400).json({ error: "Add at least one question (MCQ or Descriptive)" });
 
     exam.title = String(body.title || exam.title || "").trim() || exam.title;
     exam.slug = slugify(body.slug || exam.slug || exam.title);

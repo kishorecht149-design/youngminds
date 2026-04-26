@@ -3319,7 +3319,7 @@ function renderInterviewsManager(){
       <div class="service-admin-head">
         <div>
           <div class="service-admin-title">Question Banks</div>
-          <div class="service-admin-sub">Create and edit reusable MCQ banks.</div>
+          <div class="service-admin-sub">Create reusable question banks with MCQ and Descriptive questions.</div>
         </div>
         <div class="interview-action-row">
           <button class="btn-sm primary" type="button" onclick="startNewInterviewExam()">+ New Qn Bank</button>
@@ -3333,12 +3333,12 @@ function renderInterviewsManager(){
               <button class="service-admin-item ${String(item.id)===String(current.id) ? "active" : ""}" type="button" onclick="selectInterviewExam('${escapeHtml(item.id)}')">
                 <div class="service-admin-item-top">
                   <div class="service-admin-item-name">${escapeHtml(item.title || "Question bank")}</div>
-                  <div class="service-admin-item-price">${item.questionCount || 0} MCQs</div>
+                  <div class="service-admin-item-price">${item.questionCount || 0} question${item.questionCount !== 1 ? 's' : ''}</div>
                 </div>
                 <div class="service-admin-meta"><span class="service-admin-pill">${escapeHtml(item.slug || "slug")}</span><span class="service-admin-pill">${item.durationMinutes || 30} min</span></div>
                 <div class="service-admin-item-copy" style="margin-top:10px">${escapeHtml(item.description || "No description added yet.")}</div>
               </button>
-            `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No question banks yet</div><div class="empty-sub">Start with a clean MCQ bank.</div></div>`}
+            `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No question banks yet</div><div class="empty-sub">Create your first question bank.</div></div>`}
           </div>
         </div>
         <div class="service-admin-card">
