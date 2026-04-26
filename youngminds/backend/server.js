@@ -1174,6 +1174,17 @@ const interviewAnswerSchema = new mongoose.Schema({
   savedAt:       { type: Date, default: Date.now }
 }, { _id: false });
 
+const interviewAiGradeSchema = new mongoose.Schema({
+  displayIndex:  { type: Number },
+  originalIndex: { type: Number },
+  question:      { type: String },
+  answer:        { type: String },
+  score:         { type: Number },
+  outOf:         { type: Number },
+  feedback:      { type: String },
+  aiGraded:      { type: Boolean }
+}, { _id: false });
+
 const interviewAttemptSchema = new mongoose.Schema({
   examId:           { type: String, required: true, index: true },
   applicationId:    { type: String, required: true, index: true },
@@ -1189,6 +1200,7 @@ const interviewAttemptSchema = new mongoose.Schema({
   questionOrder:    { type: [Number], default: [] },
   optionOrders:     { type: [[Number]], default: [] },
   answers:          { type: [interviewAnswerSchema], default: [] },
+  aiGrades:         { type: [interviewAiGradeSchema], default: [] },
   currentIndex:     { type: Number, default: 0 },
   result: {
     correct:        { type: Number, default: 0 },
