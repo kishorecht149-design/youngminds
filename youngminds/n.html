@@ -131,6 +131,9 @@ a{text-decoration:none;color:inherit}
 .btn-sm:hover{color:var(--text);border-color:var(--border3)}
 .btn-sm.primary{background:var(--accent);color:#000;border-color:var(--accent)}
 .btn-sm.primary:hover{opacity:.88}
+.btn-xs{background:transparent;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--muted3);cursor:pointer;transition:all .15s ease}
+.btn-xs.active{background:var(--accent);color:#000}
+.service-admin-pill-toggle{display:flex;background:var(--bg2);border-radius:10px;padding:2px;border:1px solid var(--border2)}
 
 /* ── EMPTY ── */
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 20px;text-align:center}
@@ -3363,12 +3366,12 @@ function renderInterviewsManager(){
                 <div data-interview-question style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)">
                   <div class="service-admin-item-top" style="margin-bottom:10px">
                     <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
-                    <div style="display:flex;gap:8px">
-                      <select data-question-type style="font-size:11px;padding:4px 8px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--muted3)" onchange="updateInterviewQuestionType(${questionIndex}, this.value)">
-                        <option value="mcq" ${question.type === "mcq" || !question.type ? "selected" : ""}>MCQ</option>
-                        <option value="descriptive" ${question.type === "descriptive" ? "selected" : ""}>Descriptive</option>
-                      </select>
-                      <button class="btn-sm" type="button" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
+                    <div style="display:flex;gap:6px">
+                      <div class="service-admin-pill-toggle" style="display:flex;background:var(--bg2);border-radius:10px;padding:2px;border:1px solid var(--border2)">
+                        <button type="button" class="btn-xs ${(!question.type || question.type === 'mcq') ? 'active' : ''}" style="border:none;padding:4px 8px;font-size:10px;border-radius:8px" onclick="updateInterviewQuestionType(${questionIndex}, 'mcq')">MCQ</button>
+                        <button type="button" class="btn-xs ${(question.type === 'descriptive') ? 'active' : ''}" style="border:none;padding:4px 8px;font-size:10px;border-radius:8px" onclick="updateInterviewQuestionType(${questionIndex}, 'descriptive')">DESC</button>
+                      </div>
+                      <button class="btn-sm" type="button" style="padding:4px 10px;font-size:11px" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
                     </div>
                   </div>
                   <div class="form-field"><label>Prompt</label><textarea data-question-prompt placeholder="Write the question prompt">${escapeHtml(question.prompt || "")}</textarea></div>
