@@ -3234,7 +3234,7 @@ function renderInterviewsManager(){
 
   el.innerHTML = `
     <div class="view-hdr">
-      <span class="view-hdr-title">Interviews</span>
+      <span class="view-hdr-title">Interviews (v2.1 AI-FIXED)</span>
       <span class="view-hdr-count">${eligibleCandidates.length} eligible members · ${interviewExams.length} question bank${interviewExams.length!==1?'s':''} · ${liveAttempts.length} attempts · ${interviewLive.length} live</span>
       <div class="vhdr-right">
         <button class="btn-sm" type="button" onclick="loadInterviewData({ render: true })" ${interviewState.loading ? "disabled" : ""}>Refresh Interviews</button>
