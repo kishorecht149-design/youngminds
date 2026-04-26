@@ -744,50 +744,56 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   <div class="ft-copy">© 2026 YoungMinds Agency</div>
 </footer>
 
-<button id="ym-toggle-btn" aria-label="Open chat">
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
-  </svg>
-  <span class="ym-dot"></span>
-</button>
+<div id="ym-chatbot-container" class="ym-chatbot-ui">
+  <button id="ym-toggle-btn" aria-label="Open chat">
+    <!-- SVG injected by JS -->
+    <span class="ym-dot"></span>
+  </button>
 
-<div id="ym-chatbot">
-  <div id="ym-header">
-    <div class="ym-header-left">
-      <div class="ym-avatar"><img src="/assets/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
-      <div class="ym-header-info">
-        <h4>Yemi &middot; YoungMinds</h4>
-        <span>Online now</span>
+  <div id="ym-chatbot">
+    <div id="ym-header">
+      <div class="ym-header-left">
+        <div class="ym-avatar-container">
+          <img src="/assets/logo.png" class="ym-avatar-img" alt="Yemi Avatar">
+        </div>
+        <div class="ym-header-info">
+          <h4>Yemi · YoungMinds</h4>
+          <div class="ym-status">
+            <span class="ym-status-dot"></span>
+            Online now
+          </div>
+        </div>
+      </div>
+      <div class="ym-header-actions">
+        <button id="ym-clear-btn" class="ym-btn-ghost" title="Clear chat"></button>
+        <button id="ym-close-btn" class="ym-btn-ghost" title="Close chat"></button>
       </div>
     </div>
-    <div class="ym-header-actions">
-      <button id="ym-clear-btn" class="ym-icon-btn" title="Clear chat">&#8635;</button>
-      <button id="ym-close-btn" class="ym-icon-btn" title="Close">&#10005;</button>
-    </div>
-  </div>
 
-  <div id="ym-messages" role="log" aria-live="polite">
-    <div id="ym-typing" style="display:none;">
-      <div class="ym-msg-avatar"><img src="/assets/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
-      <div class="ym-dots">
-        <span></span><span></span><span></span>
+    <div id="ym-messages" role="log" aria-live="polite">
+      <!-- Messages appear here -->
+      <div id="ym-typing">
+        <div class="ym-msg-avatar">
+          <img src="/assets/logo.png" alt="Yemi">
+        </div>
+        <div class="ym-typing-bubble">
+          <span></span><span></span><span></span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="ym-quick-replies"></div>
+    <div id="ym-quick-replies"></div>
 
-  <div id="ym-input-area">
-    <textarea id="ym-input" placeholder="Ask about pricing, services, or joining..." rows="1" maxlength="500"></textarea>
-    <button id="ym-send-btn">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-      </svg>
-    </button>
-  </div>
+    <div id="ym-input-area">
+      <div class="ym-input-container">
+        <textarea id="ym-input" placeholder="Ask Yemi anything..." rows="1"></textarea>
+      </div>
+      <button id="ym-send-btn" disabled title="Send message"></button>
+    </div>
 
-  <div id="ym-footer">
-    Powered by <a href="https://youngmindsagency.vercel.app" target="_blank">YoungMinds Agency</a>
+    <div id="ym-footer">
+      Powered by <a href="https://youngmindsagency.vercel.app" target="_blank">YoungMinds AI</a>
+    </div>
   </div>
 </div>
 

@@ -43,10 +43,27 @@
   const clearBtn     = document.getElementById("ym-clear-btn");
   const dot          = document.querySelector(".ym-dot");
 
+  // ── Icons (Professional SVGs) ─────────────────────────────────────────────
+  const ICONS = {
+    chat: `<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`,
+    close: `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
+    send: `<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`,
+    clear: `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`,
+    user: `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`
+  };
+
   // ── Init ──────────────────────────────────────────────────────────────────
   function init() {
+    setupInitialUI();
     buildQuickReplies();
     bindEvents();
+  }
+
+  function setupInitialUI() {
+    toggleBtn.innerHTML = ICONS.chat;
+    closeBtn.innerHTML = ICONS.close;
+    clearBtn.innerHTML = ICONS.clear;
+    sendBtn.innerHTML = ICONS.send;
   }
 
   // ── Build quick-reply buttons ─────────────────────────────────────────────
@@ -57,7 +74,6 @@
       btn.className   = "ym-qr-btn";
       btn.textContent = label;
       btn.addEventListener("click", () => {
-        // Strip emoji prefix for the actual message sent
         const text = label.replace(/^[\p{Emoji}\s]+/u, "").trim();
         sendMessage(text);
       });
@@ -79,7 +95,6 @@
       }
     });
 
-    // Auto-resize textarea
     inputEl.addEventListener("input", () => {
       inputEl.style.height = "auto";
       inputEl.style.height = Math.min(inputEl.scrollHeight, 110) + "px";
@@ -94,33 +109,36 @@
   function openChat() {
     isOpen = true;
     chatWindow.classList.add("ym-open");
+    toggleBtn.classList.add("active");
+    toggleBtn.innerHTML = ICONS.close;
 
-    // Hide notification dot
     if (dot) dot.style.display = "none";
 
-    // Show welcome message once
     if (!hasWelcomed) {
       hasWelcomed = true;
-      setTimeout(() => appendBotMessage(WELCOME_MSG), 300);
+      setTimeout(() => appendBotMessage(WELCOME_MSG), 400);
     }
 
-    setTimeout(() => inputEl.focus(), 350);
+    setTimeout(() => inputEl.focus(), 450);
   }
 
   function closeChat() {
     isOpen = false;
     chatWindow.classList.remove("ym-open");
+    toggleBtn.classList.remove("active");
+    toggleBtn.innerHTML = ICONS.chat;
   }
 
   // ── Clear conversation ────────────────────────────────────────────────────
   function clearChat() {
+    if (!confirm("Clear this chat?")) return;
     history     = [];
     hasWelcomed = false;
     messagesEl.innerHTML = "";
     typingEl.style.display = "none";
     isTyping = false;
     unlockInput();
-    setTimeout(() => appendBotMessage(WELCOME_MSG), 200);
+    setTimeout(() => appendBotMessage(WELCOME_MSG), 300);
   }
 
   // ── Handle send ───────────────────────────────────────────────────────────
@@ -133,19 +151,15 @@
   async function sendMessage(text) {
     if (!text || isTyping) return;
 
-    // Show user bubble
     appendUserMessage(text);
     history.push({ role: "user", content: text });
 
-    // Reset input
     inputEl.value = "";
     inputEl.style.height = "auto";
 
-    // Lock UI + show typing
     lockInput();
     showTyping();
 
-    // Dynamically grab page context so the AI knows about new features/services!
     const ctx = { page: "hire", history: history.slice(-5) };
     const serviceEls = document.querySelectorAll('.svc-row');
     if (serviceEls.length > 0) {
@@ -206,7 +220,7 @@
   function appendUserMessage(text) {
     const wrapper = createMsgWrapper("ym-user");
     wrapper.innerHTML = `
-      <div class="ym-msg-avatar">👤</div>
+      <div class="ym-msg-avatar" style="background:var(--ym-accent); padding:6px; fill:var(--ym-black);">${ICONS.user}</div>
       <div>
         <div class="ym-bubble">${escapeHtml(text)}</div>
         <div class="ym-time">${getTime()}</div>
@@ -219,7 +233,7 @@
   function appendBotMessage(text) {
     const wrapper = createMsgWrapper("ym-bot");
     wrapper.innerHTML = `
-      <div class="ym-msg-avatar"><img src="/assets/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+      <div class="ym-msg-avatar"><img src="/assets/logo.png" alt="Yemi"></div>
       <div>
         <div class="ym-bubble">${formatBotText(text)}</div>
         <div class="ym-time">Yemi · ${getTime()}</div>
@@ -235,7 +249,6 @@
     return div;
   }
 
-  // Insert message before the typing indicator (keeps typing at bottom)
   function insertBeforeTyping(el) {
     messagesEl.insertBefore(el, typingEl);
   }
@@ -283,26 +296,17 @@
       .replace(/"/g, "&quot;");
   }
 
-  // Convert plain text bot replies → readable HTML
-  // Handles: URLs as clickable links, line breaks
   function formatBotText(text) {
-    // Escape HTML first
     let safe = escapeHtml(text);
-
-    // Convert URLs to clickable links
     safe = safe.replace(
       /(https?:\/\/[^\s]+)/g,
       '<a href="$1" target="_blank" rel="noopener" ' +
-      'style="color:var(--ym-yellow);text-decoration:underline;">$1</a>'
+      'style="color:var(--ym-accent);text-decoration:underline;">$1</a>'
     );
-
-    // Line breaks
     safe = safe.replace(/\n/g, "<br>");
-
     return safe;
   }
 
-  // ── Start ─────────────────────────────────────────────────────────────────
   init();
 
 })();

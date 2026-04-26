@@ -1,428 +1,485 @@
 /* ═══════════════════════════════════════════════════════════════
    YoungMinds Agency — AI Chatbot Styles
-   Theme: Black + Yellow  |  Fixed bottom-right popup
+   Theme: Premium Dark + Gold Accents
+   Features: Glassmorphism, Responsive, Micro-interactions
+   Author: Antigravity
+   Updated: 2026-04-26
 ═══════════════════════════════════════════════════════════════ */
 
-/* ── Variables ───────────────────────────────────────────────── */
+/* ── Design Tokens ───────────────────────────────────────────── */
 :root {
-  --ym-yellow       : #f5c518;
-  --ym-yellow-dark  : #d4a900;
-  --ym-yellow-glow  : rgba(245, 197, 24, 0.18);
+  --ym-accent       : #f5c518;
+  --ym-accent-hover : #d4a900;
+  --ym-accent-alpha : rgba(245, 197, 24, 0.15);
   --ym-black        : #0d0d0d;
-  --ym-surface      : #161616;
-  --ym-surface-2    : #1f1f1f;
-  --ym-surface-3    : #2a2a2a;
-  --ym-border       : #2e2e2e;
-  --ym-text         : #f0f0f0;
-  --ym-text-muted   : #888;
-  --ym-radius       : 16px;
-  --ym-shadow       : 0 8px 40px rgba(0,0,0,0.55);
+  --ym-bg-glass     : rgba(22, 22, 22, 0.94);
+  --ym-surface      : #1a1a1a;
+  --ym-surface-2    : #242424;
+  --ym-border       : rgba(255, 255, 255, 0.08);
+  --ym-text-pri     : #ffffff;
+  --ym-text-sec     : rgba(255, 255, 255, 0.7);
+  --ym-text-muted   : rgba(255, 255, 255, 0.45);
+  --ym-radius-lg    : 24px;
+  --ym-radius-md    : 16px;
+  --ym-radius-sm    : 10px;
+  --ym-shadow-float : 0 20px 50px -12px rgba(0, 0, 0, 0.8);
+  --ym-shadow-btn   : 0 8px 24px -6px rgba(245, 197, 24, 0.5);
+  --ym-font-main    : 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* ── Reset ───────────────────────────────────────────────────── */
-#ym-chatbot *,
-#ym-chatbot *::before,
-#ym-chatbot *::after {
+/* ── Base Reset ──────────────────────────────────────────────── */
+.ym-chatbot-ui *,
+.ym-chatbot-ui *::before,
+.ym-chatbot-ui *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── Toggle button ───────────────────────────────────────────── */
+/* ── Chat Launcher (Toggle) ──────────────────────────────────── */
 #ym-toggle-btn {
   position        : fixed;
-  bottom          : 28px;
-  right           : 28px;
-  width           : 60px;
-  height          : 60px;
+  bottom          : 32px;
+  right           : 32px;
+  width           : 64px;
+  height          : 64px;
   border-radius   : 50%;
-  background      : var(--ym-yellow);
-  border          : none;
+  background      : var(--ym-accent);
+  border          : 1px solid rgba(255,255,255,0.1);
   cursor          : pointer;
   display         : flex;
   align-items     : center;
   justify-content : center;
-  box-shadow      : 0 4px 20px rgba(245,197,24,0.45);
-  z-index         : 9999;
-  transition      : transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow      : var(--ym-shadow-btn);
+  z-index         : 10000;
+  transition      : all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 #ym-toggle-btn:hover {
-  transform  : scale(1.08);
-  box-shadow : 0 6px 28px rgba(245,197,24,0.6);
+  transform  : translateY(-4px) scale(1.05);
+  box-shadow : 0 12px 32px -4px rgba(245, 197, 24, 0.6);
+}
+
+#ym-toggle-btn:active {
+  transform : scale(0.95);
 }
 
 #ym-toggle-btn svg {
   width  : 28px;
   height : 28px;
   fill   : var(--ym-black);
-  transition: opacity 0.15s ease;
+  transition: transform 0.3s ease;
 }
 
-/* notification dot */
+#ym-toggle-btn.active svg {
+  transform: rotate(90deg) scale(0.8);
+}
+
+/* Notification dot */
 #ym-toggle-btn .ym-dot {
   position      : absolute;
-  top           : 6px;
-  right         : 6px;
-  width         : 11px;
-  height        : 11px;
-  background    : #ff4b4b;
+  top           : 4px;
+  right         : 4px;
+  width         : 14px;
+  height        : 14px;
+  background    : #ff3b3b;
   border-radius : 50%;
-  border        : 2px solid var(--ym-yellow);
-  animation     : ym-pulse 1.8s infinite;
+  border        : 3px solid var(--ym-accent);
+  animation     : ym-pulse 2s infinite;
 }
 
 @keyframes ym-pulse {
-  0%,100% { transform: scale(1);   opacity: 1; }
-  50%      { transform: scale(1.3); opacity: 0.7; }
+  0%   { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7); }
+  70%  { box-shadow: 0 0 0 10px rgba(255, 59, 59, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); }
 }
 
-/* ── Chat window ─────────────────────────────────────────────── */
+/* ── Main Chat Window ────────────────────────────────────────── */
 #ym-chatbot {
   position      : fixed;
-  bottom        : 100px;
-  right         : 28px;
-  width         : 370px;
-  max-height    : 580px;
-  border-radius : var(--ym-radius);
-  background    : var(--ym-surface);
+  bottom        : 110px;
+  right         : 32px;
+  width         : 400px;
+  height        : 680px;
+  max-height    : calc(90vh - 120px);
+  border-radius : var(--ym-radius-lg);
+  background    : var(--ym-bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border        : 1px solid var(--ym-border);
-  box-shadow    : var(--ym-shadow);
+  box-shadow    : var(--ym-shadow-float);
   display       : flex;
   flex-direction: column;
-  z-index       : 9998;
+  z-index       : 9999;
   overflow      : hidden;
-  font-family   : 'Inter', 'Segoe UI', system-ui, sans-serif;
-
-  /* hidden by default */
+  font-family   : var(--ym-font-main);
+  
+  /* Initial hidden state */
   opacity        : 0;
-  transform      : translateY(18px) scale(0.97);
-  pointer-events : none;
-  transition     : opacity 0.22s ease, transform 0.22s ease;
+  visibility     : hidden;
+  transform      : translateY(30px) scale(0.95);
+  transform-origin: bottom right;
+  transition     : all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #ym-chatbot.ym-open {
   opacity        : 1;
+  visibility     : visible;
   transform      : translateY(0) scale(1);
-  pointer-events : all;
 }
 
 /* ── Header ──────────────────────────────────────────────────── */
 #ym-header {
+  padding         : 20px 24px;
+  background      : rgba(0, 0, 0, 0.2);
+  border-bottom   : 1px solid var(--ym-border);
   display         : flex;
   align-items     : center;
   justify-content : space-between;
-  padding         : 14px 18px;
-  background      : var(--ym-black);
-  border-bottom   : 1px solid var(--ym-border);
-  flex-shrink     : 0;
 }
 
 .ym-header-left {
   display     : flex;
   align-items : center;
-  gap         : 10px;
+  gap         : 12px;
 }
 
-.ym-avatar {
-  width           : 36px;
-  height          : 36px;
-  border-radius   : 50%;
-  background      : var(--ym-yellow);
-  display         : flex;
-  align-items     : center;
-  justify-content : center;
-  font-size       : 17px;
-  flex-shrink     : 0;
+.ym-avatar-container {
+  width         : 44px;
+  height        : 44px;
+  border-radius : 50%;
+  background    : var(--ym-accent);
+  padding       : 2px;
+  display       : flex;
+  align-items   : center;
+  justify-content: center;
+  flex-shrink   : 0;
+  overflow      : hidden;
+}
+
+.ym-avatar-img {
+  width         : 100%;
+  height        : 100%;
+  object-fit    : contain;
+  border-radius : 50%;
+  background    : white;
+  padding       : 4px;
 }
 
 .ym-header-info h4 {
-  color       : var(--ym-text);
-  font-size   : 14px;
+  color       : var(--ym-text-pri);
+  font-size   : 16px;
   font-weight : 600;
-  line-height : 1.2;
+  letter-spacing: -0.2px;
 }
 
-.ym-header-info span {
-  color     : #4ade80;
-  font-size : 11px;
-  display   : flex;
-  align-items: center;
-  gap: 4px;
+.ym-status {
+  font-size   : 12px;
+  color       : #4ade80;
+  display     : flex;
+  align-items : center;
+  gap         : 6px;
+  margin-top  : 2px;
 }
 
-.ym-header-info span::before {
-  content       : '';
-  display       : inline-block;
-  width         : 6px;
-  height        : 6px;
-  border-radius : 50%;
+.ym-status-dot {
+  width         : 8px;
+  height        : 8px;
   background    : #4ade80;
+  border-radius : 50%;
+  box-shadow    : 0 0 8px rgba(74, 222, 128, 0.5);
 }
 
 .ym-header-actions {
   display : flex;
-  gap     : 6px;
+  gap     : 8px;
 }
 
-.ym-icon-btn {
-  background    : var(--ym-surface-3);
-  border        : none;
-  cursor        : pointer;
-  color         : var(--ym-text-muted);
-  width         : 30px;
-  height        : 30px;
-  border-radius : 8px;
-  display       : flex;
-  align-items   : center;
-  justify-content: center;
-  transition    : background 0.15s, color 0.15s;
-  font-size     : 16px;
+.ym-btn-ghost {
+  width           : 32px;
+  height          : 32px;
+  border-radius   : 50%;
+  border          : none;
+  background      : transparent;
+  color           : var(--ym-text-muted);
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  cursor          : pointer;
+  transition      : all 0.2s;
 }
 
-.ym-icon-btn:hover {
-  background : var(--ym-yellow);
-  color      : var(--ym-black);
+.ym-btn-ghost:hover {
+  background : rgba(255, 255, 255, 0.1);
+  color      : var(--ym-text-pri);
 }
 
-/* ── Messages area ───────────────────────────────────────────── */
+/* ── Messaging Area ──────────────────────────────────────────── */
 #ym-messages {
   flex        : 1;
   overflow-y  : auto;
-  padding     : 16px 14px;
+  padding     : 24px;
   display     : flex;
   flex-direction : column;
-  gap         : 12px;
-  background  : var(--ym-surface);
+  gap         : 20px;
   scroll-behavior: smooth;
 }
 
-#ym-messages::-webkit-scrollbar       { width: 4px; }
-#ym-messages::-webkit-scrollbar-track { background: transparent; }
-#ym-messages::-webkit-scrollbar-thumb { background: var(--ym-border); border-radius: 4px; }
-
-/* ── Message bubbles ─────────────────────────────────────────── */
-.ym-msg {
-  display        : flex;
-  gap            : 8px;
-  align-items    : flex-end;
-  animation      : ym-fadein 0.2s ease;
+#ym-messages::-webkit-scrollbar {
+  width : 5px;
+}
+#ym-messages::-webkit-scrollbar-thumb {
+  background : rgba(255, 255, 255, 0.1);
+  border-radius : 10px;
 }
 
-@keyframes ym-fadein {
-  from { opacity:0; transform: translateY(6px); }
-  to   { opacity:1; transform: translateY(0); }
+/* ── Bubbles ─────────────────────────────────────────────────── */
+.ym-msg {
+  display    : flex;
+  gap        : 12px;
+  max-width  : 85%;
+  animation  : ym-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ym-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .ym-msg.ym-user {
+  align-self     : flex-end;
   flex-direction : row-reverse;
 }
 
-.ym-msg-avatar {
-  width         : 28px;
-  height        : 28px;
-  border-radius : 50%;
-  display       : flex;
-  align-items   : center;
-  justify-content: center;
-  font-size     : 13px;
-  flex-shrink   : 0;
-}
-
-.ym-bot .ym-msg-avatar  { background: var(--ym-yellow); }
-.ym-user .ym-msg-avatar { background: var(--ym-surface-3); }
-
 .ym-bubble {
-  max-width     : 82%;
-  padding       : 10px 14px;
-  border-radius : 14px;
-  font-size     : 13.5px;
-  line-height   : 1.55;
-  white-space   : pre-wrap;
-  word-break    : break-word;
+  padding       : 12px 16px;
+  font-size     : 14.5px;
+  line-height   : 1.5;
+  position      : relative;
 }
 
 .ym-bot .ym-bubble {
   background    : var(--ym-surface-2);
-  color         : var(--ym-text);
-  border-bottom-left-radius : 4px;
+  color         : var(--ym-text-pri);
+  border-radius : 4px 18px 18px 18px;
   border        : 1px solid var(--ym-border);
 }
 
 .ym-user .ym-bubble {
-  background    : var(--ym-yellow);
+  background    : var(--ym-accent);
   color         : var(--ym-black);
   font-weight   : 500;
-  border-bottom-right-radius : 4px;
+  border-radius : 18px 4px 18px 18px;
 }
 
-/* ── Timestamp ───────────────────────────────────────────────── */
-.ym-time {
-  font-size : 10.5px;
-  color     : var(--ym-text-muted);
-  margin-top: 3px;
-  text-align: right;
-}
-
-.ym-bot .ym-time { text-align: left; }
-
-/* ── Typing indicator ────────────────────────────────────────── */
-#ym-typing {
-  display     : flex;
-  align-items : center;
-  gap         : 8px;
-  padding     : 4px 0;
-}
-
-#ym-typing .ym-msg-avatar {
-  background : var(--ym-yellow);
-}
-
-.ym-dots {
-  display    : flex;
-  gap        : 4px;
-  padding    : 10px 14px;
-  background : var(--ym-surface-2);
-  border     : 1px solid var(--ym-border);
-  border-radius : 14px;
-  border-bottom-left-radius: 4px;
-}
-
-.ym-dots span {
-  width         : 7px;
-  height        : 7px;
+.ym-msg-avatar {
+  width         : 32px;
+  height        : 32px;
   border-radius : 50%;
+  flex-shrink   : 0;
+  display       : flex;
+  align-items   : center;
+  justify-content: center;
+  overflow      : hidden;
+  background    : var(--ym-surface-2);
+}
+
+.ym-msg-avatar img {
+  width : 100%;
+  height: 100%;
+  object-fit : contain;
+  background: white;
+  padding: 3px;
+}
+
+.ym-time {
+  font-size : 11px;
+  color     : var(--ym-text-muted);
+  margin-top: 5px;
+  display   : block;
+}
+
+/* ── Typing Indicator ────────────────────────────────────────── */
+#ym-typing {
+  display     : none;
+  align-items : flex-start;
+  gap         : 12px;
+}
+
+.ym-typing-bubble {
+  padding       : 12px 18px;
+  background    : var(--ym-surface-2);
+  border-radius : 4px 18px 18px 18px;
+  border        : 1px solid var(--ym-border);
+  display       : flex;
+  gap           : 4px;
+}
+
+.ym-typing-bubble span {
+  width         : 6px;
+  height        : 6px;
   background    : var(--ym-text-muted);
-  animation     : ym-bounce 1.2s infinite;
+  border-radius : 50%;
+  animation     : ym-typing-dots 1.4s infinite ease-in-out;
 }
 
-.ym-dots span:nth-child(2) { animation-delay: 0.2s; }
-.ym-dots span:nth-child(3) { animation-delay: 0.4s; }
+.ym-typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+.ym-typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
 
-@keyframes ym-bounce {
-  0%,60%,100% { transform: translateY(0); }
-  30%          { transform: translateY(-6px); background: var(--ym-yellow); }
+@keyframes ym-typing-dots {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50%      { transform: translateY(-4px); opacity: 1; background: var(--ym-accent); }
 }
 
-/* ── Quick replies ───────────────────────────────────────────── */
+/* ── Quick Replies ───────────────────────────────────────────── */
 #ym-quick-replies {
+  padding        : 0 24px 12px;
   display        : flex;
-  flex-wrap      : wrap;
-  gap            : 7px;
-  padding        : 10px 14px 6px;
-  border-top     : 1px solid var(--ym-border);
-  background     : var(--ym-surface);
+  flex-wrap      : nowrap;
+  overflow-x     : auto;
+  gap            : 8px;
+  scrollbar-width: none;
 }
+
+#ym-quick-replies::-webkit-scrollbar { display: none; }
 
 .ym-qr-btn {
-  background    : var(--ym-surface-3);
-  border        : 1px solid var(--ym-border);
-  color         : var(--ym-text);
-  font-size     : 12px;
-  padding       : 5px 11px;
-  border-radius : 20px;
+  background    : var(--ym-accent-alpha);
+  border        : 1px solid rgba(245, 197, 24, 0.3);
+  color         : var(--ym-accent);
+  padding       : 8px 16px;
+  border-radius : 100px;
+  font-size     : 13px;
+  font-weight   : 500;
   cursor        : pointer;
-  transition    : background 0.15s, border-color 0.15s, color 0.15s;
   white-space   : nowrap;
+  transition    : all 0.2s;
 }
 
 .ym-qr-btn:hover {
-  background   : var(--ym-yellow-glow);
-  border-color : var(--ym-yellow);
-  color        : var(--ym-yellow);
+  background   : var(--ym-accent);
+  color        : var(--ym-black);
+  transform    : translateY(-2px);
 }
 
-/* ── Input area ──────────────────────────────────────────────── */
+/* ── Input Area ──────────────────────────────────────────────── */
 #ym-input-area {
+  padding      : 16px 24px 24px;
+  background   : rgba(0, 0, 0, 0.2);
+  border-top   : 1px solid var(--ym-border);
   display      : flex;
   align-items  : flex-end;
-  gap          : 8px;
-  padding      : 12px 14px;
-  background   : var(--ym-black);
-  border-top   : 1px solid var(--ym-border);
-  flex-shrink  : 0;
+  gap          : 12px;
+}
+
+.ym-input-container {
+  flex : 1;
+  background : var(--ym-surface-2);
+  border : 1px solid var(--ym-border);
+  border-radius : var(--ym-radius-md);
+  padding : 2px;
+  transition : all 0.2s;
+}
+
+.ym-input-container:focus-within {
+  border-color : var(--ym-accent);
+  box-shadow : 0 0 0 3px var(--ym-accent-alpha);
 }
 
 #ym-input {
-  flex          : 1;
-  background    : var(--ym-surface-2);
-  border        : 1px solid var(--ym-border);
-  border-radius : 12px;
-  color         : var(--ym-text);
-  font-size     : 13.5px;
-  padding       : 10px 14px;
-  resize        : none;
-  min-height    : 42px;
-  max-height    : 110px;
-  overflow-y    : auto;
-  outline       : none;
-  line-height   : 1.4;
+  width         : 100%;
+  background    : transparent;
+  border        : none;
+  padding       : 12px 14px;
+  color         : var(--ym-text-pri);
+  font-size     : 14px;
   font-family   : inherit;
-  transition    : border-color 0.15s;
+  resize        : none;
+  max-height    : 120px;
+  outline       : none;
+  line-height   : 1.5;
 }
 
-#ym-input::placeholder { color: var(--ym-text-muted); }
-
-#ym-input:focus {
-  border-color : var(--ym-yellow);
-  box-shadow   : 0 0 0 3px var(--ym-yellow-glow);
+#ym-input::placeholder {
+  color : var(--ym-text-muted);
 }
 
 #ym-send-btn {
-  width           : 42px;
-  height          : 42px;
-  border-radius   : 12px;
-  background      : var(--ym-yellow);
+  width           : 48px;
+  height          : 48px;
+  border-radius   : var(--ym-radius-md);
+  background      : var(--ym-accent);
   border          : none;
-  cursor          : pointer;
   display         : flex;
   align-items     : center;
   justify-content : center;
+  cursor          : pointer;
+  transition      : all 0.2s;
   flex-shrink     : 0;
-  transition      : background 0.15s, transform 0.1s;
 }
 
-#ym-send-btn:hover   { background: var(--ym-yellow-dark); }
-#ym-send-btn:active  { transform: scale(0.93); }
+#ym-send-btn:hover:not(:disabled) {
+  background : var(--ym-accent-hover);
+  transform  : scale(1.05);
+}
+
 #ym-send-btn:disabled {
-  background : var(--ym-surface-3);
-  cursor     : not-allowed;
+  opacity : 0.5;
+  cursor  : not-allowed;
+  filter  : grayscale(1);
 }
 
 #ym-send-btn svg {
-  width  : 18px;
-  height : 18px;
-  fill   : var(--ym-black);
+  width : 20px;
+  height: 20px;
+  fill  : var(--ym-black);
 }
 
-#ym-send-btn:disabled svg { fill: var(--ym-text-muted); }
-
-/* ── Footer branding ─────────────────────────────────────────── */
+/* ── Footer ──────────────────────────────────────────────────── */
 #ym-footer {
+  padding     : 8px;
   text-align  : center;
-  padding     : 7px;
-  font-size   : 10.5px;
+  font-size   : 11px;
   color       : var(--ym-text-muted);
-  background  : var(--ym-black);
+  background  : rgba(0,0,0,0.3);
   border-top  : 1px solid var(--ym-border);
 }
 
 #ym-footer a {
-  color           : var(--ym-yellow);
+  color : var(--ym-accent);
   text-decoration : none;
 }
 
-/* ── Responsive — mobile ─────────────────────────────────────── */
-@media (max-width: 480px) {
-  #ym-chatbot {
-    right         : 0;
-    bottom        : 0;
-    width         : 100%;
-    max-height    : 85dvh;
-    border-radius : 20px 20px 0 0;
-  }
+/* ── Mobile Optimization ─────────────────────────────────────── */
+@media (max-width: 520px) {
   #ym-toggle-btn {
-    bottom : 18px;
-    right  : 18px;
+    bottom : 20px;
+    right  : 20px;
+    width  : 56px;
+    height : 56px;
+  }
+
+  #ym-chatbot {
+    bottom        : 0;
+    right         : 0;
+    width         : 100vw;
+    height        : 100dvh;
+    max-height    : 100dvh;
+    border-radius : 0;
+    border        : none;
+  }
+
+  #ym-header {
+    padding : 16px 20px;
+    padding-top : env(safe-area-inset-top, 16px);
+  }
+
+  #ym-input-area {
+    padding-bottom : env(safe-area-inset-bottom, 24px);
+  }
+
+  .ym-bubble {
+    font-size : 15px;
   }
 }
