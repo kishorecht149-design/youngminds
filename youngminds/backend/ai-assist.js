@@ -408,9 +408,10 @@ async function gradeDescriptiveAnswer(question, answer) {
   ].join("\n");
 
   // Try Gemini first (free)
-  const geminiKey = process.env.GEMINI_API_KEY;
+  const geminiKey = String(process.env.GEMINI_API_KEY || "").trim();
   if (geminiKey) {
     try {
+      console.log(`[Gemini-Grade] Sending request to gemini-1.5-flash (Key present, len=${geminiKey.length}, prefix=${geminiKey.slice(0, 4)})...`);
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(
@@ -421,7 +422,7 @@ async function gradeDescriptiveAnswer(question, answer) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2, maxOutputTokens: 200 }
+            generationConfig: { temperature: 0.2, maxOutputTokens: 250 }
           })
         }
       );
