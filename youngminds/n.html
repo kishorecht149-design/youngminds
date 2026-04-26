@@ -1327,7 +1327,7 @@ function renderView(type,status){
         let scoreStr = '—';
         let actionHtml = '—';
         if(attempt && attempt.result && attempt.result.total) {
-          scoreStr = `${attempt.result.percent}% (${attempt.result.score}/${attempt.result.total})`;
+          scoreStr = `${attempt.result.percent}% (${attempt.result.correct}/${attempt.result.total})`;
         } else if (attempt && attempt.status !== 'completed') {
           scoreStr = 'Pending';
         }
@@ -3438,7 +3438,7 @@ function renderInterviewsManager(){
                 </div>
                 <div class="interview-monitor-meta">
                   <span class="service-admin-pill">${attempt.warningsCount || 0} warnings</span>
-                  ${attempt.result && attempt.result.total ? `<span class="service-admin-pill" style="color:var(--accent)">Score: ${attempt.result.score}/${attempt.result.total} (${attempt.result.percent}%)</span>` : `<span class="service-admin-pill">Awaiting result</span>`}
+                  ${attempt.result && attempt.result.total ? `<span class="service-admin-pill" style="color:var(--accent)">Score: ${attempt.result.correct}/${attempt.result.total} (${attempt.result.percent}%)</span>` : `<span class="service-admin-pill">Awaiting result</span>`}
                 </div>
               </div>
               ${attempt.latestThumbnail ? `<img src="${attempt.latestThumbnail}" alt="Candidate live frame" style="width:100%;max-width:220px;margin-top:12px;border-radius:14px;border:1px solid var(--border)">` : `<div class="service-admin-note" style="margin-top:12px">No camera frame received yet.</div>`}
@@ -3461,7 +3461,7 @@ function renderInterviewsManager(){
                 </div>
                 <div class="interview-monitor-meta">
                   <span class="service-admin-pill">${attempt.warningsCount || 0} warnings</span>
-                  ${attempt.result && attempt.result.total ? `<span class="service-admin-pill" style="color:var(--accent)">Score: ${attempt.result.score}/${attempt.result.total} (${attempt.result.percent}%)</span>` : ``}
+                  ${attempt.result && attempt.result.total ? `<span class="service-admin-pill" style="color:var(--accent)">Score: ${attempt.result.correct}/${attempt.result.total} (${attempt.result.percent}%)</span>` : ``}
                 </div>
               </div>
               <div class="interview-action-row" style="margin-top:12px">
