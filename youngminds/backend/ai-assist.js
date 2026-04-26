@@ -60,12 +60,12 @@ function buildLocalAssistReply(role, message, context) {
     if (ctx.services && ctx.services.length > 0) {
       add(
         `Services and starting prices: ${ctx.services.join("; ")}. Final quotes depend on scope — the hire form captures budget so we can respond accurately.`,
-        ["price", "cost", "budget", "rupee", "how much", "quote", "affordable", "cheap", "expensive", "payment", "advance", "50"]
+        ["price", "pricing", "cost", "budget", "rupee", "how much", "quote", "affordable", "cheap", "expensive", "payment", "advance", "50", "website", "design", "package", "service", "social", "video", "ai"]
       );
     } else {
       add(
         "Services and starting prices (from the site): Web from ₹5,000; Graphic design from ₹2,000; Content from ₹1,500; AI solutions from ₹8,000; Social from ₹4,000/mo; Video editing from ₹2,500. Final quotes depend on scope — the hire form captures budget so we can respond accurately.",
-        ["price", "cost", "budget", "rupee", "how much", "quote", "affordable", "cheap", "expensive", "payment", "advance", "50"]
+        ["price", "pricing", "cost", "budget", "rupee", "how much", "quote", "affordable", "cheap", "expensive", "payment", "advance", "50", "website", "design", "package", "service", "social", "video", "ai"]
       );
     }
     if (ctx.process && ctx.process.length > 0) {
