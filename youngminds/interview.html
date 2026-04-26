@@ -567,13 +567,14 @@ function checkPreflightStatus() {
 }
 
 async function executeStartAttempt() {
+  const id = pendingStartAttemptId;
   closePreFlight();
   try {
-    const res = await fetch(`${API}/api/interviews/attempts/${pendingStartAttemptId}/start`, { method: "POST", headers: headers() });
+    const res = await fetch(`${API}/api/interviews/attempts/${id}/start`, { method: "POST", headers: headers() });
     const data = await res.json().catch(()=>({}));
     if (!res.ok) throw new Error(data.error || "Failed to start");
     activeAttempt = data.attempt || activeAttempt;
-    await loadExam(pendingStartAttemptId);
+    await loadExam(id);
     setViewState("exam");
     await ensureExamEnvironment();
   } catch(err) {
