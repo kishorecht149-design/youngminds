@@ -390,6 +390,13 @@ h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8
 const API = window.location.origin;
 const SESSION_KEY = "ym_interview_session";
 const REMEMBER_KEY = "ym_interview_remember";
+
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[&<>"']/g, function(m) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+  });
+}
 let interviewToken = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || "";
 let candidateState = null, interviewAttempts = [], activeAttempt = null, activeExam = null;
 let activeQuestionIndex = 0, timerInterval = null, socket = null, localStream = null;
