@@ -3361,37 +3361,46 @@ function renderInterviewsManager(){
               <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-questions" type="checkbox" ${current.randomizeQuestions !== false ? "checked" : ""} style="margin-right:6px">Randomize questions</label>
               <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-options" type="checkbox" ${current.randomizeOptions !== false ? "checked" : ""} style="margin-right:6px">Randomize options</label>
             </div>
-            <div style="display:grid;gap:12px">
-              ${(Array.isArray(current.questions) ? current.questions : []).map((question, questionIndex) => `
-                <div data-interview-question style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)">
-                  <div class="service-admin-item-top" style="margin-bottom:10px">
-                    <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
-                    <div style="display:flex;gap:6px">
-                      <div class="service-admin-pill-toggle" style="display:flex;background:var(--bg2);border-radius:10px;padding:2px;border:1px solid var(--border2)">
-                        <button type="button" class="btn-xs ${(!question.type || question.type === 'mcq') ? 'active' : ''}" style="border:none;padding:4px 8px;font-size:10px;border-radius:8px" onclick="updateInterviewQuestionType(${questionIndex}, 'mcq')">MCQ</button>
-                        <button type="button" class="btn-xs ${(question.type === 'descriptive') ? 'active' : ''}" style="border:none;padding:4px 8px;font-size:10px;border-radius:8px" onclick="updateInterviewQuestionType(${questionIndex}, 'descriptive')">DESC</button>
+            <div style="display:grid;gap:16px">
+              ${(Array.isArray(current.questions) ? current.questions : []).map((question, qi) => {
+                const isMcq = question.type !== 'descriptive';
+                return `
+                <div data-interview-question style="border:1px solid var(--border2);border-radius:14px;padding:18px;background:var(--bg2);position:relative">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+                    <div style="display:flex;align-items:center;gap:10px">
+                      <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;font-weight:800;font-size:12px;display:grid;place-items:center;flex-shrink:0">${qi+1}</div>
+                      <div style="font-weight:700;font-size:13px;color:var(--text)">Question ${String(qi+1).padStart(2,'0')}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;border:1px solid var(--border2)">
+                        <button type="button" data-type-btn="mcq" class="btn-xs ${isMcq ? 'active' : ''}" onclick="updateInterviewQuestionType(${qi},'mcq')">MCQ</button>
+                        <button type="button" data-type-btn="descriptive" class="btn-xs ${!isMcq ? 'active' : ''}" onclick="updateInterviewQuestionType(${qi},'descriptive')">Descriptive</button>
                       </div>
-                      <button class="btn-sm" type="button" style="padding:4px 10px;font-size:11px" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
+                      <button type="button" class="btn-sm" style="padding:4px 12px;color:var(--red,#f87171)" onclick="removeInterviewQuestion(${qi})">✕ Remove</button>
                     </div>
                   </div>
-                  <div class="form-field"><label>Prompt</label><textarea data-question-prompt placeholder="Write the question prompt">${escapeHtml(question.prompt || "")}</textarea></div>
-                  
-                  <div style="${(question.type === "mcq" || !question.type) ? "" : "display:none"}">
+                  <div class="form-field" style="margin-bottom:12px">
+                    <label>Question Prompt</label>
+                    <textarea data-question-prompt rows="2" placeholder="Write the question here...">${escapeHtml(question.prompt || '')}</textarea>
+                  </div>
+                  <div data-mcq-section style="${isMcq ? '' : 'display:none'}">
                     <div class="service-admin-form-row">
-                      ${(Array.isArray(question.options) ? question.options : ["","","",""]).map((option, optionIndex) => `
-                        <div class="form-field"><label>Option ${String.fromCharCode(65 + optionIndex)}</label><input type="text" data-question-option value="${escapeHtml(option)}" placeholder="Option ${String.fromCharCode(65 + optionIndex)}"></div>
-                      `).join("")}
+                      ${(Array.isArray(question.options) && question.options.length >= 4 ? question.options : ['','','','']).map((opt,oi) => `
+                        <div class="form-field"><label>Option ${String.fromCharCode(65+oi)}</label><input type="text" data-question-option value="${escapeHtml(opt)}" placeholder="Option ${String.fromCharCode(65+oi)}"></div>
+                      `).join('')}
                     </div>
                     <div class="service-admin-form-row">
-                      <div class="form-field"><label>Correct Option Index</label><input type="number" data-question-correct min="0" max="5" value="${Number(question.correctIndex || 0)}"></div>
-                      <div class="form-field"><label>Explanation</label><input type="text" data-question-explanation value="${escapeHtml(question.explanation || "")}" placeholder="Optional admin explanation"></div>
+                      <div class="form-field"><label>Correct Answer (0=A,1=B…)</label><input type="number" data-question-correct min="0" max="5" value="${Number(question.correctIndex||0)}"></div>
+                      <div class="form-field"><label>Explanation (optional)</label><input type="text" data-question-explanation value="${escapeHtml(question.explanation||'')}" placeholder="Why this is correct"></div>
                     </div>
                   </div>
-                  <div style="${question.type === "descriptive" ? "" : "display:none"}">
-                    <div class="service-admin-note" style="margin-top:8px">This question will show a text area for the candidate to type their answer.</div>
+                  <div data-desc-section style="${!isMcq ? '' : 'display:none'}">
+                    <div style="background:rgba(232,197,71,0.06);border:1px solid rgba(232,197,71,0.2);border-radius:10px;padding:12px;font-size:12px;color:var(--muted)">
+                      <strong style="color:var(--accent)">Descriptive Mode</strong> — Candidate will type their answer in a text area. No options needed.
+                    </div>
                   </div>
-                </div>
-              `).join("")}
+                </div>`;
+              }).join('')}
             </div>
             <div class="interview-action-row" style="margin-top:12px">
               <button class="btn-sm" type="button" onclick="addInterviewQuestion()">+ Add Question</button>
@@ -3523,57 +3532,77 @@ function selectInterviewExam(examId){
   renderInterviewsManager();
 }
 
+// ── STATE-FIRST sync: NEVER reads 'type' from DOM. type lives only in JS state.
 function syncInterviewData() {
   const current = getSelectedInterviewExam();
   if(!current) return;
-  current.title = document.getElementById("interview-title")?.value?.trim() || current.title;
-  current.slug = document.getElementById("interview-slug")?.value?.trim() || current.slug;
-  current.description = document.getElementById("interview-description")?.value?.trim() || current.description;
-  current.durationMinutes = Number(document.getElementById("interview-duration")?.value || current.durationMinutes);
-  current.warningLimit = Number(document.getElementById("interview-warning-limit")?.value || current.warningLimit);
-  current.active = document.getElementById("interview-active") ? !!document.getElementById("interview-active").checked : current.active;
-  current.allowBacktracking = document.getElementById("interview-backtracking") ? !!document.getElementById("interview-backtracking").checked : current.allowBacktracking;
-  current.oneQuestionAtTime = document.getElementById("interview-one-question") ? !!document.getElementById("interview-one-question").checked : current.oneQuestionAtTime;
-  current.randomizeQuestions = document.getElementById("interview-randomize-questions") ? !!document.getElementById("interview-randomize-questions").checked : current.randomizeQuestions;
-  current.randomizeOptions = document.getElementById("interview-randomize-options") ? !!document.getElementById("interview-randomize-options").checked : current.randomizeOptions;
-  
-  const cards = [...document.querySelectorAll('[data-interview-question]')];
-  cards.forEach((card, i) => {
-    if (!current.questions[i]) return;
+  const v = id => document.getElementById(id);
+  if(v('interview-title')) current.title = v('interview-title').value.trim() || current.title;
+  if(v('interview-slug')) current.slug = v('interview-slug').value.trim() || current.slug;
+  if(v('interview-description')) current.description = v('interview-description').value.trim();
+  if(v('interview-duration')) current.durationMinutes = Number(v('interview-duration').value) || current.durationMinutes;
+  if(v('interview-warning-limit')) current.warningLimit = Number(v('interview-warning-limit').value) || current.warningLimit;
+  if(v('interview-active')) current.active = v('interview-active').checked;
+  if(v('interview-backtracking')) current.allowBacktracking = v('interview-backtracking').checked;
+  if(v('interview-one-question')) current.oneQuestionAtTime = v('interview-one-question').checked;
+  if(v('interview-randomize-questions')) current.randomizeQuestions = v('interview-randomize-questions').checked;
+  if(v('interview-randomize-options')) current.randomizeOptions = v('interview-randomize-options').checked;
+  // Sync question text fields only — type is NEVER touched here
+  document.querySelectorAll('[data-interview-question]').forEach((card, i) => {
     const q = current.questions[i];
-    q.prompt = card.querySelector('[data-question-prompt]')?.value?.trim() || q.prompt || "";
-    const optionInputs = [...card.querySelectorAll('[data-question-option]')];
-    if (optionInputs.length > 0) {
-      q.options = optionInputs.map(input => input.value.trim());
-    }
-    q.correctIndex = Number(card.querySelector('[data-question-correct]')?.value || q.correctIndex || 0);
-    q.explanation = card.querySelector('[data-question-explanation]')?.value?.trim() || q.explanation || "";
+    if(!q) return;
+    const prompt = card.querySelector('[data-question-prompt]');
+    if(prompt) q.prompt = prompt.value.trim();
+    const opts = [...card.querySelectorAll('[data-question-option]')];
+    if(opts.length) q.options = opts.map(o => o.value);
+    const correct = card.querySelector('[data-question-correct]');
+    if(correct) q.correctIndex = Number(correct.value) || 0;
+    const expl = card.querySelector('[data-question-explanation]');
+    if(expl) q.explanation = expl.value.trim();
   });
 }
 
+// KEY FIX: Mutate state FIRST, then mutate only the affected DOM card (no full re-render).
 function updateInterviewQuestionType(index, type) {
   flagAdminEditing();
+  syncInterviewData(); // save text fields first
   const current = getSelectedInterviewExam();
-  if (current && current.questions[index]) {
+  if(current && current.questions && current.questions[index]) {
     current.questions[index].type = type;
   }
-  syncInterviewData();
-  renderInterviewsManager();
+  // Only mutate the single card's visibility — no full re-render, so no state loss
+  const cards = document.querySelectorAll('[data-interview-question]');
+  const card = cards[index];
+  if(card) {
+    const isMcq = type !== 'descriptive';
+    card.querySelectorAll('[data-type-btn]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.typeBtn === (isMcq ? 'mcq' : 'descriptive'));
+    });
+    const mcqSec = card.querySelector('[data-mcq-section]');
+    const descSec = card.querySelector('[data-desc-section]');
+    if(mcqSec) mcqSec.style.display = isMcq ? '' : 'none';
+    if(descSec) descSec.style.display = isMcq ? 'none' : '';
+  }
 }
 
 function addInterviewQuestion(){
   syncInterviewData();
   const current = getSelectedInterviewExam();
   if(!current) return;
-  current.questions = Array.isArray(current.questions) ? current.questions : [];
+  if(!Array.isArray(current.questions)) current.questions = [];
   current.questions.push({ type:"mcq", prompt:"", options:["","","",""], correctIndex:0, explanation:"" });
   renderInterviewsManager();
+  setTimeout(() => {
+    const cards = document.querySelectorAll('[data-interview-question]');
+    if(cards.length) cards[cards.length-1].scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 50);
 }
 
 function removeInterviewQuestion(index){
   syncInterviewData();
   const current = getSelectedInterviewExam();
-  if(!current || !Array.isArray(current.questions) || current.questions.length <= 1) return;
+  if(!current || !Array.isArray(current.questions)) return;
+  if(current.questions.length <= 1) { showToast('A bank must have at least 1 question'); return; }
   current.questions.splice(index, 1);
   renderInterviewsManager();
 }

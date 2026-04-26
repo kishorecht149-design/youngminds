@@ -322,16 +322,17 @@ h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8
   
   <!-- RESULT CARD -->
   <section class="hidden" id="resultSection">
-    <div class="glass-card" style="max-width:540px; margin:0 auto; text-align:center; padding: 60px 32px;">
-      <div style="width:80px; height:80px; border-radius:50%; background:var(--accent-glow); color:var(--accent); display:grid; place-items:center; font-size:40px; margin:0 auto 24px;">✓</div>
-      <h2>Interview Submitted</h2>
-      <p class="text-muted">Your responses have been successfully recorded.</p>
-      <div style="margin:32px 0; padding:24px; border:1px solid var(--border); border-radius:16px; background:rgba(0,0,0,0.3);">
-        <div style="font-size:0.9rem; text-transform:uppercase; font-weight:600; color:var(--muted); margin-bottom:8px;">Final Score</div>
-        <div style="font-family:'Outfit',sans-serif; font-size:4rem; font-weight:800; color:var(--accent); line-height:1;" id="resultPercent">0%</div>
-        <div style="font-size:1rem; font-weight:500; margin-top:12px;" id="resultMeta">0 correct out of 0</div>
+    <div class="glass-card" style="max-width:580px; margin:0 auto; text-align:center; padding:48px 32px;">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--accent-glow);color:var(--accent);display:grid;place-items:center;font-size:40px;margin:0 auto 20px">✓</div>
+      <h2 style="margin:0 0 8px">Interview Submitted</h2>
+      <p class="text-muted" style="margin:0 0 28px">Your responses have been successfully recorded and locked.</p>
+      <div style="padding:24px;border:1px solid var(--border);border-radius:16px;background:rgba(0,0,0,0.3);margin-bottom:16px">
+        <div style="font-size:0.85rem;text-transform:uppercase;font-weight:600;color:var(--muted);margin-bottom:8px">Final Score</div>
+        <div style="font-family:'Outfit',sans-serif;font-size:4rem;font-weight:800;line-height:1" id="resultPercent">0%</div>
+        <div style="font-size:1rem;font-weight:500;margin-top:12px;color:var(--muted)" id="resultMeta">0 correct out of 0</div>
       </div>
-      <button class="btn" onclick="window.location.href='/'">Return to Home</button>
+      <div id="resultExtra" style="text-align:left"></div>
+      <button class="btn" style="margin-top:24px" onclick="logoutInterview()">Sign Out</button>
     </div>
   </section>
 </main>
@@ -496,23 +497,48 @@ function renderAttempts() {
     return;
   }
   list.innerHTML = interviewAttempts.map(a => {
-    const isDone = ["submitted","terminated","expired"].includes(a.status);
-    let scoreText = isDone && a.result && a.result.total ? `<div style="font-weight:700;color:var(--accent);margin-top:8px;">Score: ${a.result.percent}%</div>` : '';
-    let btnText = isDone ? "View Result" : (a.startedAt ? "Resume Exam" : "Start Exam");
-    return `
-      <div class="attempt-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
-          <div>
-            <h3 style="margin:0 0 4px;font-size:1.15rem;">${a.examTitle || "Interview"}</h3>
-            <div class="text-muted" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">
-              ${a.status.replace(/_/g," ")} &middot; ${a.durationMinutes} MINS &middot; ${a.warningsCount}/${a.warningLimit} WARNINGS
+    const isDone = ["submitted","terminated","expired","completed","malpractice"].includes(a.status);
+    const isMalpractice = a.status === "malpractice";
+    const hasScore = a.result && a.result.total;
+    
+    if (isDone) {
+      // LOCKED result card — no re-attempt button
+      const scoreColor = hasScore ? (a.result.percent >= 60 ? 'var(--green)' : 'var(--danger)') : 'var(--muted)';
+      return `
+        <div class="attempt-card" style="border:1px solid ${isMalpractice ? 'var(--danger)' : 'var(--border)'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+            <div style="flex:1">
+              <h3 style="margin:0 0 4px;font-size:1.1rem">${escapeHtml(a.examTitle || "Interview")}</h3>
+              <div class="text-muted" style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600">
+                ${isMalpractice ? '⚠️ MALPRACTICE' : a.status.replace(/_/g," ")} · ${a.durationMinutes} MINS · ${a.warningsCount}/${a.warningLimit} WARNINGS
+              </div>
+              ${hasScore ? `
+              <div style="margin-top:12px;display:flex;gap:24px;flex-wrap:wrap">
+                <div>
+                  <div style="font-size:2rem;font-weight:900;color:${scoreColor};line-height:1">${a.result.percent}%</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${a.result.correct} / ${a.result.total} correct</div>
+                </div>
+                ${isMalpractice ? `<div style="padding:10px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;font-size:12px;color:var(--danger);max-width:280px"><strong>Malpractice Detected</strong><br>This attempt was flagged. The YoungMinds team will review your session before making a decision.</div>` : ''}
+              </div>` : `<div style="margin-top:8px;font-size:13px;color:var(--muted)">Result pending review by YoungMinds team.</div>`}
             </div>
-            ${scoreText}
+            <button class="btn" onclick="openAttempt('${escapeHtml(a.id)}')">View Details</button>
           </div>
-          <button class="btn ${!isDone ? 'primary' : ''}" onclick="openAttempt('${a.id}')">${btnText}</button>
+        </div>`;
+    }
+    
+    // Active attempt
+    return `
+      <div class="attempt-card" style="border:1px solid rgba(232,197,71,0.3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+          <div>
+            <h3 style="margin:0 0 4px;font-size:1.15rem">${escapeHtml(a.examTitle || "Interview")}</h3>
+            <div class="text-muted" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600">
+              ${a.status.replace(/_/g," ")} · ${a.durationMinutes} MINS · ${a.warningsCount}/${a.warningLimit} WARNINGS
+            </div>
+          </div>
+          <button class="btn primary" onclick="openAttempt('${escapeHtml(a.id)}')">${a.startedAt ? "Resume Exam" : "Start Exam"}</button>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join("");
 }
 
@@ -736,12 +762,36 @@ async function submitInterview(auto) {
 
 function showResultScreen(attempt) {
   setViewState("result");
-  if(attempt.result && attempt.result.total) {
-    document.getElementById("resultPercent").textContent = `${attempt.result.percent}%`;
-    document.getElementById("resultMeta").textContent = `${attempt.result.correct} correct out of ${attempt.result.total} questions`;
-  } else {
-    document.getElementById("resultPercent").textContent = "N/A";
-    document.getElementById("resultMeta").textContent = "Evaluation pending";
+  const isMalp = attempt.status === "malpractice";
+  const hasScore = attempt.result && attempt.result.total;
+  const scoreColor = hasScore ? (attempt.result.percent >= 60 ? 'var(--green)' : 'var(--danger)') : 'var(--muted)';
+  
+  document.getElementById("resultPercent").textContent = hasScore ? `${attempt.result.percent}%` : "N/A";
+  document.getElementById("resultPercent").style.color = scoreColor;
+  document.getElementById("resultMeta").textContent = hasScore
+    ? `${attempt.result.correct} correct out of ${attempt.result.total} questions · ${attempt.warningsCount || 0} warning(s)`
+    : "Evaluation pending — the team will review and notify you.";
+  
+  // Extra info block
+  const extra = document.getElementById("resultExtra");
+  if(extra) {
+    extra.innerHTML = `
+      ${isMalp ? `<div style="margin-top:20px;padding:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:14px">
+        <div style="font-weight:700;color:var(--danger);margin-bottom:6px">⚠️ Malpractice Flagged</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6">Your session was flagged for suspicious activity. The YoungMinds team will review your session recording and proctoring data before making a decision. You may receive a follow-up message.</div>
+      </div>` : ''}
+      <div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px">
+        <div style="font-weight:700;margin-bottom:8px;font-size:14px">What happens next?</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8">
+          • The <strong>YoungMinds team</strong> will review your responses<br>
+          • You'll be notified via email if you move forward<br>
+          • Results are typically shared within <strong>3–5 business days</strong><br>
+          • This interview portal access is now <strong>locked</strong> — no re-attempts allowed
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:14px 16px;background:rgba(232,197,71,0.06);border:1px solid rgba(232,197,71,0.15);border-radius:12px;font-size:12px;color:var(--muted);text-align:center">
+        <strong style="color:var(--accent)">Young Minds Agency</strong> · Founded by Kishore R · Saveetha University
+      </div>`;
   }
 }
 
