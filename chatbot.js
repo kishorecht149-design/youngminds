@@ -10,19 +10,18 @@
   const API_URL = "https://youngminds-3rk5.onrender.com/api/ai/assist";
 
   const QUICK_REPLIES = [
-    "💰 Pricing",
-    "🌐 Website packages",
-    "🎨 Design & branding",
-    "🤖 AI solutions",
-    "📱 Social media",
-    "🎬 Video editing",
-    "🚀 How to hire",
     "🎓 Join the team",
+    "💼 Apply as member",
+    "🚀 How to hire",
+    "💰 Pricing",
+    "🤖 AI solutions",
+    "🌐 Web packages",
+    "🎨 Design",
+    "🛠️ Portal help",
   ];
 
   const WELCOME_MSG =
-    "Hey there! 👋 I'm Yemi, your YoungMinds assistant.\n\n" +
-    "I can help you with pricing, services, how to hire us, or joining our team.\n\n" +
+    "Hey! I'm Yemi. 👋 Whether you're a **client** looking for professional services or a **student** looking to join our talented team, I'm here to help!\n\n" +
     "What can I help you with today?";
 
   // ── State ─────────────────────────────────────────────────────────────────
