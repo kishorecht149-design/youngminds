@@ -3521,33 +3521,38 @@ function selectInterviewExam(examId){
 function syncInterviewData() {
   const current = getSelectedInterviewExam();
   if(!current) return;
-  current.title = document.getElementById("interview-title")?.value.trim();
-  current.slug = document.getElementById("interview-slug")?.value.trim();
-  current.description = document.getElementById("interview-description")?.value.trim();
-  current.durationMinutes = Number(document.getElementById("interview-duration")?.value || 30);
-  current.warningLimit = Number(document.getElementById("interview-warning-limit")?.value || 3);
-  current.active = !!document.getElementById("interview-active")?.checked;
-  current.allowBacktracking = !!document.getElementById("interview-backtracking")?.checked;
-  current.oneQuestionAtTime = !!document.getElementById("interview-one-question")?.checked;
-  current.randomizeQuestions = !!document.getElementById("interview-randomize-questions")?.checked;
-  current.randomizeOptions = !!document.getElementById("interview-randomize-options")?.checked;
-  current.questions = [...document.querySelectorAll('[data-interview-question]')].map(card => {
-    const opts = [...card.querySelectorAll('[data-question-option]')].map(input => input.value.trim());
-    return {
-      type: card.querySelector('[data-question-type]')?.value || "mcq",
-      prompt: card.querySelector('[data-question-prompt]')?.value.trim() || "",
-      options: opts.length > 0 ? opts : ["","","",""],
-      correctIndex: Number(card.querySelector('[data-question-correct]')?.value || 0),
-      explanation: card.querySelector('[data-question-explanation]')?.value.trim() || ""
-    };
+  current.title = document.getElementById("interview-title")?.value?.trim() || current.title;
+  current.slug = document.getElementById("interview-slug")?.value?.trim() || current.slug;
+  current.description = document.getElementById("interview-description")?.value?.trim() || current.description;
+  current.durationMinutes = Number(document.getElementById("interview-duration")?.value || current.durationMinutes);
+  current.warningLimit = Number(document.getElementById("interview-warning-limit")?.value || current.warningLimit);
+  current.active = document.getElementById("interview-active") ? !!document.getElementById("interview-active").checked : current.active;
+  current.allowBacktracking = document.getElementById("interview-backtracking") ? !!document.getElementById("interview-backtracking").checked : current.allowBacktracking;
+  current.oneQuestionAtTime = document.getElementById("interview-one-question") ? !!document.getElementById("interview-one-question").checked : current.oneQuestionAtTime;
+  current.randomizeQuestions = document.getElementById("interview-randomize-questions") ? !!document.getElementById("interview-randomize-questions").checked : current.randomizeQuestions;
+  current.randomizeOptions = document.getElementById("interview-randomize-options") ? !!document.getElementById("interview-randomize-options").checked : current.randomizeOptions;
+  
+  const cards = [...document.querySelectorAll('[data-interview-question]')];
+  cards.forEach((card, i) => {
+    if (!current.questions[i]) return;
+    const q = current.questions[i];
+    q.type = card.querySelector('[data-question-type]')?.value || q.type || "mcq";
+    q.prompt = card.querySelector('[data-question-prompt]')?.value?.trim() || q.prompt || "";
+    const optionInputs = [...card.querySelectorAll('[data-question-option]')];
+    if (optionInputs.length > 0) {
+      q.options = optionInputs.map(input => input.value.trim());
+    }
+    q.correctIndex = Number(card.querySelector('[data-question-correct]')?.value || q.correctIndex || 0);
+    q.explanation = card.querySelector('[data-question-explanation]')?.value?.trim() || q.explanation || "";
   });
 }
 
 function updateInterviewQuestionType(index, type) {
-  syncInterviewData();
   const current = getSelectedInterviewExam();
-  if(!current || !current.questions[index]) return;
-  current.questions[index].type = type;
+  if (current && current.questions[index]) {
+    current.questions[index].type = type;
+  }
+  syncInterviewData();
   renderInterviewsManager();
 }
 
