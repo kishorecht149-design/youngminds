@@ -243,7 +243,7 @@ async function tryGemini(role, message, context) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
 
-  const model = "gemini-1.5-flash"; // Free tier model that works!
+  const model = "gemini-flash-latest"; // Best stable alias that uses current quota
   const prompt = buildSystemPrompt(role, context) + "\n\nUser: " + String(message).slice(0, 3500);
 
   const controller = new AbortController();
@@ -338,7 +338,7 @@ async function tryGeminiPasswordCoach(userMessage) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
 
-  const model = "gemini-1.5-flash";
+  const model = "gemini-flash-latest";
   const system = [
     "You are a short, friendly password coach for the YoungMinds member portal only.",
     "Explain: (1) change password after login with current+new, min 8 chars; (2) forgot flow: Gmail + optional current password—if correct, user must self-serve not admin; if wrong password entered, error; if no password field filled, WhatsApp on file must match for admin reset queue;",
@@ -415,7 +415,7 @@ async function gradeDescriptiveAnswer(question, answer) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`,
         {
           method: "POST",
           signal: controller.signal,
