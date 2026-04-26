@@ -438,8 +438,13 @@ async function gradeDescriptiveAnswer(question, answer) {
             }
           }
         }
+      } else {
+        const errText = await res.text().catch(() => "Unknown error");
+        console.error(`[Gemini-Grade] API Error ${res.status}:`, errText);
       }
-    } catch { /* fallthrough */ }
+    } catch (err) {
+      console.error("[Gemini-Grade] Fetch Exception:", err.message);
+    }
   }
 
   // Try OpenAI as fallback
