@@ -441,8 +441,8 @@ canvas#revChart{max-height:220px}
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <div class="l-logo">
-      <div class="l-dot">Y</div>
-      <span class="l-name">YoungMinds</span>
+      <img src="/assets/logo.png" alt="YoungMinds" style="height: 32px; border-radius: 8px;">
+      <span class="l-name" style="margin-left: 8px;">YoungMinds</span>
       <span class="l-badge">Admin</span>
     </div>
     <div class="l-title">Welcome back</div>
@@ -462,8 +462,8 @@ canvas#revChart{max-height:220px}
   <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
   <div class="sidebar">
     <div class="sb-header">
-      <div class="sb-dot">Y</div>
-      <div><div class="sb-brand">YoungMinds</div><div class="sb-tag">Admin Panel</div></div>
+      <img src="/assets/logo.png" alt="Y/A" style="width: 32px; height: 32px; border-radius: 8px; object-fit: contain;">
+      <div style="margin-left: 12px;"><div class="sb-brand">YoungMinds</div><div class="sb-tag">Admin Panel</div></div>
     </div>
     <div class="sb-nav">
       <div class="sb-sec">General</div>
@@ -875,7 +875,7 @@ const SERVICE_CLIENT_DEFAULTS = [
     pricing_min_inr: 5000,
     pricing_max_inr: 50000,
     meta_description: "YoungMinds Agency builds responsive websites, landing pages, and internal tools for modern Indian businesses.",
-    og_image_url: "/static/assets/logo.png",
+    og_image_url: "/assets/logo.png",
     deliverables: [
       "Responsive website design",
       "Landing page build",
@@ -893,7 +893,7 @@ const SERVICE_CLIENT_DEFAULTS = [
     pricing_min_inr: 2000,
     pricing_max_inr: 25000,
     meta_description: "YoungMinds Agency creates logos, launch creatives, brand systems, and everyday design assets for growing brands.",
-    og_image_url: "/static/assets/logo.png",
+    og_image_url: "/assets/logo.png",
     deliverables: [
       "Logo and identity concepts",
       "Brand color and type direction",
@@ -911,7 +911,7 @@ const SERVICE_CLIENT_DEFAULTS = [
     pricing_min_inr: 4000,
     pricing_max_inr: 30000,
     meta_description: "YoungMinds Agency manages social media content planning, creative production, and publishing support for brands in India.",
-    og_image_url: "/static/assets/logo.png",
+    og_image_url: "/assets/logo.png",
     deliverables: [
       "Monthly content calendar",
       "Post and reel concepts",
@@ -929,7 +929,7 @@ const SERVICE_CLIENT_DEFAULTS = [
     pricing_min_inr: 8000,
     pricing_max_inr: 100000,
     meta_description: "YoungMinds Agency designs automation flows, assistants, and lightweight AI tools for business workflows in India.",
-    og_image_url: "/static/assets/logo.png",
+    og_image_url: "/assets/logo.png",
     deliverables: [
       "Workflow audit and use-case mapping",
       "Custom AI assistant setup",
@@ -947,7 +947,7 @@ const SERVICE_CLIENT_DEFAULTS = [
     pricing_min_inr: 2500,
     pricing_max_inr: 30000,
     meta_description: "YoungMinds Agency edits reels, explainers, launch videos, and short-form content for brands and creators.",
-    og_image_url: "/static/assets/logo.png",
+    og_image_url: "/assets/logo.png",
     deliverables: [
       "Short-form reel editing",
       "Motion graphics support",
@@ -965,7 +965,7 @@ const SERVICE_CLIENT_DEFAULTS = [
     pricing_min_inr: 1500,
     pricing_max_inr: 20000,
     meta_description: "YoungMinds Agency writes website copy, blogs, product messaging, and social content for modern businesses.",
-    og_image_url: "/static/assets/logo.png",
+    og_image_url: "/assets/logo.png",
     deliverables: [
       "Website and landing copy",
       "Brand messaging direction",
@@ -2734,7 +2734,7 @@ function renderServicesManager(){
             <div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">${escapeHtml(current.meta_description||"")}</textarea></div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo.png" value="${escapeHtml(current.og_image_url||"")}"></div>
+            <div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/assets/logo.png" value="${escapeHtml(current.og_image_url||"")}"></div>
           </div>
           <div>
             <div class="dp-sec-title" style="margin-bottom:14px">What You Get</div>
