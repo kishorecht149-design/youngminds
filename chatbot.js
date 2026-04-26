@@ -114,6 +114,7 @@
     chatWindow.classList.add("ym-open");
     toggleBtn.classList.add("active");
     toggleBtn.innerHTML = ICONS.close;
+    document.body.classList.add("ym-chat-open");
 
     if (dot) dot.style.display = "none";
 
@@ -130,6 +131,7 @@
     chatWindow.classList.remove("ym-open");
     toggleBtn.classList.remove("active");
     toggleBtn.innerHTML = ICONS.chat;
+    document.body.classList.remove("ym-chat-open");
   }
 
   // ── Clear conversation ────────────────────────────────────────────────────

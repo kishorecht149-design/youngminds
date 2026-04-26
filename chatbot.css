@@ -478,7 +478,7 @@
   text-decoration : none;
 }
 
-/* ── Mobile Optimization ─────────────────────────────────────── */
+/* ── Mobile Optimization (Native App Feel) ───────────────────── */
 @media (max-width: 520px) {
   #ym-toggle-btn {
     bottom : 20px;
@@ -487,6 +487,7 @@
     height : 56px;
   }
 
+  /* Full screen app mode */
   #ym-chatbot {
     bottom        : 0;
     right         : 0;
@@ -495,18 +496,70 @@
     max-height    : 100dvh;
     border-radius : 0;
     border        : none;
+    transform-origin: bottom center;
   }
 
+  /* Sticky header with safe area */
   #ym-header {
     padding : 16px 20px;
     padding-top : env(safe-area-inset-top, 16px);
+    height : auto;
+    min-height : 80px;
   }
 
-  #ym-input-area {
-    padding-bottom : env(safe-area-inset-bottom, 24px);
+  .ym-header-info h4 {
+    font-size : 18px;
+  }
+
+  /* Larger message area for readability */
+  #ym-messages {
+    padding : 20px;
+    padding-bottom : 100px; /* Space for input */
   }
 
   .ym-bubble {
-    font-size : 15px;
+    font-size : 16px;
+    max-width : 90%;
+  }
+
+  /* Floating Input Bar (Modern App Style) */
+  #ym-input-area {
+    position : absolute;
+    bottom   : 0;
+    left     : 0;
+    width    : 100%;
+    padding  : 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    background : linear-gradient(to top, var(--ym-bg-glass) 80%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top : none;
+  }
+
+  .ym-input-container {
+    background : rgba(255, 255, 255, 0.05);
+    border : 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow : 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  #ym-quick-replies {
+    position : absolute;
+    bottom   : 90px; /* Above input */
+    left     : 0;
+    width    : 100%;
+    padding  : 10px 16px;
+    background : transparent;
+    z-index : 10;
+  }
+
+  /* Hide footer branding on mobile to save space */
+  #ym-footer {
+    display : none;
+  }
+
+  /* Prevent background scrolling when open */
+  body.ym-chat-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
   }
 }
