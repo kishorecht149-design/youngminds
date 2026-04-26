@@ -42,38 +42,65 @@
   position        : fixed;
   bottom          : 32px;
   right           : 32px;
-  width           : 64px;
-  height          : 64px;
+  width           : 68px;
+  height          : 68px;
   border-radius   : 50%;
-  background      : var(--ym-accent);
-  border          : 1px solid rgba(255,255,255,0.1);
+  background      : linear-gradient(135deg, #f5c518 0%, #ff9d00 100%);
+  border          : 2px solid rgba(255, 255, 255, 0.2);
   cursor          : pointer;
   display         : flex;
   align-items     : center;
   justify-content : center;
-  box-shadow      : var(--ym-shadow-btn);
+  box-shadow      : 0 10px 30px -5px rgba(245, 197, 24, 0.5),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.3);
   z-index         : 10000;
-  transition      : all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition      : all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  overflow        : visible;
+}
+
+#ym-toggle-btn::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--ym-accent);
+  opacity: 0.3;
+  animation: ym-ring-pulse 3s infinite;
+}
+
+@keyframes ym-ring-pulse {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.4); opacity: 0; }
 }
 
 #ym-toggle-btn:hover {
-  transform  : translateY(-4px) scale(1.05);
-  box-shadow : 0 12px 32px -4px rgba(245, 197, 24, 0.6);
+  transform  : translateY(-6px) rotate(8deg) scale(1.08);
+  box-shadow : 0 15px 40px -5px rgba(245, 197, 24, 0.7);
 }
 
 #ym-toggle-btn:active {
-  transform : scale(0.95);
+  transform : scale(0.92);
 }
 
 #ym-toggle-btn svg {
-  width  : 28px;
-  height : 28px;
+  width  : 32px;
+  height : 32px;
   fill   : var(--ym-black);
-  transition: transform 0.3s ease;
+  filter : drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  transition: all 0.4s ease;
+}
+
+#ym-toggle-btn.active {
+  background : var(--ym-surface);
+  border-color: var(--ym-border);
 }
 
 #ym-toggle-btn.active svg {
-  transform: rotate(90deg) scale(0.8);
+  fill: var(--ym-accent);
+  transform: rotate(180deg);
 }
 
 /* Notification dot */
