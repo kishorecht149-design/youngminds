@@ -1312,7 +1312,8 @@ function hydrateAttemptExam(exam, attempt) {
 function getAttemptAnswerMap(attempt) {
   const map = new Map();
   (Array.isArray(attempt?.answers) ? attempt.answers : []).forEach((answer) => {
-    map.set(Number(answer.questionIndex), Number(answer.selectedIndex));
+    const val = (answer.selectedIndex != null) ? Number(answer.selectedIndex) : (answer.answerText || "");
+    map.set(Number(answer.questionIndex), val);
   });
   return map;
 }
@@ -3082,8 +3083,9 @@ app.get("/api/interviews/attempts/:id/exam", async (req, res) => {
         oneQuestionAtTime: exam.oneQuestionAtTime !== false,
         questions: hydratedQuestions.map((question, displayIndex) => ({
           index: displayIndex,
+          type: question.type || "mcq",
           prompt: question.prompt,
-          options: question.options
+          options: (question.type || "mcq") === "mcq" ? question.options : []
         }))
       },
       attempt: {
@@ -3111,13 +3113,15 @@ app.post("/api/interviews/attempts/:id/answer", async (req, res) => {
     }
 
     const questionIndex = Number(req.body?.questionIndex);
-    const selectedIndex = Number(req.body?.selectedIndex);
-    if (questionIndex < 0 || selectedIndex < 0) {
-      return res.status(400).json({ error: "Question and selected option are required" });
+    const selectedIndex = req.body?.selectedIndex != null ? Number(req.body.selectedIndex) : null;
+    const answerText = req.body?.answerText != null ? String(req.body.answerText) : null;
+
+    if (questionIndex < 0 || (selectedIndex === null && answerText === null)) {
+      return res.status(400).json({ error: "Question and an answer (option or text) are required" });
     }
 
     const existingIndex = (attempt.answers || []).findIndex((answer) => Number(answer.questionIndex) === questionIndex);
-    const answerPayload = { questionIndex, selectedIndex, savedAt: new Date() };
+    const answerPayload = { questionIndex, selectedIndex, answerText, savedAt: new Date() };
     if (existingIndex >= 0) attempt.answers[existingIndex] = answerPayload;
     else attempt.answers.push(answerPayload);
 

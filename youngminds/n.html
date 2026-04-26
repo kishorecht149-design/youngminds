@@ -3361,17 +3361,29 @@ function renderInterviewsManager(){
                 <div data-interview-question style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)">
                   <div class="service-admin-item-top" style="margin-bottom:10px">
                     <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
-                    <button class="btn-sm" type="button" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
+                    <div style="display:flex;gap:8px">
+                      <select data-question-type style="font-size:11px;padding:4px 8px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--muted3)" onchange="renderInterviewsManager()">
+                        <option value="mcq" ${question.type === "mcq" || !question.type ? "selected" : ""}>MCQ</option>
+                        <option value="descriptive" ${question.type === "descriptive" ? "selected" : ""}>Descriptive</option>
+                      </select>
+                      <button class="btn-sm" type="button" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
+                    </div>
                   </div>
-                  <div class="form-field"><label>Prompt</label><textarea data-question-prompt placeholder="Write the MCQ prompt">${escapeHtml(question.prompt || "")}</textarea></div>
-                  <div class="service-admin-form-row">
-                    ${(Array.isArray(question.options) ? question.options : ["","","",""]).map((option, optionIndex) => `
-                      <div class="form-field"><label>Option ${String.fromCharCode(65 + optionIndex)}</label><input type="text" data-question-option value="${escapeHtml(option)}" placeholder="Option ${String.fromCharCode(65 + optionIndex)}"></div>
-                    `).join("")}
+                  <div class="form-field"><label>Prompt</label><textarea data-question-prompt placeholder="Write the question prompt">${escapeHtml(question.prompt || "")}</textarea></div>
+                  
+                  <div style="${(question.type === "mcq" || !question.type) ? "" : "display:none"}">
+                    <div class="service-admin-form-row">
+                      ${(Array.isArray(question.options) ? question.options : ["","","",""]).map((option, optionIndex) => `
+                        <div class="form-field"><label>Option ${String.fromCharCode(65 + optionIndex)}</label><input type="text" data-question-option value="${escapeHtml(option)}" placeholder="Option ${String.fromCharCode(65 + optionIndex)}"></div>
+                      `).join("")}
+                    </div>
+                    <div class="service-admin-form-row">
+                      <div class="form-field"><label>Correct Option Index</label><input type="number" data-question-correct min="0" max="5" value="${Number(question.correctIndex || 0)}"></div>
+                      <div class="form-field"><label>Explanation</label><input type="text" data-question-explanation value="${escapeHtml(question.explanation || "")}" placeholder="Optional admin explanation"></div>
+                    </div>
                   </div>
-                  <div class="service-admin-form-row">
-                    <div class="form-field"><label>Correct Option Index</label><input type="number" data-question-correct min="0" max="5" value="${Number(question.correctIndex || 0)}"></div>
-                    <div class="form-field"><label>Explanation</label><input type="text" data-question-explanation value="${escapeHtml(question.explanation || "")}" placeholder="Optional admin explanation"></div>
+                  <div style="${question.type === "descriptive" ? "" : "display:none"}">
+                    <div class="service-admin-note" style="margin-top:8px">This question will show a text area for the candidate to type their answer.</div>
                   </div>
                 </div>
               `).join("")}
@@ -3510,7 +3522,7 @@ function addInterviewQuestion(){
   const current = getSelectedInterviewExam();
   if(!current) return;
   current.questions = Array.isArray(current.questions) ? current.questions : [];
-  current.questions.push({ prompt:"", options:["","","",""], correctIndex:0, explanation:"" });
+  current.questions.push({ type:"mcq", prompt:"", options:["","","",""], correctIndex:0, explanation:"" });
   renderInterviewsManager();
 }
 
@@ -3545,6 +3557,7 @@ async function saveInterviewExam(){
     randomizeQuestions: !!document.getElementById("interview-randomize-questions")?.checked,
     randomizeOptions: !!document.getElementById("interview-randomize-options")?.checked,
     questions: [...document.querySelectorAll('[data-interview-question]')].map(card => ({
+      type: card.querySelector('[data-question-type]')?.value || "mcq",
       prompt: card.querySelector('[data-question-prompt]')?.value.trim() || "",
       options: [...card.querySelectorAll('[data-question-option]')].map(input => input.value.trim()).filter(Boolean),
       correctIndex: Number(card.querySelector('[data-question-correct]')?.value || 0),

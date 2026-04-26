@@ -601,8 +601,9 @@ function renderExamNav() {
   const answers = activeAttempt.answers || {};
   let answeredCount = 0;
   
-  grid.innerHTML = activeExam.questions.map((_, i) => {
-    const isAns = typeof answers[i] === "number";
+  grid.innerHTML = activeExam.questions.map((q, i) => {
+    const ans = answers[i];
+    const isAns = ans != null && (typeof ans === "number" || (typeof ans === "string" && ans.trim().length > 0));
     if (isAns) answeredCount++;
     let cls = "nav-dot";
     if (isAns) cls += " answered";
@@ -632,16 +633,27 @@ function renderQuestion() {
   document.getElementById("questionCounter").textContent = `Question ${activeQuestionIndex + 1} of ${activeExam.questions.length}`;
   document.getElementById("questionPrompt").textContent = q.prompt;
   
-  document.getElementById("optionList").innerHTML = (q.options || []).map((opt, i) => `
-    <button class="option-btn ${sel === i ? 'active' : ''}" onclick="selectOption(${activeQuestionIndex}, ${i})">
-      <div style="display:flex; gap:16px; align-items:center;">
-        <div style="width:24px;height:24px;border-radius:50%;border:2px solid ${sel===i?'var(--accent)':'var(--border)'};display:grid;place-items:center;flex-shrink:0;">
-          ${sel===i ? `<div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>` : ''}
-        </div>
-        <div>${opt}</div>
+  if (q.type === "descriptive") {
+    const text = typeof ans[activeQuestionIndex] === "string" ? ans[activeQuestionIndex] : "";
+    document.getElementById("optionList").innerHTML = `
+      <div class="form-field">
+        <label>Your Answer</label>
+        <textarea style="height:180px; width:100%;" placeholder="Type your descriptive answer here..." 
+          oninput="saveDescriptiveAnswer(${activeQuestionIndex}, this.value)">${escapeHtml(text)}</textarea>
       </div>
-    </button>
-  `).join("");
+    `;
+  } else {
+    document.getElementById("optionList").innerHTML = (q.options || []).map((opt, i) => `
+      <button class="option-btn ${sel === i ? 'active' : ''}" onclick="selectOption(${activeQuestionIndex}, ${i})">
+        <div style="display:flex; gap:16px; align-items:center;">
+          <div style="width:24px;height:24px;border-radius:50%;border:2px solid ${sel===i?'var(--accent)':'var(--border)'};display:grid;place-items:center;flex-shrink:0;">
+            ${sel===i ? `<div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>` : ''}
+          </div>
+          <div>${opt}</div>
+        </div>
+      </button>
+    `).join("");
+  }
   
   document.getElementById("prevBtn").style.visibility = (activeExam.allowBacktracking && activeQuestionIndex > 0) ? "visible" : "hidden";
   const isLast = activeQuestionIndex >= activeExam.questions.length - 1;
@@ -661,6 +673,22 @@ async function selectOption(qIdx, optIdx) {
     method: "POST", headers: headers({"Content-Type":"application/json"}),
     body: JSON.stringify({ questionIndex: qIdx, selectedIndex: optIdx })
   }).catch(()=>{});
+}
+
+let descriptiveTimeout = null;
+function saveDescriptiveAnswer(qIdx, text) {
+  activeAttempt.answers = activeAttempt.answers || {};
+  activeAttempt.answers[qIdx] = text;
+  renderExamNav();
+  lastActivityAt = Date.now();
+  
+  clearTimeout(descriptiveTimeout);
+  descriptiveTimeout = setTimeout(() => {
+    fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/answer`, {
+      method: "POST", headers: headers({"Content-Type":"application/json"}),
+      body: JSON.stringify({ questionIndex: qIdx, answerText: text })
+    }).catch(()=>{});
+  }, 800);
 }
 
 function goQuestion(dir) {
