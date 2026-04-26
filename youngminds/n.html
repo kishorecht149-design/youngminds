@@ -993,7 +993,7 @@ let interviewAttempts = [];
 let interviewCandidates = [];
 let interviewLive = [];
 let interviewDraft = null;
-let interviewState = { loading: false, saving: false, error: "", selectedExamId: "", selectedAttemptId: "", selectedCandidateId: "", assignResult: "", accessResult: "", draftPassword: "" };
+let interviewState = { loading: false, saving: false, error: "", selectedExamId: "", selectedAttemptId: "", selectedCandidateId: "", assignResult: "", accessResult: "", draftPassword: "", activeTab: "assign" };
 let interviewAdminSocket = null;
 let adminEditState = { dirty: false, lastInputAt: 0, pauseReason: "" };
 let currentBoardEditId = null;
@@ -1316,15 +1316,37 @@ function renderView(type,status){
 
   let colsCss,colsHdr,rowsFn;
   if(isApp){
-    colsCss='grid-template-columns:2fr 1.2fr 1.3fr 1fr 1fr';
-    colsHdr=`<span class="th">Name</span><span class="th">Skill</span><span class="th">College</span><span class="th">Date</span><span class="th">Status</span>`;
-    rowsFn=a=>`<div class="trow" style="${colsCss}" onclick="openRecord(this)" data-record='${enc(a)}'>
-      <div class="td name">${a.name||'—'}</div>
-      <div class="td">${a.skill||'—'}</div>
-      <div class="td muted">${a.college||'—'}</div>
-      <div class="td muted">${fmtDate(a.timestamp)}</div>
-      <div class="td"><span class="badge ${a.status}">${LABEL[a.status]||a.status}</span></div>
-    </div>`;
+    if(status === 'reviewing'){
+      colsCss='grid-template-columns:1.5fr 1fr 1fr 1fr 0.8fr 1fr';
+      colsHdr=`<span class="th">Name</span><span class="th">Skill</span><span class="th">College</span><span class="th">Score</span><span class="th">Date</span><span class="th">Status</span>`;
+      rowsFn=a=>{
+        const attempt = getLatestInterviewAttempt(a._id);
+        let scoreStr = '—';
+        if(attempt && attempt.result && attempt.result.total) {
+          scoreStr = `${attempt.result.percent}% (${attempt.result.score}/${attempt.result.total})`;
+        } else if (attempt && attempt.status !== 'completed') {
+          scoreStr = 'Pending';
+        }
+        return `<div class="trow" style="${colsCss}" onclick="openRecord(this)" data-record='${enc(a)}'>
+          <div class="td name">${a.name||'—'}</div>
+          <div class="td">${a.skill||'—'}</div>
+          <div class="td muted">${a.college||'—'}</div>
+          <div class="td"><b>${scoreStr}</b></div>
+          <div class="td muted">${fmtDate(a.timestamp)}</div>
+          <div class="td"><span class="badge ${a.status}">${LABEL[a.status]||a.status}</span></div>
+        </div>`;
+      };
+    } else {
+      colsCss='grid-template-columns:2fr 1.2fr 1.3fr 1fr 1fr';
+      colsHdr=`<span class="th">Name</span><span class="th">Skill</span><span class="th">College</span><span class="th">Date</span><span class="th">Status</span>`;
+      rowsFn=a=>`<div class="trow" style="${colsCss}" onclick="openRecord(this)" data-record='${enc(a)}'>
+        <div class="td name">${a.name||'—'}</div>
+        <div class="td">${a.skill||'—'}</div>
+        <div class="td muted">${a.college||'—'}</div>
+        <div class="td muted">${fmtDate(a.timestamp)}</div>
+        <div class="td"><span class="badge ${a.status}">${LABEL[a.status]||a.status}</span></div>
+      </div>`;
+    }
   } else {
     colsCss='grid-template-columns:2fr 1.3fr 1.2fr 1fr 1fr 1fr';
     colsHdr=`<span class="th">Client</span><span class="th">Service</span><span class="th">Budget</span><span class="th">Timeline</span><span class="th">Date</span><span class="th">Status</span>`;
@@ -3163,6 +3185,11 @@ function ensureInterviewPasswordDraft(force = false){
   return interviewState.draftPassword;
 }
 
+function selectInterviewTab(tab) {
+  interviewState.activeTab = tab;
+  renderInterviewsManager();
+}
+
 function renderInterviewsManager(){
   const el = document.getElementById("interviews-admin-content");
   if(!el) return;
@@ -3179,7 +3206,6 @@ function renderInterviewsManager(){
   if (selectedCandidate && String(interviewState.selectedCandidateId) !== String(selectedCandidate.id)) {
     interviewState.selectedCandidateId = String(selectedCandidate.id);
   }
-  const resolvedPassword = ensureInterviewPasswordDraft();
 
   if(interviewState.loading && !interviewExams.length && !interviewAttempts.length && !eligibleCandidates.length){
     el.innerHTML = `<div class="empty"><div class="empty-icon">🎥</div><div class="empty-title">Loading interviews</div><div class="empty-sub">Syncing question banks, candidate access, and live monitoring data.</div></div>`;
@@ -3192,16 +3218,24 @@ function renderInterviewsManager(){
       <span class="view-hdr-count">${eligibleCandidates.length} eligible members · ${interviewExams.length} question bank${interviewExams.length!==1?'s':''} · ${liveAttempts.length} attempts · ${interviewLive.length} live</span>
       <div class="vhdr-right">
         <button class="btn-sm" type="button" onclick="loadInterviewData({ render: true })" ${interviewState.loading ? "disabled" : ""}>Refresh Interviews</button>
-        <button class="btn-sm primary" type="button" onclick="startNewInterviewExam()">+ New Qn Bank</button>
       </div>
     </div>
+    
+    <div style="display:flex;gap:12px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;overflow-x:auto">
+      <button class="btn-sm ${interviewState.activeTab==='assign'?'primary':''}" onclick="selectInterviewTab('assign')">Candidates & Assign</button>
+      <button class="btn-sm ${interviewState.activeTab==='banks'?'primary':''}" onclick="selectInterviewTab('banks')">Question Banks</button>
+      <button class="btn-sm ${interviewState.activeTab==='live'?'primary':''}" onclick="selectInterviewTab('live')">Live Monitoring & Review</button>
+    </div>
+
     ${interviewState.error ? `<div class="service-admin-note" style="margin-bottom:12px;color:var(--orange)">${escapeHtml(interviewState.error)}</div>` : ``}
-    <div class="interview-admin-grid">
+    
+    <!-- TAB 1: Candidates & Assign -->
+    <div class="interview-admin-grid" style="grid-template-columns:1fr 1fr; ${interviewState.activeTab === 'assign' ? '' : 'display:none'}">
       <div class="service-admin-card">
         <div class="service-admin-head">
           <div>
             <div class="service-admin-title">1. Eligible Members</div>
-            <div class="service-admin-sub">Only members not moved to hired or rejected are shown here. Pick one person first, then create or assign their interview access.</div>
+            <div class="service-admin-sub">Members not moved to hired or rejected. Pick a person to view or assign interview access.</div>
           </div>
         </div>
         <div class="interview-member-list">
@@ -3222,96 +3256,61 @@ function renderInterviewsManager(){
                 ${latestAttempt ? `<span class="service-admin-pill">${escapeHtml(formatInterviewStatus(latestAttempt.status || "assigned"))}</span>` : `<span class="service-admin-pill">Awaiting interview</span>`}
               </div>
             </button>`;
-          }).join("") || `<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No eligible members</div><div class="empty-sub">Accepted, new, and reviewing members appear here until they move to hired or rejected.</div></div>`}
+          }).join("") || `<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No eligible members</div><div class="empty-sub">Accepted, new, and reviewing members appear here.</div></div>`}
         </div>
       </div>
       <div class="service-admin-card">
         <div class="service-admin-head">
           <div>
-            <div class="service-admin-title">2. Create Interview Access</div>
-            <div class="service-admin-sub">${selectedCandidate ? `Assign a question bank and credentials for ${escapeHtml(selectedCandidate.name || "this member")}.` : "Select a member from the left to create interview access."}</div>
+            <div class="service-admin-title">2. Assign Interview</div>
+            <div class="service-admin-sub">${selectedCandidate ? `Assign a question bank for ${escapeHtml(selectedCandidate.name || "this member")}.` : "Select a member from the left."}</div>
           </div>
         </div>
         ${selectedCandidate ? `
         <div class="interview-form-shell">
           <div class="interview-credentials">
-            <div class="form-field"><label>Candidate Email</label><input id="interview-candidate-email" type="text" value="${escapeHtml(selectedCandidate.email || "")}" readonly></div>
+            <div class="form-field"><label>Candidate Email</label><input type="text" value="${escapeHtml(selectedCandidate.email || "")}" readonly></div>
             <div class="form-field"><label>Current Status</label><input type="text" value="${escapeHtml(formatInterviewStatus(selectedCandidate.status || "new"))}" readonly></div>
           </div>
-          <div class="service-admin-form-row">
+          <div class="form-row full">
             <div class="form-field">
               <label>Question Bank</label>
               <select id="interview-selected-bank" onchange="selectInterviewExam(this.value)">
                 <option value="">Select question bank</option>
                 ${interviewExams.map(item => `<option value="${escapeHtml(item.id)}" ${String(item.id)===String(current?.id || "") ? "selected" : ""}>${escapeHtml(item.title || "Question bank")} · ${Number(item.questionCount || 0)} questions</option>`).join("")}
-                <option value="__new__" ${interviewState.selectedExamId === "__new__" ? "selected" : ""}>Create new question bank below</option>
               </select>
             </div>
-            <div class="form-field"><label>Interview Password</label><input id="interview-candidate-password" type="text" value="${escapeHtml(resolvedPassword)}" placeholder="Set login password"></div>
           </div>
-          <div class="service-admin-note">Candidate login must use this email and password together. If the password is forgotten later, use <strong>Reset Credentials</strong> here and share the new one.</div>
-          ${!current.id ? `<div class="service-admin-note" style="color:var(--orange)">Choose an existing question bank or create and save a new one below before assigning this interview.</div>` : ``}
+          <div class="service-admin-note" style="padding:14px;background:var(--bg3);border-radius:12px;border:1px solid var(--border)">
+            <strong>Credentials:</strong><br>
+            The credentials are the exact Gmail and Password they entered in their member application.
+          </div>
           <div class="interview-action-row">
-            <button class="btn-sm primary" type="button" onclick="assignInterviewForSelectedCandidate()" ${interviewState.saving || !selectedCandidate.email || !current.id ? "disabled" : ""}>${interviewState.saving ? "Saving…" : "Create / Update Interview"}</button>
-            <button class="btn-sm" type="button" onclick="refreshInterviewPasswordDraft()">Generate Password</button>
-            <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}', document.getElementById('interview-candidate-password')?.value || '')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
+            <button class="btn-sm primary" type="button" onclick="assignInterviewForSelectedCandidate()" ${interviewState.saving || !selectedCandidate.email || !current.id || current.id === '__new__' ? "disabled" : ""}>${interviewState.saving ? "Saving…" : "Assign Interview"}</button>
+            <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
           </div>
           ${interviewState.assignResult ? `<div class="interview-access-box">${escapeHtml(interviewState.assignResult)}</div>` : ``}
           ${interviewState.accessResult ? `<div class="interview-access-box">${escapeHtml(interviewState.accessResult)}</div>` : ``}
-          ${!selectedCandidate.email ? `<div class="service-admin-note" style="color:var(--orange)">This member does not have an email saved, so interview login cannot be generated yet.</div>` : ``}
+          ${!selectedCandidate.email ? `<div class="service-admin-note" style="color:var(--orange)">This member does not have an email saved, so interview cannot be assigned.</div>` : ``}
         </div>` : `
         <div class="empty" style="padding:42px 18px">
           <div class="empty-icon">👤</div>
           <div class="empty-title">Select a member first</div>
-          <div class="empty-sub">We’ll fill the interview form here with the member email, question bank, and credentials flow.</div>
         </div>
         `}
       </div>
-      <div class="service-admin-card">
-        <div class="service-admin-head">
-          <div>
-            <div class="service-admin-title">3. Live View & Controls</div>
-            <div class="service-admin-sub">See recent activity, warnings, camera thumbnails, logs, and termination controls without refreshing away your form.</div>
-          </div>
-        </div>
-        <div class="interview-monitor-list">
-          ${liveAttempts.map(attempt => `
-            <div class="interview-monitor-card">
-              <div class="interview-monitor-top">
-                <div>
-                  <div class="interview-monitor-name">${escapeHtml(attempt.candidateName || "Candidate")}</div>
-                  <div class="interview-monitor-copy">${escapeHtml(formatInterviewStatus(attempt.status))} · ${escapeHtml(attempt.candidateSkill || "General")} · ${attempt.result && attempt.result.total ? `${attempt.result.percent}% result` : "awaiting result"}</div>
-                </div>
-                <div class="interview-monitor-meta">
-                  <span class="service-admin-pill">${attempt.warningsCount || 0} warnings</span>
-                  <span class="service-admin-pill">${attempt.suspiciousScore || 0} score</span>
-                </div>
-              </div>
-              ${attempt.latestThumbnail ? `<img src="${attempt.latestThumbnail}" alt="Candidate live frame" style="width:100%;max-width:220px;margin-top:12px;border-radius:14px;border:1px solid var(--border)">` : `<div class="service-admin-note" style="margin-top:12px">No camera frame received yet.</div>`}
-              <div class="interview-action-row" style="margin-top:12px">
-                <button class="btn-sm" type="button" onclick="selectInterviewAttempt('${escapeHtml(attempt.id)}')">View Logs</button>
-                <button class="btn-sm" type="button" onclick="terminateInterviewAttempt('${escapeHtml(attempt.id)}')" ${["submitted","terminated","expired"].includes(attempt.status) ? "disabled" : ""}>Terminate</button>
-              </div>
-            </div>
-          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No interview attempts yet</div><div class="empty-sub">Once you create interview access for a member, their live activity and controls will show here.</div></div>`}
-        </div>
-        ${selectedAttempt ? `
-          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
-            <div class="service-admin-title" style="margin-bottom:8px">Audit Log · ${escapeHtml(selectedAttempt.candidateName || "Candidate")}</div>
-            <div id="interview-log-panel" class="interview-log-list service-admin-note">Loading logs…</div>
-          </div>
-        ` : ``}
-      </div>
     </div>
-    <div class="service-admin-card" style="margin-top:16px">
+
+    <!-- TAB 2: Question Banks -->
+    <div class="service-admin-card" style="${interviewState.activeTab === 'banks' ? '' : 'display:none'}">
       <div class="service-admin-head">
         <div>
-          <div class="service-admin-title">4. Question Banks</div>
-          <div class="service-admin-sub">Create reusable MCQ banks here. Then go back to the member flow above, choose a bank, and generate interview access with visible credentials.</div>
+          <div class="service-admin-title">Question Banks</div>
+          <div class="service-admin-sub">Create and edit reusable MCQ banks.</div>
         </div>
         <div class="interview-action-row">
           <button class="btn-sm primary" type="button" onclick="startNewInterviewExam()">+ New Qn Bank</button>
-          ${current.id ? `<button class="btn-sm" type="button" onclick="deleteInterviewExam('${escapeHtml(current.id)}','${escapeHtml(current.title || "this question bank")}')" ${interviewState.saving ? "disabled" : ""}>Delete Qn Bank</button>` : ``}
+          ${current.id && current.id !== '__new__' ? `<button class="btn-sm" type="button" onclick="deleteInterviewExam('${escapeHtml(current.id)}','${escapeHtml(current.title || "this question bank")}')" ${interviewState.saving ? "disabled" : ""}>Delete Qn Bank</button>` : ``}
         </div>
       </div>
       <div class="service-admin-layout">
@@ -3326,7 +3325,7 @@ function renderInterviewsManager(){
                 <div class="service-admin-meta"><span class="service-admin-pill">${escapeHtml(item.slug || "slug")}</span><span class="service-admin-pill">${item.durationMinutes || 30} min</span></div>
                 <div class="service-admin-item-copy" style="margin-top:10px">${escapeHtml(item.description || "No description added yet.")}</div>
               </button>
-            `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No question banks yet</div><div class="empty-sub">Start with a clean MCQ bank, then assign it from the member flow above.</div></div>`}
+            `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No question banks yet</div><div class="empty-sub">Start with a clean MCQ bank.</div></div>`}
           </div>
         </div>
         <div class="service-admin-card">
@@ -3371,14 +3370,63 @@ function renderInterviewsManager(){
             </div>
             <div class="interview-action-row" style="margin-top:12px">
               <button class="btn-sm" type="button" onclick="addInterviewQuestion()">+ Add Question</button>
-              <button class="btn-sm primary" type="button" onclick="saveInterviewExam()" ${interviewState.saving ? "disabled" : ""}>${interviewState.saving ? "Saving…" : (current.id ? "Save Qn Bank" : "Create Qn Bank")}</button>
+              <button class="btn-sm primary" type="button" onclick="saveInterviewExam()" ${interviewState.saving ? "disabled" : ""}>${interviewState.saving ? "Saving…" : (current.id && current.id !== '__new__' ? "Save Qn Bank" : "Create Qn Bank")}</button>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- TAB 3: Live Monitoring & Review -->
+    <div class="interview-admin-grid" style="grid-template-columns:1.2fr 1fr; ${interviewState.activeTab === 'live' ? '' : 'display:none'}">
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Live Monitoring & Review</div>
+            <div class="service-admin-sub">Check who is attending, monitor malpractices, view scores, and review completed interviews.</div>
+          </div>
+        </div>
+        <div class="interview-monitor-list">
+          ${liveAttempts.map(attempt => `
+            <div class="interview-monitor-card ${String(selectedAttempt?.id) === String(attempt.id) ? 'active' : ''}">
+              <div class="interview-monitor-top">
+                <div>
+                  <div class="interview-monitor-name">${escapeHtml(attempt.candidateName || "Candidate")}</div>
+                  <div class="interview-monitor-copy">${escapeHtml(formatInterviewStatus(attempt.status))} · ${escapeHtml(attempt.candidateSkill || "General")}</div>
+                </div>
+                <div class="interview-monitor-meta">
+                  <span class="service-admin-pill">${attempt.warningsCount || 0} warnings</span>
+                  ${attempt.result && attempt.result.total ? `<span class="service-admin-pill" style="color:var(--accent)">Score: ${attempt.result.score}/${attempt.result.total} (${attempt.result.percent}%)</span>` : `<span class="service-admin-pill">Awaiting result</span>`}
+                </div>
+              </div>
+              ${attempt.latestThumbnail ? `<img src="${attempt.latestThumbnail}" alt="Candidate live frame" style="width:100%;max-width:220px;margin-top:12px;border-radius:14px;border:1px solid var(--border)">` : `<div class="service-admin-note" style="margin-top:12px">No camera frame received yet.</div>`}
+              <div class="interview-action-row" style="margin-top:12px">
+                <button class="btn-sm" type="button" onclick="selectInterviewAttempt('${escapeHtml(attempt.id)}')">View Logs</button>
+                <button class="btn-sm" type="button" onclick="terminateInterviewAttempt('${escapeHtml(attempt.id)}')" ${["submitted","terminated","expired"].includes(attempt.status) ? "disabled" : ""}>Terminate Session</button>
+                <button class="btn-sm" type="button" onclick="markInterviewCompleted('${escapeHtml(attempt.id)}')" ${attempt.status === "completed" ? "disabled" : ""}>Mark Completed</button>
+              </div>
+            </div>
+          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No interview attempts yet</div></div>`}
+        </div>
+      </div>
+      <div class="service-admin-card">
+        ${selectedAttempt ? `
+          <div>
+            <div class="service-admin-title" style="margin-bottom:8px">Audit Log · ${escapeHtml(selectedAttempt.candidateName || "Candidate")}</div>
+            <div class="service-admin-sub" style="margin-bottom:12px">Started at: ${new Date(selectedAttempt.createdAt || Date.now()).toLocaleString()}</div>
+            <div id="interview-log-panel" class="interview-log-list service-admin-note" style="max-height: 600px;">Loading logs…</div>
+          </div>
+        ` : `
+          <div class="empty" style="padding:42px 18px">
+            <div class="empty-icon">📝</div>
+            <div class="empty-title">Select an attempt</div>
+            <div class="empty-sub">Audit logs will appear here.</div>
+          </div>
+        `}
+      </div>
+    </div>
   `;
-  if (selectedAttempt) {
+  if (selectedAttempt && interviewState.activeTab === 'live') {
     loadInterviewAttemptLogs(selectedAttempt.id);
   }
 }
@@ -3645,6 +3693,25 @@ async function terminateInterviewAttempt(attemptId){
     await loadInterviewData({ render: true });
   }catch{
     showToast("Could not terminate interview");
+  }
+}
+
+async function markInterviewCompleted(attemptId){
+  if(!attemptId) return;
+  try{
+    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/complete`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" })
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok){
+      showToast(data.error || "Could not mark interview as completed");
+      return;
+    }
+    showToast("Interview marked as completed");
+    await loadInterviewData({ render: true });
+  }catch{
+    showToast("Could not mark interview as completed");
   }
 }
 

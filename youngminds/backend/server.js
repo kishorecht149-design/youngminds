@@ -2767,8 +2767,8 @@ app.post("/api/interviews/exams/:id/assign", async (req, res) => {
     const candidates = await Application.find({ _id: { $in: applicationIds } });
     const assigned = [];
     for (const candidate of candidates) {
-      const generatedPassword = String(req.body?.accessPassword || "").trim() || crypto.randomBytes(4).toString("hex");
-      candidate.interviewPassword = hashPassword(generatedPassword);
+      // Use the exact password they entered in the member application
+      candidate.interviewPassword = candidate.password;
       candidate.interviewSessionNonce = "";
       candidate.interviewAssignedAt = new Date();
       await candidate.save();
@@ -2808,7 +2808,7 @@ app.post("/api/interviews/exams/:id/assign", async (req, res) => {
         candidateId: String(candidate._id),
         candidateName: candidate.name || "",
         email: candidate.gmail || candidate.email || "",
-        password: generatedPassword,
+        password: "Their Application Password",
         attemptId: String(attempt._id)
       });
     }
@@ -2835,6 +2835,27 @@ app.post("/api/interviews/attempts/:id/terminate", async (req, res) => {
       attempt.submittedAt = attempt.submittedAt || new Date();
       attempt.updatedAt = new Date();
       pushInterviewLog(attempt, "terminated", `Terminated by ${session.admin.username}`, 3, {});
+      await attempt.save();
+    }
+    emitRealtimeEvent("interview_attempt_updated", normalizeInterviewAttempt(attempt), { roles: ["admin"] });
+    res.json({ success: true, attempt: normalizeInterviewAttempt(attempt) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/attempts/:id/complete", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const attempt = await InterviewAttempt.findById(req.params.id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    if (attempt.status !== "completed") {
+      attempt.status = "completed";
+      attempt.completedBy = session.admin.username;
+      attempt.updatedAt = new Date();
+      pushInterviewLog(attempt, "completed", `Marked completed by ${session.admin.username}`, 1, {});
       await attempt.save();
     }
     emitRealtimeEvent("interview_attempt_updated", normalizeInterviewAttempt(attempt), { roles: ["admin"] });
@@ -2917,6 +2938,7 @@ app.post("/api/interviews/candidates/:id/access", async (req, res) => {
       return res.status(400).json({ error: "Interview password must be at least 6 characters" });
     }
 
+    candidate.password = hashPassword(rawPassword);
     candidate.interviewPassword = hashPassword(rawPassword);
     candidate.interviewSessionNonce = "";
     candidate.interviewAssignedAt = new Date();
