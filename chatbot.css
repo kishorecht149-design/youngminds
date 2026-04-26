@@ -224,22 +224,41 @@
 }
 
 .ym-btn-ghost {
-  width           : 32px;
-  height          : 32px;
-  border-radius   : 50%;
-  border          : none;
-  background      : transparent;
+  width           : 36px;
+  height          : 36px;
+  border-radius   : 10px;
+  border          : 1px solid var(--ym-border);
+  background      : var(--ym-surface-2);
   color           : var(--ym-text-muted);
   display         : flex;
   align-items     : center;
   justify-content : center;
   cursor          : pointer;
   transition      : all 0.2s;
+  position        : relative;
+}
+
+#ym-close-btn::after {
+  content: "Back";
+  position: absolute;
+  right: 100%;
+  margin-right: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ym-text-pri);
+  display: none;
+}
+
+@media (max-width: 520px) {
+  #ym-close-btn::after {
+    display: block;
+  }
 }
 
 .ym-btn-ghost:hover {
   background : rgba(255, 255, 255, 0.1);
   color      : var(--ym-text-pri);
+  border-color: var(--ym-accent);
 }
 
 /* ── Messaging Area ──────────────────────────────────────────── */
@@ -506,17 +525,35 @@
     min-height : 70px;
     border-bottom: 1px solid var(--ym-border);
     background: var(--ym-surface);
+    justify-content: space-between;
+  }
+
+  .ym-header-left {
+    gap: 10px;
+  }
+
+  .ym-avatar-container {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ym-header-info h4 {
+    font-size : 16px;
+  }
+
+  #ym-input {
+    font-size : 16px; /* Prevents iOS auto-zoom when typing */
   }
 
   /* Larger message area */
   #ym-messages {
     padding : 16px;
-    padding-bottom : 160px; /* Space for the floating UI */
+    padding-bottom : 180px; 
     background: var(--ym-bg-dark);
   }
 
   .ym-msg {
-    max-width: 92%;
+    max-width: 95%;
   }
 
   .ym-bubble {
