@@ -98,6 +98,9 @@
     inputEl.addEventListener("input", () => {
       inputEl.style.height = "auto";
       inputEl.style.height = Math.min(inputEl.scrollHeight, 110) + "px";
+      
+      // Toggle send button state
+      sendBtn.disabled = !inputEl.value.trim() || isTyping;
     });
   }
 
@@ -272,8 +275,9 @@
   }
 
   function unlockInput() {
-    sendBtn.disabled    = false;
-    inputEl.disabled    = false;
+    inputEl.disabled = false;
+    // Only enable send if there's text (though usually empty here)
+    sendBtn.disabled = !inputEl.value.trim();
   }
 
   // ── Scroll ────────────────────────────────────────────────────────────────
