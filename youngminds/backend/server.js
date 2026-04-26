@@ -166,7 +166,7 @@ function adminServicesHotfixScript() {
     while (deliverables.length < 6) deliverables.push("");
     mount.innerHTML = '<div class="view-hdr"><span class="view-hdr-title">Services</span><span class="view-hdr-count">' + state.entries.length + ' service lines' + (state.saving ? ' · saving…' : '') + '</span><div class="vhdr-right"><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesCreate()" ' + (state.saving ? 'disabled' : '') + '>+ Add Service</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesReload()" ' + (state.loading ? 'disabled' : '') + '>Refresh Services</button></div></div><div class="service-admin-layout"><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Service list</div><div class="service-admin-sub">Choose a service to edit the deep-dive page copy and public messaging. Packages and pricing now live on their own page.</div></div></div><div class="service-admin-list">' + state.entries.map(function(item){
       return '<button class="service-admin-item ' + (item.slug === current.slug ? 'active' : '') + '" type="button" onclick="window.__ymStandaloneServicesSelect(\\'' + escapeHtml(item.slug) + '\\')"><div class="service-admin-item-top"><div class="service-admin-item-name">' + escapeHtml(item.name || "Service") + '</div><div class="service-admin-item-price">' + escapeHtml(String(Array.isArray(item.sectors) ? item.sectors.length : 0) + " sectors") + '</div></div><div class="service-admin-meta"><span class="service-admin-pill">' + escapeHtml(item.shortLabel || "Service") + '</span><span class="service-admin-pill">' + escapeHtml(item.slug || "service") + '</span></div><div class="service-admin-item-copy" style="margin-top:10px">' + escapeHtml(item.valueProp || "No value proposition added yet.") + '</div></button>';
-    }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section and the /services/[slug] page. Use the dedicated Packages & Pricing screen for sectors, packages, and price cards.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn-sm" href="' + ('https://youngmindsagency.vercel.app' + (['web-development','graphic-design','social-media','ai-solutions','video-editing','content-writing'].indexOf(current.slug) !== -1 ? ('/services/' + encodeURIComponent(current.slug) + '/') : ('/packages-pricing/?service=' + encodeURIComponent(current.slug || '')))) + '" target="_blank" rel="noopener">Open Page</a><a class="btn-sm" href="/admin/packages-pricing" rel="noopener">Packages & Pricing</a></div></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo-ym.jpg" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
+    }).join("") + '</div></div><div class="service-admin-card"><div class="service-admin-head"><div><div class="service-admin-title">Edit ' + escapeHtml(current.name || "service") + '</div><div class="service-admin-sub">Changes publish to the homepage service section and the /services/[slug] page. Use the dedicated Packages & Pricing screen for sectors, packages, and price cards.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn-sm" href="' + ('https://youngmindsagency.vercel.app' + (['web-development','graphic-design','social-media','ai-solutions','video-editing','content-writing'].indexOf(current.slug) !== -1 ? ('/services/' + encodeURIComponent(current.slug) + '/') : ('/packages-pricing/?service=' + encodeURIComponent(current.slug || '')))) + '" target="_blank" rel="noopener">Open Page</a><a class="btn-sm" href="/admin/packages-pricing" rel="noopener">Packages & Pricing</a></div></div>' + (state.error ? '<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">' + escapeHtml(state.error) + '</div>' : '') + '<div class="service-admin-form"><div class="service-admin-form-row"><div class="form-field"><label>Service Name</label><input id="service-name" type="text" value="' + escapeHtml(current.name || "") + '"></div><div class="form-field"><label>Short Label</label><input id="service-short-label" type="text" value="' + escapeHtml(current.shortLabel || "") + '"></div></div><div class="form-row full"><div class="form-field"><label>Value Proposition</label><textarea id="service-value-prop" placeholder="One-line promise for the hero block and homepage card">' + escapeHtml(current.valueProp || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Meta Description</label><textarea id="service-meta-description" placeholder="Used for SEO description and social preview copy">' + escapeHtml(current.meta_description || "") + '</textarea></div></div><div class="form-row full"><div class="form-field"><label>Open Graph Image URL</label><input id="service-og-image" type="text" placeholder="/static/assets/logo.png" value="' + escapeHtml(current.og_image_url || "") + '"></div></div><div><div class="dp-sec-title" style="margin-bottom:14px">What You Get</div><div class="service-admin-deliverables">' + deliverables.map(function(item, index){
       return '<div class="service-admin-deliverable"><div class="service-admin-deliverable-num">' + String(index + 1).padStart(2, "0") + '</div><div class="form-field" style="margin:0;flex:1"><label>Deliverable ' + (index + 1) + '</label><input type="text" data-service-deliverable value="' + escapeHtml(item) + '"></div></div>';
     }).join("") + '</div></div><div class="service-admin-note">Keep package tables, sectors, and price ranges in the separate Packages & Pricing screen so service content stays simple and easier to edit.</div><div class="service-admin-actions"><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesRender()">Reset</button><button class="btn-sm" type="button" onclick="window.__ymStandaloneServicesDelete()" ' + ((state.saving || isCoreServiceSlug(current.slug)) ? 'disabled' : '') + '>Delete Service</button><button class="btn-sm primary" type="button" onclick="window.__ymStandaloneServicesSave()" ' + (state.saving ? 'disabled' : '') + '>' + (state.saving ? 'Saving…' : 'Save Service') + '</button></div>' + (isCoreServiceSlug(current.slug) ? '<div class="service-admin-note">Core services stay locked so the main catalogue never loses the agency service foundation.</div>' : '') + '</div></div></div></div>';
   }
@@ -683,7 +683,7 @@ const SERVICE_DEFAULTS = [
     shortLabel: "Web",
     valueProp: "Conversion-focused websites and digital products built fast, clean, and ready to scale.",
     meta_description: "YoungMinds Agency builds responsive websites, landing pages, and internal tools for modern Indian businesses.",
-    og_image_url: "/static/assets/logo-ym.jpg",
+    og_image_url: "/static/assets/logo.png",
     pricing_min_inr: 5000,
     pricing_max_inr: 50000,
     deliverables: [
@@ -763,7 +763,7 @@ const SERVICE_DEFAULTS = [
     shortLabel: "Design",
     valueProp: "Brand visuals that look sharp, feel consistent, and work across digital and print touchpoints.",
     meta_description: "YoungMinds Agency creates logos, launch creatives, brand systems, and everyday design assets for growing brands.",
-    og_image_url: "/static/assets/logo-ym.jpg",
+    og_image_url: "/static/assets/logo.png",
     pricing_min_inr: 2000,
     pricing_max_inr: 25000,
     deliverables: [
@@ -818,7 +818,7 @@ const SERVICE_DEFAULTS = [
     shortLabel: "Social",
     valueProp: "Consistent social content systems that turn scattered posting into a clear growth rhythm.",
     meta_description: "YoungMinds Agency manages social media content planning, creative production, and publishing support for brands in India.",
-    og_image_url: "/static/assets/logo-ym.jpg",
+    og_image_url: "/static/assets/logo.png",
     pricing_min_inr: 4000,
     pricing_max_inr: 30000,
     deliverables: [
@@ -873,7 +873,7 @@ const SERVICE_DEFAULTS = [
     shortLabel: "AI",
     valueProp: "Practical AI systems that automate repetitive work and make your team faster without extra complexity.",
     meta_description: "YoungMinds Agency designs automation flows, assistants, and lightweight AI tools for business workflows in India.",
-    og_image_url: "/static/assets/logo-ym.jpg",
+    og_image_url: "/static/assets/logo.png",
     pricing_min_inr: 8000,
     pricing_max_inr: 100000,
     deliverables: [
@@ -948,7 +948,7 @@ const SERVICE_DEFAULTS = [
     shortLabel: "Video",
     valueProp: "Fast-moving edits for reels, explainers, and campaign content that feel current and watchable.",
     meta_description: "YoungMinds Agency edits reels, explainers, launch videos, and short-form content for brands and creators.",
-    og_image_url: "/static/assets/logo-ym.jpg",
+    og_image_url: "/static/assets/logo.png",
     pricing_min_inr: 2500,
     pricing_max_inr: 30000,
     deliverables: [
@@ -1023,7 +1023,7 @@ const SERVICE_DEFAULTS = [
     shortLabel: "Content",
     valueProp: "Clear, persuasive writing for websites, campaigns, and content engines that need a stronger voice.",
     meta_description: "YoungMinds Agency writes website copy, blogs, product messaging, and social content for modern businesses.",
-    og_image_url: "/static/assets/logo-ym.jpg",
+    og_image_url: "/static/assets/logo.png",
     pricing_min_inr: 1500,
     pricing_max_inr: 20000,
     deliverables: [
@@ -1426,7 +1426,7 @@ function createEmptyServiceRecord(input = {}) {
     shortLabel,
     valueProp: String(input.valueProp || `Custom ${title.toLowerCase()} support built around your exact scope.`).trim(),
     meta_description: String(input.meta_description || `YoungMinds Agency offers ${title.toLowerCase()} services with sector-specific packages and pricing.`).trim(),
-    og_image_url: String(input.og_image_url || "/static/assets/logo-ym.jpg").trim(),
+    og_image_url: String(input.og_image_url || "/static/assets/logo.png").trim(),
     pricing_min_inr: 0,
     pricing_max_inr: 0,
     deliverables: ["Discovery and planning", "Scope mapping", "Execution workflow", "Delivery handoff", "Revision support", "Launch guidance"],
@@ -1594,7 +1594,7 @@ function serviceMatchesProject(service, project) {
 }
 
 function buildAbsoluteAssetUrl(req, rawUrl) {
-  if (!rawUrl) return `${req.protocol}://${req.get("host")}/static/assets/logo-ym.jpg`;
+  if (!rawUrl) return `${req.protocol}://${req.get("host")}/static/assets/logo.png`;
   if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
   return `${req.protocol}://${req.get("host")}${rawUrl.startsWith("/") ? rawUrl : `/${rawUrl}`}`;
 }
