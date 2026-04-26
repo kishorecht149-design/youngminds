@@ -566,6 +566,10 @@
     display : none;
   }
 
+  body.ym-chat-open #ym-toggle-btn {
+    display: none;
+  }
+
   body.ym-chat-open {
     overflow: hidden;
     position: fixed;
