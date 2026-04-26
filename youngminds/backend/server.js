@@ -1301,6 +1301,7 @@ function hydrateAttemptExam(exam, attempt) {
       : (Array.isArray(question.options) ? question.options.map((_, index) => index) : []);
     return {
       originalIndex: questionIndex,
+      type: question.type || "mcq",
       prompt: question.prompt || "",
       options: optionOrder.map((optionIndex) => question.options?.[optionIndex] || ""),
       optionOrder,
