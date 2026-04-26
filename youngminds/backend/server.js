@@ -1170,6 +1170,7 @@ const interviewAttemptLogSchema = new mongoose.Schema({
 const interviewAnswerSchema = new mongoose.Schema({
   questionIndex: { type: Number, required: true },
   selectedIndex: { type: Number, default: -1 },
+  answerText:    { type: String, default: "" },
   savedAt:       { type: Date, default: Date.now }
 }, { _id: false });
 
