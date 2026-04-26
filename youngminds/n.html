@@ -3164,7 +3164,7 @@ function createInterviewDraft(){
     randomizeQuestions: true,
     randomizeOptions: true,
     questions: [
-      { prompt: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" }
+      { type: "mcq", prompt: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" }
     ]
   };
 }
@@ -3301,18 +3301,13 @@ function renderInterviewsManager(){
               </select>
             </div>
           </div>
-          <div class="interview-credentials">
-            <div class="form-field"><label>Interview Login Email</label><input type="text" value="${escapeHtml(selectedCandidate.email || "")}" readonly></div>
-            <div class="form-field"><label>Interview Password</label><input id="interview-candidate-password" type="text" value="${escapeHtml(ensureInterviewPasswordDraft())}" placeholder="Set interview password"></div>
-          </div>
           <div class="service-admin-note" style="padding:14px;background:var(--bg3);border-radius:12px;border:1px solid var(--border)">
             <strong>Credentials:</strong><br>
-            Share this interview email and password pair with the candidate. If they forget it later, use <strong>Reset Credentials</strong> to issue a new password without touching their member portal password.
+            After assignment, the candidate logs in with their <strong>application email</strong> and the <strong>same password they entered in the application form</strong>. Use <strong>Reset Credentials</strong> only if they forget that password and need a separate interview password.
           </div>
           <div class="interview-action-row">
             <button class="btn-sm primary" type="button" onclick="assignInterviewForSelectedCandidate()" ${interviewState.saving || !selectedCandidate.email || !current.id || current.id === '__new__' ? "disabled" : ""}>${interviewState.saving ? "Saving…" : "Assign Interview"}</button>
-            <button class="btn-sm" type="button" onclick="refreshInterviewPasswordDraft()">Generate Password</button>
-            <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}', document.getElementById('interview-candidate-password')?.value || '')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
+            <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
           </div>
           ${interviewState.assignResult ? `<div class="interview-access-box">${escapeHtml(interviewState.assignResult)}</div>` : ``}
           ${interviewState.accessResult ? `<div class="interview-access-box">${escapeHtml(interviewState.accessResult)}</div>` : ``}
@@ -3523,6 +3518,7 @@ function startNewInterviewExam(){
   interviewState.selectedExamId = "__new__";
   interviewState.assignResult = "";
   interviewState.accessResult = "";
+  interviewState.activeTab = "banks";
   renderInterviewsManager();
 }
 
@@ -3701,11 +3697,6 @@ async function assignInterviewForSelectedCandidate(){
     showToast("Create or select a question bank first");
     return;
   }
-  const password = document.getElementById("interview-candidate-password")?.value.trim() || ensureInterviewPasswordDraft();
-  if(password.length < 6){
-    showToast("Interview password must be at least 6 characters");
-    return;
-  }
   interviewState.saving = true;
   interviewState.assignResult = "";
   interviewState.accessResult = "";
@@ -3715,8 +3706,7 @@ async function assignInterviewForSelectedCandidate(){
       method: "POST",
       headers: adminAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
-        applicationIds: [candidate.id],
-        accessPassword: password
+        applicationIds: [candidate.id]
       })
     });
     const data = await response.json().catch(() => ({}));
@@ -3726,8 +3716,10 @@ async function assignInterviewForSelectedCandidate(){
     }
     const created = Array.isArray(data.assigned) ? data.assigned[0] : null;
     if (created) {
-      interviewState.assignResult = `${created.candidateName} — ${created.email}\nQuestion Bank: ${current.title || "Interview"}\nPassword: ${created.password}\nLogin: /interview/`;
-      interviewState.draftPassword = created.password;
+      const passwordLine = created.passwordMode === "reset_password"
+        ? "Password: Uses the latest reset interview password"
+        : "Password: Uses the application form password by default";
+      interviewState.assignResult = `${created.candidateName} — ${created.email}\nQuestion Bank: ${current.title || "Interview"}\n${passwordLine}\nLogin: /interview/`;
     }
     showToast("Interview access created");
     await loadInterviewData({ render: true });

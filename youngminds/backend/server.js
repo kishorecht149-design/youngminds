@@ -2661,7 +2661,7 @@ app.get("/api/interviews/dashboard", async (req, res) => {
     const [exams, attempts, candidates] = await Promise.all([
       InterviewExam.find({}).sort({ updatedAt: -1 }),
       InterviewAttempt.find({}).sort({ updatedAt: -1 }).limit(160),
-      Application.find({ status: { $in: ["new", "reviewing", "accepted"] } }).sort({ timestamp: -1 }).limit(200)
+      Application.find({ status: { $nin: ["hired", "rejected"] } }).sort({ timestamp: -1 }).limit(200)
     ]);
 
     res.json({
@@ -2674,7 +2674,7 @@ app.get("/api/interviews/dashboard", async (req, res) => {
         phone: candidate.phone || "",
         status: candidate.status || "new",
         skill: candidate.skill || "",
-        hasInterviewAccess: Boolean(candidate.interviewPassword)
+        hasInterviewAccess: Boolean(candidate.interviewPassword || candidate.interviewAssignedAt)
       })),
       live: Array.from(interviewPresence.values())
     });
@@ -2748,6 +2748,26 @@ app.put("/api/interviews/exams/:id", async (req, res) => {
     exam.updatedAt = new Date();
     await exam.save();
 
+    const assignedAttempts = await InterviewAttempt.find({
+      examId: String(exam._id),
+      status: "assigned"
+    });
+    for (const attempt of assignedAttempts) {
+      const maps = buildAttemptQuestionMaps(exam);
+      attempt.durationMinutes = exam.durationMinutes;
+      attempt.warningLimit = exam.warningLimit;
+      attempt.questionOrder = maps.questionOrder;
+      attempt.optionOrders = maps.optionOrders;
+      attempt.currentIndex = 0;
+      attempt.answers = [];
+      attempt.updatedAt = new Date();
+      pushInterviewLog(attempt, "bank_updated", `Question bank updated by ${session.admin.username} before start`, 1, {
+        admin: session.admin.username,
+        examId: String(exam._id)
+      });
+      await attempt.save();
+    }
+
     emitRealtimeEvent("interview_exam_updated", { examId: String(exam._id), title: exam.title }, { roles: ["admin"] });
     res.json(sanitizeInterviewExam(exam));
   } catch (err) {
@@ -2817,8 +2837,6 @@ app.post("/api/interviews/exams/:id/assign", async (req, res) => {
     const candidates = await Application.find({ _id: { $in: applicationIds } });
     const assigned = [];
     for (const candidate of candidates) {
-      // Use the exact password they entered in the member application
-      candidate.interviewPassword = candidate.password;
       candidate.interviewSessionNonce = "";
       candidate.interviewAssignedAt = new Date();
       await candidate.save();
@@ -2852,13 +2870,27 @@ app.post("/api/interviews/exams/:id/assign", async (req, res) => {
           }],
           updatedAt: new Date()
         });
+      } else if (attempt.status === "assigned") {
+        const maps = buildAttemptQuestionMaps(exam);
+        attempt.durationMinutes = exam.durationMinutes;
+        attempt.warningLimit = exam.warningLimit;
+        attempt.questionOrder = maps.questionOrder;
+        attempt.optionOrders = maps.optionOrders;
+        attempt.currentIndex = 0;
+        attempt.answers = [];
+        attempt.updatedAt = new Date();
+        pushInterviewLog(attempt, "reassigned", `Interview reassigned by ${session.admin.username}`, 1, {
+          admin: session.admin.username,
+          examId: String(exam._id)
+        });
+        await attempt.save();
       }
 
       assigned.push({
         candidateId: String(candidate._id),
         candidateName: candidate.name || "",
         email: candidate.gmail || candidate.email || "",
-        password: "Their Application Password",
+        passwordMode: candidate.interviewPassword ? "reset_password" : "application_password",
         attemptId: String(attempt._id)
       });
     }
@@ -2879,7 +2911,7 @@ app.post("/api/interviews/attempts/:id/terminate", async (req, res) => {
 
     const attempt = await InterviewAttempt.findById(req.params.id);
     if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
-    if (!["submitted", "terminated", "expired"].includes(attempt.status)) {
+    if (!["submitted", "terminated", "expired", "completed", "malpractice"].includes(attempt.status)) {
       attempt.status = "terminated";
       attempt.terminatedBy = session.admin.username;
       attempt.submittedAt = attempt.submittedAt || new Date();
@@ -2967,11 +2999,21 @@ app.post("/api/interviews/auth/login", async (req, res) => {
     if (!candidate) {
       return res.status(401).json({ error: "No interview account found for this email" });
     }
-    if (!candidate.interviewPassword) {
-      return res.status(403).json({ error: "Interview access has not been generated yet. Ask the admin to reset access." });
+    const hasInterviewAssignment = Boolean(candidate.interviewAssignedAt)
+      || await InterviewAttempt.exists({
+        applicationId: String(candidate._id),
+        status: { $in: ["assigned", "in_progress", "submitted", "terminated", "expired", "completed", "malpractice"] }
+      });
+    if (!hasInterviewAssignment) {
+      return res.status(403).json({ error: "No interview has been assigned to this candidate yet." });
     }
-    if (candidate.interviewPassword !== hashPassword(password)) {
-      return res.status(401).json({ error: "Password does not match the latest interview access" });
+
+    const expectedPassword = String(candidate.interviewPassword || candidate.password || "");
+    if (!expectedPassword) {
+      return res.status(403).json({ error: "This candidate does not have a valid login password on file." });
+    }
+    if (expectedPassword !== hashPassword(password)) {
+      return res.status(401).json({ error: candidate.interviewPassword ? "Password does not match the latest interview reset password" : "Password does not match the application form password" });
     }
 
     const nonce = crypto.randomUUID();
@@ -3069,7 +3111,7 @@ app.post("/api/interviews/attempts/:id/start", async (req, res) => {
     if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
     const exam = await loadInterviewExamById(attempt.examId);
     if (!exam || !exam.active) return res.status(404).json({ error: "Interview exam is unavailable" });
-    if (["submitted", "terminated", "expired"].includes(attempt.status)) {
+    if (["submitted", "terminated", "expired", "completed", "malpractice"].includes(attempt.status)) {
       return res.json({ attempt: normalizeInterviewAttempt(attempt) });
     }
 
@@ -3207,7 +3249,7 @@ app.post("/api/interviews/attempts/:id/event", async (req, res) => {
     const exam = await loadInterviewExamById(attempt.examId);
     const warningLimit = Number(attempt.warningLimit || exam?.warningLimit || INTERVIEW_WARNING_LIMIT);
     let autoSubmitted = false;
-    if (attempt.warningsCount >= warningLimit && !["submitted", "terminated", "expired"].includes(attempt.status)) {
+    if (attempt.warningsCount >= warningLimit && !["submitted", "terminated", "expired", "completed", "malpractice"].includes(attempt.status)) {
       attempt.status = "submitted";
       attempt.submittedAt = new Date();
       attempt.result = gradeInterviewAttempt(exam, attempt);
