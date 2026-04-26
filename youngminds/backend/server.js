@@ -1135,6 +1135,7 @@ const Service = mongoose.model("Service", serviceSchema);
 const Lead = mongoose.model("Lead", leadSchema);
 
 const interviewQuestionSchema = new mongoose.Schema({
+  type:          { type: String, default: "mcq" },
   prompt:        { type: String, required: true },
   options:       { type: [String], default: [] },
   correctIndex:  { type: Number, default: 0 },
