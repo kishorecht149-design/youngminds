@@ -265,21 +265,6 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
 
-.ai-fab{position:fixed;right:20px;bottom:20px;z-index:220;background:linear-gradient(135deg,var(--accent),#ffea00);color:#000;border:none;border-radius:999px;padding:14px 18px;font-size:12px;font-weight:800;box-shadow:0 12px 32px rgba(255,215,0,0.3);cursor:pointer;transition:all .3s;letter-spacing:0.5px}
-.ai-fab:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(255,215,0,0.4)}
-.ai-panel{position:fixed;right:20px;bottom:80px;width:360px;max-width:calc(100vw - 24px);background:linear-gradient(135deg,rgba(255,215,0,0.03),rgba(255,215,0,0.01));border:1px solid var(--border2);border-radius:16px;z-index:220;display:none;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.5);backdrop-filter:blur(20px)}
-.ai-panel.open{display:block;animation:slideUp .3s ease}
-.ai-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-weight:700;color:var(--accent)}
-.ai-body{padding:16px;max-height:min(52vh,480px);overflow-y:auto;display:flex;flex-direction:column;gap:12px}
-.ai-bubble{padding:12px 14px;border-radius:12px;background:rgba(255,215,0,0.05);border:1px solid var(--border);font-size:13px;line-height:1.6;color:var(--muted)}
-.ai-bubble.user{background:rgba(255,215,0,0.15);border-color:var(--accent);color:var(--text);font-weight:500}
-.ai-foot{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:10px}
-.ai-foot input{flex:1;background:rgba(255,255,255,0.02);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;color:var(--text);font-size:12px;outline:none;transition:all .2s}
-.ai-foot input:focus{border-color:var(--accent);background:rgba(255,215,0,0.04)}
-.ai-foot button{padding:10px 14px;background:var(--accent);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px}
-.ai-foot button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(255,215,0,0.3)}
-
-@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
@@ -305,7 +290,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .hero-features{grid-template-columns:1fr 1fr}
   .stepper{flex-wrap:wrap;gap:12px}.stp-line{display:none}
   .skill-grid{grid-template-columns:repeat(2,1fr)}
-  .ai-panel{right:12px;left:12px;width:auto;max-width:none}
+
 }
 
 @media(max-width:480px){
@@ -359,10 +344,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .suc-title{font-size:24px}
   .faq-q{padding:16px 18px;font-size:14px}
   .faq-a{padding:0 18px 18px;font-size:13px}
-  .ai-fab{right:16px;bottom:16px;padding:12px 18px;font-size:11px}
-  .ai-head,.ai-foot{padding:12px 14px}
-  .ai-body{max-height:min(45vh,400px);font-size:13px}
-  .ai-bubble{padding:10px 12px}
+
 }
 
 /* Animated Icons CSS */
@@ -493,7 +475,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   opacity: 0;
 }
 </style>
-
+<link rel="stylesheet" href="chatbot.css">
 </head>
 <body>
 
@@ -762,18 +744,54 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   <div class="ft-copy">© 2026 YoungMinds Agency</div>
 </footer>
 
-<div class="ai-panel" id="landingAiPanel">
-  <div class="ai-head">
-    <strong style="font-size:13px">YoungMinds Assistant</strong>
-    <button class="nav-login" style="padding:0" onclick="toggleAiPanel('landingAiPanel')">Close</button>
+<button id="ym-toggle-btn" aria-label="Open chat">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+  </svg>
+  <span class="ym-dot"></span>
+</button>
+
+<div id="ym-chatbot">
+  <div id="ym-header">
+    <div class="ym-header-left">
+      <div class="ym-avatar">&#9889;</div>
+      <div class="ym-header-info">
+        <h4>Yemi &middot; YoungMinds</h4>
+        <span>Online now</span>
+      </div>
+    </div>
+    <div class="ym-header-actions">
+      <button id="ym-clear-btn" class="ym-icon-btn" title="Clear chat">&#8635;</button>
+      <button id="ym-close-btn" class="ym-icon-btn" title="Close">&#10005;</button>
+    </div>
   </div>
-  <div class="ai-body" id="landingAiBody"></div>
-  <div class="ai-foot">
-    <input id="landingAiInput" type="text" placeholder="Try: services & prices, join steps, hire flow, timelines…" onkeydown="if(event.key==='Enter')sendLandingAi()">
-    <button class="cta-primary" style="padding:10px 14px" onclick="sendLandingAi()">Ask</button>
+
+  <div id="ym-messages" role="log" aria-live="polite">
+    <div id="ym-typing" style="display:none;">
+      <div class="ym-msg-avatar">&#9889;</div>
+      <div class="ym-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="ym-quick-replies"></div>
+
+  <div id="ym-input-area">
+    <textarea id="ym-input" placeholder="Ask about pricing, services, or joining..." rows="1" maxlength="500"></textarea>
+    <button id="ym-send-btn">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="ym-footer">
+    Powered by <a href="https://youngmindsagency.vercel.app" target="_blank">YoungMinds Agency</a>
   </div>
 </div>
-<button class="ai-fab" onclick="toggleAiPanel('landingAiPanel')">AI Help</button>
+
+<script src="chatbot.js"></script>
 
 <script>
 // Scroll reveal
@@ -1351,56 +1369,7 @@ loadBoardMembers();
 initHeroHeadline();
 loadServices();
 
-function toggleAiPanel(id){
-  const panel=document.getElementById(id);
-  if(!panel)return;
-  panel.classList.toggle('open');
-  const body=document.getElementById('landingAiBody');
-  if(panel.classList.contains('open')&&!body.dataset.seeded){
-    appendAiBubble('landingAiBody','assistant','Ask me anything about YoungMinds — I can answer using this site, your live server data, and AI-powered help when available.');
-    body.dataset.seeded='true';
-  }
-}
-function appendAiBubble(containerId,role,text){
-  const wrap=document.getElementById(containerId);
-  if(!wrap)return null;
-  const bubble=document.createElement('div');
-  bubble.className=`ai-bubble${role==='user'?' user':''}`;
-  bubble.textContent=text;
-  wrap.appendChild(bubble);
-  wrap.scrollTop=wrap.scrollHeight;
-  return bubble;
-}
-function landingAiReply(input){
-  const text=input.toLowerCase();
-  if(text.includes('join')||text.includes('apply')||text.includes('member')) return 'Use the Join form, submit your Gmail and password, and your application will move through new, reviewing, then hired or rejected.';
-  if(text.includes('hire')||text.includes('project')||text.includes('client')) return 'Client requests move through review, acceptance, assignment, in progress, and completion. A 50% advance is expected before work begins.';
-  if(text.includes('price')||text.includes('budget')||text.includes('payment')) return 'Budgets are collected in the Hire form, and the admin team tracks project payments separately once your request is accepted.';
-  if(text.includes('password')||text.includes('login')) return 'Team members sign in later with Gmail and password. If they forget it, they can request a reset from the member portal.';
-  if(text.includes('chat')||text.includes('notice')) return 'After hiring, members get chats with admin and team rooms, plus circular notices from admin in the notification panel.';
-  return 'Ask me about joining, hiring, project flow, payments, or how the member portal works.';
-}
-async function sendLandingAi(){
-  const input=document.getElementById('landingAiInput');
-  const text=input?.value.trim();
-  if(!text)return;
-  appendAiBubble('landingAiBody','user',text);
-  input.value='';
-  const askBtn=input?.nextElementSibling;
-  const thinking=appendAiBubble('landingAiBody','assistant','Thinking…');
-  if(askBtn)askBtn.disabled=true;
-  let reply=null;
-  try{
-    const res=await fetch(API+'/api/ai/assist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:'landing',message:text,context:{page:'hire'}})});
-    if(res.ok){
-      const data=await res.json();
-      if(data&&data.reply)reply=data.reply;
-    }
-  }catch(e){console.warn('[AI]',e);}
-  if(thinking)thinking.remove();
-  if(askBtn)askBtn.disabled=false;
-  appendAiBubble('landingAiBody','assistant',reply||landingAiReply(text));
-}
+
 </script>
 </body>
 </html>
