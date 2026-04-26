@@ -3306,7 +3306,7 @@ function renderInterviewsManager(){
             After assignment, the candidate logs in with their <strong>application email</strong> and the <strong>same password they entered in the application form</strong>. Use <strong>Reset Credentials</strong> only if they forget that password and need a separate interview password.
           </div>
           <div class="interview-action-row">
-            <button class="btn-sm primary" type="button" onclick="assignInterviewForSelectedCandidate()" ${interviewState.saving || !selectedCandidate.email || !current.id || current.id === '__new__' ? "disabled" : ""}>${interviewState.saving ? "Saving…" : "Assign Interview"}</button>
+            <button class="btn-sm primary" type="button" onclick="assignInterviewForSelectedCandidate()" ${interviewState.saving || !selectedCandidate.email || !current?.id || current?.id === '__new__' ? "disabled" : ""}>${interviewState.saving ? "Saving…" : "Assign Interview"}</button>
             <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
           </div>
           ${interviewState.assignResult ? `<div class="interview-access-box">${escapeHtml(interviewState.assignResult)}</div>` : ``}
@@ -3632,6 +3632,11 @@ window.loadInterviewAttemptLogs = loadInterviewAttemptLogs;
 window.terminateInterviewAttempt = terminateInterviewAttempt;
 window.markInterviewCompleted = markInterviewCompleted;
 window.markInterviewMalpractice = markInterviewMalpractice;
+window.selectInterviewTab = selectInterviewTab;
+window.selectInterviewExam = selectInterviewExam;
+window.selectInterviewCandidate = selectInterviewCandidate;
+window.refreshInterviewPasswordDraft = refreshInterviewPasswordDraft;
+window.loadInterviewData = loadInterviewData;
 
 function refreshInterviewPasswordDraft(){
   syncInterviewData();
