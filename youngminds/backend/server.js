@@ -3175,7 +3175,7 @@ app.post("/api/interviews/attempts/:id/event", async (req, res) => {
   }
 });
 
-app.post("/api/interviews/attempts/:id/submit", async (req, res) => {
+app.post("/api/interviews/attempts/:id/finish", async (req, res) => {
   try {
     const session = await requireInterviewCandidateSession(req, res);
     if (!session) return;

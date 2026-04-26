@@ -687,9 +687,9 @@ async function confirmSubmit() {
 
 async function submitInterview(auto) {
   try {
-    const res = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/submit`, { method: "POST", headers: headers() });
+    const res = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/finish`, { method: "POST", headers: headers() });
     const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data.error);
+    if(!res.ok) throw new Error(data.error || "Submission failed");
     activeAttempt = data.attempt || activeAttempt;
     stopExamRuntime();
     showResultScreen(activeAttempt);
@@ -833,8 +833,14 @@ async function startFaceChecks() {
   if(faceInterval) return;
   faceApiReady = await loadFaceApi();
   if(faceApiReady && window.faceapi?.nets?.tinyFaceDetector) {
-    try { await window.faceapi.nets.tinyFaceDetector.loadFromUri("https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights"); updateAiStatus("AI Active", "ok"); } 
-    catch { updateAiStatus("AI load failed", "warn"); }
+    try { 
+      await window.faceapi.nets.tinyFaceDetector.loadFromUri("https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights"); 
+      updateAiStatus("AI Active", "ok"); 
+    } 
+    catch (err) { 
+      console.error("Face API Error:", err);
+      updateAiStatus("AI load failed", "warn"); 
+    }
   }
   const v = document.getElementById("candidateVideo");
   faceInterval = setInterval(async () => {
