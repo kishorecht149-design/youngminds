@@ -2825,11 +2825,16 @@ app.post("/api/interviews/auth/login", async (req, res) => {
     }
 
     const candidate = await Application.findOne({
-      $or: [{ gmail: email }, { email }],
-      interviewPassword: hashPassword(password)
+      $or: [{ gmail: email }, { email }]
     });
     if (!candidate) {
-      return res.status(401).json({ error: "Invalid interview credentials" });
+      return res.status(401).json({ error: "No interview account found for this email" });
+    }
+    if (!candidate.interviewPassword) {
+      return res.status(403).json({ error: "Interview access has not been generated yet. Ask the admin to reset access." });
+    }
+    if (candidate.interviewPassword !== hashPassword(password)) {
+      return res.status(401).json({ error: "Password does not match the latest interview access" });
     }
 
     const nonce = crypto.randomUUID();
@@ -2851,6 +2856,38 @@ app.post("/api/interviews/auth/login", async (req, res) => {
         status: candidate.status || "new"
       },
       token
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/candidates/:id/access", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const candidate = await Application.findById(req.params.id);
+    if (!candidate) return res.status(404).json({ error: "Candidate not found" });
+
+    const rawPassword = String(req.body?.password || "").trim() || crypto.randomBytes(4).toString("hex");
+    if (rawPassword.length < 6) {
+      return res.status(400).json({ error: "Interview password must be at least 6 characters" });
+    }
+
+    candidate.interviewPassword = hashPassword(rawPassword);
+    candidate.interviewSessionNonce = "";
+    candidate.interviewAssignedAt = new Date();
+    candidate.interviewLastResetBy = session.admin.username;
+    await candidate.save();
+
+    res.json({
+      success: true,
+      candidateId: String(candidate._id),
+      candidateName: candidate.name || "",
+      email: candidate.gmail || candidate.email || "",
+      password: rawPassword,
+      loginUrl: "/interview/"
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
