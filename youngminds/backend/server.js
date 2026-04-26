@@ -2777,8 +2777,7 @@ app.delete("/api/interviews/exams/:id", async (req, res) => {
         const candidate = await Application.findById(candidateId);
         if (!candidate) continue;
         const remainingAttempts = await InterviewAttempt.countDocuments({
-          applicationId: String(candidate._id),
-          status: { $in: ["assigned", "in_progress"] }
+          applicationId: String(candidate._id)
         });
         if (!remainingAttempts) {
           candidate.interviewPassword = "";
@@ -2944,7 +2943,10 @@ app.get("/api/interviews/attempts/:id/logs", async (req, res) => {
 
     const attempt = await InterviewAttempt.findById(req.params.id);
     if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
-    res.json((attempt.logs || []).slice().reverse());
+    res.json({
+      logs: (attempt.logs || []).slice().reverse(),
+      answers: Array.isArray(attempt.answers) ? attempt.answers : []
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -3010,7 +3012,6 @@ app.post("/api/interviews/candidates/:id/access", async (req, res) => {
       return res.status(400).json({ error: "Interview password must be at least 6 characters" });
     }
 
-    candidate.password = hashPassword(rawPassword);
     candidate.interviewPassword = hashPassword(rawPassword);
     candidate.interviewSessionNonce = "";
     candidate.interviewAssignedAt = new Date();
@@ -3036,7 +3037,7 @@ app.get("/api/interviews/session", async (req, res) => {
     if (!session) return;
     const attempts = await InterviewAttempt.find({
       applicationId: String(session.candidate._id),
-      status: { $in: ["assigned", "in_progress", "submitted", "terminated", "expired"] }
+      status: { $in: ["assigned", "in_progress", "submitted", "terminated", "expired", "completed", "malpractice"] }
     }).sort({ updatedAt: -1 });
     const exams = await InterviewExam.find({ _id: { $in: attempts.map((item) => item.examId).filter(Boolean) } });
     const examMap = new Map(exams.map((exam) => [String(exam._id), exam]));

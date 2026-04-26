@@ -1142,8 +1142,9 @@ async function loadInterviewData(options = {}){
     if (interviewState.selectedCandidateId && !interviewCandidates.find(item => String(item.id) === String(interviewState.selectedCandidateId))) {
       interviewState.selectedCandidateId = "";
     }
-    if (!interviewState.selectedCandidateId && interviewCandidates[0]) {
-      interviewState.selectedCandidateId = interviewCandidates[0].id;
+    const eligibleCandidates = interviewCandidates.filter(item => !["hired", "rejected"].includes(String(item.status || "").toLowerCase()));
+    if (!interviewState.selectedCandidateId && eligibleCandidates[0]) {
+      interviewState.selectedCandidateId = eligibleCandidates[0].id;
     }
     return data;
   }catch(err){
@@ -3178,7 +3179,7 @@ function createInterviewPasswordDraft(){
 
 function getEligibleInterviewCandidates(){
   return interviewCandidates
-    .filter(candidate => String(candidate.status || "").toLowerCase() === "reviewing")
+    .filter(candidate => !["hired", "rejected"].includes(String(candidate.status || "").toLowerCase()))
     .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 }
 
@@ -3294,13 +3295,18 @@ function renderInterviewsManager(){
               </select>
             </div>
           </div>
+          <div class="interview-credentials">
+            <div class="form-field"><label>Interview Login Email</label><input type="text" value="${escapeHtml(selectedCandidate.email || "")}" readonly></div>
+            <div class="form-field"><label>Interview Password</label><input id="interview-candidate-password" type="text" value="${escapeHtml(ensureInterviewPasswordDraft())}" placeholder="Set interview password"></div>
+          </div>
           <div class="service-admin-note" style="padding:14px;background:var(--bg3);border-radius:12px;border:1px solid var(--border)">
             <strong>Credentials:</strong><br>
-            The credentials are the exact Gmail and Password they entered in their member application.
+            Share this interview email and password pair with the candidate. If they forget it later, use <strong>Reset Credentials</strong> to issue a new password without touching their member portal password.
           </div>
           <div class="interview-action-row">
             <button class="btn-sm primary" type="button" onclick="assignInterviewForSelectedCandidate()" ${interviewState.saving || !selectedCandidate.email || !current.id || current.id === '__new__' ? "disabled" : ""}>${interviewState.saving ? "Saving…" : "Assign Interview"}</button>
-            <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
+            <button class="btn-sm" type="button" onclick="refreshInterviewPasswordDraft()">Generate Password</button>
+            <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}', document.getElementById('interview-candidate-password')?.value || '')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
           </div>
           ${interviewState.assignResult ? `<div class="interview-access-box">${escapeHtml(interviewState.assignResult)}</div>` : ``}
           ${interviewState.accessResult ? `<div class="interview-access-box">${escapeHtml(interviewState.accessResult)}</div>` : ``}
