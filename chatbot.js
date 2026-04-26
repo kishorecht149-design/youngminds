@@ -145,11 +145,38 @@
     lockInput();
     showTyping();
 
+    // Dynamically grab page context so the AI knows about new features/services!
+    const ctx = { page: "hire", history: history.slice(-5) };
+    const serviceEls = document.querySelectorAll('.svc-row');
+    if (serviceEls.length > 0) {
+      ctx.services = Array.from(serviceEls).map(el => {
+        const name = el.querySelector('.svc-name')?.innerText || '';
+        const price = el.querySelector('.svc-price')?.innerText || '';
+        const desc = el.querySelector('.svc-desc')?.innerText || '';
+        return `${name} (starts at ${price}): ${desc}`;
+      });
+    }
+
+    const processEls = document.querySelectorAll('.proc-cell');
+    if (processEls.length > 0) {
+      ctx.process = Array.from(processEls).map(el => {
+        const title = el.querySelector('.proc-title')?.innerText || '';
+        const desc = el.querySelector('.proc-desc')?.innerText || '';
+        return `${title}: ${desc}`;
+      });
+    }
+
+    const hero = document.querySelector('h1')?.innerText;
+    const subtitle = document.querySelector('.hero-p')?.innerText;
+    if (hero || subtitle) {
+      ctx.hero = `${hero || ''} - ${subtitle || ''}`;
+    }
+
     try {
       const res = await fetch(API_URL, {
         method  : "POST",
         headers : { "Content-Type": "application/json" },
-        body    : JSON.stringify({ role: "landing", message: text, context: { page: "hire", history } }),
+        body    : JSON.stringify({ role: "landing", message: text, context: ctx }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

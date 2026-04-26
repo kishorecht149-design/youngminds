@@ -57,14 +57,28 @@ function buildLocalAssistReply(role, message, context) {
       "To hire YoungMinds: switch to Hire our team, describe your service, budget, and timeline. Typical flow: we review → accept → assign specialists → work in progress → delivered. A 50% advance is mentioned on this page to secure your slot before work begins.",
       ["hire", "client", "business", "project", "request", "company", "startup", "agency", "work", "brief"]
     );
-    add(
-      "Services and starting prices (from the site): Web from ₹5,000; Graphic design from ₹2,000; Content from ₹1,500; AI solutions from ₹8,000; Social from ₹4,000/mo; Video editing from ₹2,500. Final quotes depend on scope — the hire form captures budget so we can respond accurately.",
-      ["price", "cost", "budget", "rupee", "how much", "quote", "affordable", "cheap", "expensive", "payment", "advance", "50"]
-    );
-    add(
-      "Process: (1) Fill the form — under about 3 minutes. (2) We reach out on WhatsApp within about 24–48 hours. (3) 50% advance secures your slot. (4) We deliver and revise until you are satisfied.",
-      ["process", "how it works", "steps", "timeline", "time", "how long", "whatsapp", "response", "deliver"]
-    );
+    if (ctx.services && ctx.services.length > 0) {
+      add(
+        `Services and starting prices: ${ctx.services.join("; ")}. Final quotes depend on scope — the hire form captures budget so we can respond accurately.`,
+        ["price", "cost", "budget", "rupee", "how much", "quote", "affordable", "cheap", "expensive", "payment", "advance", "50"]
+      );
+    } else {
+      add(
+        "Services and starting prices (from the site): Web from ₹5,000; Graphic design from ₹2,000; Content from ₹1,500; AI solutions from ₹8,000; Social from ₹4,000/mo; Video editing from ₹2,500. Final quotes depend on scope — the hire form captures budget so we can respond accurately.",
+        ["price", "cost", "budget", "rupee", "how much", "quote", "affordable", "cheap", "expensive", "payment", "advance", "50"]
+      );
+    }
+    if (ctx.process && ctx.process.length > 0) {
+      add(
+        `Process: ${ctx.process.join(" → ")}.`,
+        ["process", "how it works", "steps", "timeline", "time", "how long", "whatsapp", "response", "deliver"]
+      );
+    } else {
+      add(
+        "Process: (1) Fill the form — under about 3 minutes. (2) We reach out on WhatsApp within about 24–48 hours. (3) 50% advance secures your slot. (4) We deliver and revise until you are satisfied.",
+        ["process", "how it works", "steps", "timeline", "time", "how long", "whatsapp", "response", "deliver"]
+      );
+    }
     add(
       "YoungMinds highlights student-powered delivery, dedicated specialists per service (not random generalists), and roughly ~50% cost savings versus traditional agencies — as shown in the stats on this page.",
       ["who", "youngminds", "about", "why", "team", "student", "quality", "difference"]
@@ -180,10 +194,11 @@ async function tryOpenAI(role, message, context) {
   const system = [
     "You are the YoungMinds assistant embedded in a student-led agency portal.",
     "Answer clearly in plain English. Use short paragraphs. No markdown code blocks.",
-    "Do not invent private data about users; use only the provided context object when relevant.",
+    "CRITICAL: The user's page dynamically injects its current services, prices, processes, and features into your Context JSON.",
+    "ALWAYS base your answers on the EXACT services, prices, and features provided in the Context JSON. Do not invent old generic prices.",
     "Never claim you executed admin actions — only explain how to do them in the UI.",
     `Current portal role: ${role}.`,
-    `Context JSON: ${JSON.stringify(context || {}).slice(0, 1800)}`
+    `Context JSON: ${JSON.stringify(context || {}).slice(0, 2500)}`
   ].join(" ");
 
   const controller = new AbortController();
