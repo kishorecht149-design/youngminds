@@ -277,11 +277,11 @@ async function tryGemini(role, message, context) {
 async function getAiAssistReply({ role, message, context }) {
   const allowed = new Set(["landing", "member", "admin"]);
   const r = allowed.has(role) ? role : "landing";
-  // Try OpenAI first, then Gemini (free), then local keyword fallback
-  const openai = await tryOpenAI(r, message, context);
-  if (openai) return openai;
+  // Try Gemini first (free), then OpenAI, then local keyword fallback
   const gemini = await tryGemini(r, message, context);
   if (gemini) return gemini;
+  const openai = await tryOpenAI(r, message, context);
+  if (openai) return openai;
   return buildLocalAssistReply(r, message, context);
 }
 
@@ -334,12 +334,56 @@ async function tryOpenAIPasswordCoach(userMessage) {
   }
 }
 
+async function tryGeminiPasswordCoach(userMessage) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+
+  const model = "gemini-2.5-flash-lite";
+  const system = [
+    "You are a short, friendly password coach for the YoungMinds member portal only.",
+    "Explain: (1) change password after login with current+new, min 8 chars; (2) forgot flow: Gmail + optional current password—if correct, user must self-serve not admin; if wrong password entered, error; if no password field filled, WhatsApp on file must match for admin reset queue;",
+    "Never ask for their actual password. Never claim you reset accounts. Keep under 180 words."
+  ].join(" ");
+  
+  const prompt = system + "\n\nUser: " + String(userMessage || "Explain password reset and change.").slice(0, 2000);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 22000);
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.35, maxOutputTokens: 500 }
+        })
+      }
+    );
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text || typeof text !== "string") return null;
+    return text.trim().slice(0, 3500);
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
+
 async function getPasswordCoachReply(message) {
   const trimmed = String(message || "").trim();
+  const gemini = await tryGeminiPasswordCoach(trimmed || "How do I change or reset my password?");
+  if (gemini) return gemini;
+  
   const ai = await tryOpenAIPasswordCoach(trimmed || "How do I change or reset my password?");
   if (ai) return ai;
+  
   if (trimmed.length > 2) {
-    return `${PASSWORD_COACH_LOCAL}\n\nAbout your question: I cannot access your account. Follow the steps above, or use the “Get AI tips” text on the forgot-password screen after the server has OPENAI_API_KEY set for richer answers.`;
+    return `${PASSWORD_COACH_LOCAL}\n\nAbout your question: I cannot access your account. Follow the steps above, or use the “Get AI tips” text on the forgot-password screen after the server has GEMINI_API_KEY set for richer answers.`;
   }
   return PASSWORD_COACH_LOCAL;
 }

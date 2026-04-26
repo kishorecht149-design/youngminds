@@ -3815,9 +3815,30 @@ async function loadInterviewAttemptLogs(attemptId){
     const answers = Array.isArray(resData.answers) ? resData.answers : [];
     
     let html = '';
+    const aiGrades = Array.isArray(resData.aiGrades) ? resData.aiGrades : [];
+    
+    if (aiGrades.length > 0) {
+      html += `<div style="margin-bottom:16px;border-bottom:1px solid var(--border2);padding-bottom:12px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--accent)">AI Evaluation (Descriptive Answers)</div>`;
+      aiGrades.forEach(grade => {
+        html += `<div style="font-size:11px;margin-bottom:10px;background:rgba(255,255,255,0.03);padding:10px;border-radius:6px;border-left:2px solid ${grade.aiGraded ? 'var(--primary)' : 'var(--orange)'}">
+          <div style="margin-bottom:4px"><strong>Q:</strong> ${escapeHtml(grade.question)}</div>
+          <div style="margin-bottom:4px;color:var(--muted)"><strong>A:</strong> ${escapeHtml(grade.answer)}</div>
+          <div style="margin-bottom:4px;display:flex;justify-content:space-between;">
+            <span style="color:var(--accent);font-weight:bold;">Score: ${grade.score} / ${grade.outOf}</span>
+            <span style="font-size:9px;color:var(--muted3)">${grade.aiGraded ? 'AI Graded' : 'Fallback Length Graded'}</span>
+          </div>
+          <div style="font-style:italic;color:var(--muted2);margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:4px;">
+            <strong>Feedback:</strong> ${escapeHtml(grade.feedback)}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
     if (answers.length > 0) {
       html += `<div style="margin-bottom:16px;border-bottom:1px solid var(--border2);padding-bottom:12px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--accent)">Candidate Answers</div>`;
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--accent)">Raw Answers</div>`;
       answers.forEach(ans => {
         const val = ans.selectedIndex !== null && ans.selectedIndex !== undefined ? `Option ${ans.selectedIndex}` : (ans.answerText || "No answer");
         html += `<div style="font-size:11px;margin-bottom:6px;background:rgba(255,255,255,0.03);padding:8px;border-radius:6px">

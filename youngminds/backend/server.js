@@ -2977,7 +2977,8 @@ app.get("/api/interviews/attempts/:id/logs", async (req, res) => {
     if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
     res.json({
       logs: (attempt.logs || []).slice().reverse(),
-      answers: Array.isArray(attempt.answers) ? attempt.answers : []
+      answers: Array.isArray(attempt.answers) ? attempt.answers : [],
+      aiGrades: Array.isArray(attempt.aiGrades) ? attempt.aiGrades : []
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
