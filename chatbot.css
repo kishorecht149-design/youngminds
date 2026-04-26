@@ -265,13 +265,9 @@
 .ym-msg {
   display    : flex;
   gap        : 12px;
-  max-width  : 85%;
+  max-width  : 88%;
   animation  : ym-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes ym-slide-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  margin-bottom: 8px;
 }
 
 .ym-msg.ym-user {
@@ -280,36 +276,38 @@
 }
 
 .ym-bubble {
-  padding       : 12px 16px;
-  font-size     : 14.5px;
+  padding       : 14px 18px;
+  font-size     : 15px;
   line-height   : 1.5;
   position      : relative;
+  box-shadow    : 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .ym-bot .ym-bubble {
   background    : var(--ym-surface-2);
   color         : var(--ym-text-pri);
-  border-radius : 4px 18px 18px 18px;
+  border-radius : 4px 20px 20px 20px;
   border        : 1px solid var(--ym-border);
 }
 
 .ym-user .ym-bubble {
-  background    : var(--ym-accent);
+  background    : linear-gradient(135deg, #f5c518 0%, #ff9d00 100%);
   color         : var(--ym-black);
   font-weight   : 500;
-  border-radius : 18px 4px 18px 18px;
+  border-radius : 20px 4px 20px 20px;
 }
 
 .ym-msg-avatar {
-  width         : 32px;
-  height        : 32px;
+  width         : 36px;
+  height        : 36px;
   border-radius : 50%;
   flex-shrink   : 0;
   display       : flex;
   align-items   : center;
   justify-content: center;
   overflow      : hidden;
-  background    : var(--ym-surface-2);
+  border        : 2px solid var(--ym-border);
+  background    : var(--ym-bg-dark);
 }
 
 .ym-msg-avatar img {
@@ -317,14 +315,14 @@
   height: 100%;
   object-fit : contain;
   background: white;
-  padding: 3px;
+  padding: 4px;
 }
 
 .ym-time {
-  font-size : 11px;
+  font-size : 10px;
   color     : var(--ym-text-muted);
-  margin-top: 5px;
-  display   : block;
+  margin-top: 6px;
+  opacity: 0.7;
 }
 
 /* ── Typing Indicator ────────────────────────────────────────── */
@@ -467,9 +465,9 @@
 #ym-footer {
   padding     : 8px;
   text-align  : center;
-  font-size   : 11px;
+  font-size   : 10px;
   color       : var(--ym-text-muted);
-  background  : rgba(0,0,0,0.3);
+  background  : rgba(0,0,0,0.4);
   border-top  : 1px solid var(--ym-border);
 }
 
@@ -483,8 +481,8 @@
   #ym-toggle-btn {
     bottom : 20px;
     right  : 20px;
-    width  : 56px;
-    height : 56px;
+    width  : 60px;
+    height : 60px;
   }
 
   /* Full screen app mode */
@@ -497,66 +495,77 @@
     border-radius : 0;
     border        : none;
     transform-origin: bottom center;
+    background: var(--ym-bg-dark);
   }
 
-  /* Sticky header with safe area */
+  /* Sticky header */
   #ym-header {
-    padding : 16px 20px;
+    padding : 12px 16px;
     padding-top : env(safe-area-inset-top, 16px);
     height : auto;
-    min-height : 80px;
+    min-height : 70px;
+    border-bottom: 1px solid var(--ym-border);
+    background: var(--ym-surface);
   }
 
-  .ym-header-info h4 {
-    font-size : 18px;
-  }
-
-  /* Larger message area for readability */
+  /* Larger message area */
   #ym-messages {
-    padding : 20px;
-    padding-bottom : 100px; /* Space for input */
+    padding : 16px;
+    padding-bottom : 160px; /* Space for the floating UI */
+    background: var(--ym-bg-dark);
+  }
+
+  .ym-msg {
+    max-width: 92%;
   }
 
   .ym-bubble {
     font-size : 16px;
-    max-width : 90%;
   }
 
-  /* Floating Input Bar (Modern App Style) */
-  #ym-input-area {
-    position : absolute;
+  /* Fixed Floating Controls at Bottom */
+  .ym-mobile-controls {
+    position : fixed;
     bottom   : 0;
     left     : 0;
     width    : 100%;
-    padding  : 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
-    background : linear-gradient(to top, var(--ym-bg-glass) 80%, transparent);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-top : none;
-  }
-
-  .ym-input-container {
-    background : rgba(255, 255, 255, 0.05);
-    border : 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow : 0 4px 12px rgba(0,0,0,0.2);
+    background : linear-gradient(to top, var(--ym-surface) 85%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding-bottom : env(safe-area-inset-bottom, 16px);
+    z-index : 1000;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--ym-border);
   }
 
   #ym-quick-replies {
-    position : absolute;
-    bottom   : 90px; /* Above input */
-    left     : 0;
-    width    : 100%;
-    padding  : 10px 16px;
+    padding : 12px 16px 4px;
     background : transparent;
-    z-index : 10;
+    margin-bottom: 0;
   }
 
-  /* Hide footer branding on mobile to save space */
+  #ym-input-area {
+    background : transparent;
+    border : none;
+    padding : 12px 16px;
+  }
+
+  .ym-input-container {
+    background: rgba(255,255,255,0.05);
+    border-radius: 28px;
+  }
+
+  #ym-send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+  }
+
   #ym-footer {
     display : none;
   }
 
-  /* Prevent background scrolling when open */
   body.ym-chat-open {
     overflow: hidden;
     position: fixed;
