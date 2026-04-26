@@ -2864,12 +2864,14 @@ async function autoRefreshAdminData(){
     updateAdminRefreshUi(`Auto-refresh paused while ${adminEditState.pauseReason || "editing"}.`);
     return;
   }
+  // NEW: Completely pause interview refreshes if we are in that view to prevent UI flips
+  if (activeAdminView === "interviews") {
+    updateAdminRefreshUi("Auto-refresh paused while in Interviews panel.");
+    return;
+  }
   updateAdminRefreshUi("");
   clearAdminEditing("auto refresh");
   await loadAll();
-  if (activeAdminView === "interviews") {
-    await loadInterviewData({ render: true, silent: true });
-  }
 }
 
 async function saveServiceConfig(){
@@ -3549,6 +3551,7 @@ function syncInterviewData() {
 }
 
 function updateInterviewQuestionType(index, type) {
+  flagAdminEditing();
   const current = getSelectedInterviewExam();
   if (current && current.questions[index]) {
     current.questions[index].type = type;
