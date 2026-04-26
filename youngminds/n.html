@@ -466,6 +466,9 @@ canvas#revChart{max-height:220px}
       <div class="sb-item" id="nav-packages" onclick="nav('packages')">
         <div class="sb-il"><span class="sb-icon">◭</span><span class="sb-label">Packages & Pricing</span></div>
       </div>
+      <div class="sb-item" id="nav-interviews" onclick="nav('interviews')">
+        <div class="sb-il"><span class="sb-icon">🎥</span><span class="sb-label">Interviews</span></div>
+      </div>
       <div class="sb-sec">Hiring</div>
       <div class="sb-item" id="nav-app-new" onclick="nav('app-new')">
         <div class="sb-il"><span class="sb-icon">⚡</span><span class="sb-label">New</span></div><span class="sb-count" id="cnt-app-new">0</span>
@@ -671,6 +674,9 @@ canvas#revChart{max-height:220px}
       </div>
       <div class="view" id="view-packages">
         <div id="packages-admin-content"></div>
+      </div>
+      <div class="view" id="view-interviews">
+        <div id="interviews-admin-content"></div>
       </div>
 
       <!-- HIRING VIEWS -->
@@ -960,6 +966,12 @@ let payments = []; // Loaded from MongoDB via /api/payments
 let boardEntries = [];
 let serviceEntries = [];
 let serviceState = { loading: false, saving: false, ready: false, error: "" };
+let interviewExams = [];
+let interviewAttempts = [];
+let interviewCandidates = [];
+let interviewLive = [];
+let interviewState = { loading: false, saving: false, error: "", selectedExamId: "", selectedAttemptId: "", assignResult: "" };
+let interviewAdminSocket = null;
 let currentBoardEditId = null;
 let currentServiceSlug = "web-development";
 let revChart = null;
@@ -1081,6 +1093,35 @@ async function loadServicesData(options = {}){
   }
 }
 
+async function loadInterviewData(options = {}){
+  const { render = true, silent = false } = options;
+  if (!currentAdminToken) return null;
+  if (!silent) {
+    interviewState.loading = true;
+    interviewState.error = "";
+    if (render && activeAdminView === "interviews") renderInterviewsManager();
+  }
+  try{
+    const response = await fetch(`${API}/api/interviews/dashboard`, { headers: adminAuthHeaders() });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not load interview dashboard");
+    interviewExams = Array.isArray(data.exams) ? data.exams : [];
+    interviewAttempts = Array.isArray(data.attempts) ? data.attempts : [];
+    interviewCandidates = Array.isArray(data.candidates) ? data.candidates : [];
+    interviewLive = Array.isArray(data.live) ? data.live : [];
+    if (!interviewState.selectedExamId && interviewExams[0]) interviewState.selectedExamId = interviewExams[0].id;
+    return data;
+  }catch(err){
+    interviewState.error = err.message || "Could not load interview dashboard";
+    return null;
+  }finally{
+    if (!silent) {
+      interviewState.loading = false;
+      if (render && activeAdminView === "interviews") renderInterviewsManager();
+    }
+  }
+}
+
 async function loadAll(){
   setLoading(true);
   let ok=true;
@@ -1149,7 +1190,7 @@ function updateAllCounts(){
 
 /* ── NAV ── */
 const NAV_TITLE={
-  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',services:'Services',packages:'Packages & Pricing',
+  overview:'Overview',revenue:'Revenue & Payments',board:'Board of Members',services:'Services',packages:'Packages & Pricing',interviews:'Interviews',
   'app-new':'Hiring — New','app-reviewing':'Hiring — Reviewing','app-accepted':'Hiring — Accepted',
   'app-hired':'Hiring — Members','app-rejected':'Hiring — Rejected',
   'prj-new':'Projects — New','prj-reviewing':'Projects — Reviewing','prj-accepted':'Projects — Accepted',
@@ -1190,6 +1231,7 @@ function renderAllViews(){
   safeAdminRender('board-manager', ()=>renderBoardManager());
   safeAdminRender('services-manager', ()=>renderServicesManager());
   safeAdminRender('packages-manager', ()=>renderPackagesPricingManager());
+  safeAdminRender('interviews-manager', ()=>renderInterviewsManager());
   APP_STS.forEach(s=>safeAdminRender(`app-${s}`, ()=>renderView('app',s)));
   PRJ_STS.forEach(s=>safeAdminRender(`prj-${s}`, ()=>renderView('prj',s)));
 }
@@ -2696,6 +2738,9 @@ async function refreshAdminData(){
   if (activeAdminView === "services" || activeAdminView === "packages") {
     await reloadServicesManager();
   }
+  if (activeAdminView === "interviews") {
+    await loadInterviewData({ render: true });
+  }
 }
 
 async function saveServiceConfig(){
@@ -2955,6 +3000,408 @@ async function savePackagesPricingConfig(){
     serviceState.saving = false;
     renderPackagesPricingManager();
   }
+}
+
+function getSelectedInterviewExam(){
+  return interviewExams.find(item => String(item.id) === String(interviewState.selectedExamId)) || interviewExams[0] || null;
+}
+
+function createInterviewDraft(){
+  return {
+    id: "",
+    title: "",
+    slug: "",
+    description: "",
+    durationMinutes: 30,
+    warningLimit: 3,
+    active: true,
+    allowBacktracking: false,
+    oneQuestionAtTime: true,
+    randomizeQuestions: true,
+    randomizeOptions: true,
+    questions: [
+      { prompt: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" }
+    ]
+  };
+}
+
+function formatInterviewStatus(status){
+  const key = String(status || "assigned").replace(/_/g, " ");
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+function mergeInterviewPresence(attempt){
+  const live = interviewLive.find(item => String(item.attemptId) === String(attempt.id));
+  return live ? { ...attempt, ...live } : attempt;
+}
+
+function renderInterviewsManager(){
+  const el = document.getElementById("interviews-admin-content");
+  if(!el) return;
+  const current = getSelectedInterviewExam() || createInterviewDraft();
+  const liveAttempts = interviewAttempts.map(mergeInterviewPresence);
+  const selectedAttempt = liveAttempts.find(item => String(item.id) === String(interviewState.selectedAttemptId)) || liveAttempts[0] || null;
+
+  if(interviewState.loading && !interviewExams.length && !interviewAttempts.length){
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🎥</div><div class="empty-title">Loading interviews</div><div class="empty-sub">Syncing exams, candidates, and live monitoring data.</div></div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="view-hdr">
+      <span class="view-hdr-title">Interviews</span>
+      <span class="view-hdr-count">${interviewExams.length} exam${interviewExams.length!==1?'s':''} · ${liveAttempts.length} attempts · ${interviewLive.length} live</span>
+      <div class="vhdr-right">
+        <button class="btn-sm" type="button" onclick="loadInterviewData({ render: true })" ${interviewState.loading ? "disabled" : ""}>Refresh Interviews</button>
+        <button class="btn-sm primary" type="button" onclick="startNewInterviewExam()">+ New Exam</button>
+      </div>
+    </div>
+    ${interviewState.error ? `<div class="service-admin-note" style="margin-bottom:12px;color:var(--orange)">${escapeHtml(interviewState.error)}</div>` : ``}
+    <div class="service-admin-layout">
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Exam Templates</div>
+            <div class="service-admin-sub">Create the MCQ interview once, then assign it to shortlisted candidates from the same panel.</div>
+          </div>
+        </div>
+        <div class="service-admin-list">
+          ${interviewExams.map(item => `
+            <button class="service-admin-item ${String(item.id)===String(current.id) ? "active" : ""}" type="button" onclick="selectInterviewExam('${escapeHtml(item.id)}')">
+              <div class="service-admin-item-top">
+                <div class="service-admin-item-name">${escapeHtml(item.title || "Interview")}</div>
+                <div class="service-admin-item-price">${item.questionCount || 0} MCQs</div>
+              </div>
+              <div class="service-admin-meta"><span class="service-admin-pill">${escapeHtml(item.slug || "slug")}</span><span class="service-admin-pill">${item.durationMinutes || 30} min</span></div>
+              <div class="service-admin-item-copy" style="margin-top:10px">${escapeHtml(item.description || "No description added yet.")}</div>
+            </button>
+          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No exam templates yet</div><div class="empty-sub">Start with one interview exam and then assign it from this screen.</div></div>`}
+        </div>
+      </div>
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">${current.id ? `Edit ${escapeHtml(current.title || "exam")}` : "Create Interview Exam"}</div>
+            <div class="service-admin-sub">Questions are randomized candidate-by-candidate. Option order is shuffled automatically unless you switch that off.</div>
+          </div>
+        </div>
+        <div class="service-admin-form">
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Exam Title</label><input id="interview-title" type="text" value="${escapeHtml(current.title || "")}" placeholder="Frontend Screening Interview"></div>
+            <div class="form-field"><label>Slug</label><input id="interview-slug" type="text" value="${escapeHtml(current.slug || "")}" placeholder="frontend-screening"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Description</label><textarea id="interview-description" placeholder="What this interview is for and what the candidate should expect.">${escapeHtml(current.description || "")}</textarea></div>
+          </div>
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Duration (minutes)</label><input id="interview-duration" type="number" min="5" max="180" value="${Number(current.durationMinutes || 30)}"></div>
+            <div class="form-field"><label>Warning Limit</label><input id="interview-warning-limit" type="number" min="1" max="10" value="${Number(current.warningLimit || 3)}"></div>
+          </div>
+          <div class="service-admin-meta" style="margin-bottom:12px">
+            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-active" type="checkbox" ${current.active !== false ? "checked" : ""} style="margin-right:6px">Active</label>
+            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-one-question" type="checkbox" ${current.oneQuestionAtTime !== false ? "checked" : ""} style="margin-right:6px">One question at a time</label>
+            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-backtracking" type="checkbox" ${current.allowBacktracking ? "checked" : ""} style="margin-right:6px">Allow backtracking</label>
+            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-questions" type="checkbox" ${current.randomizeQuestions !== false ? "checked" : ""} style="margin-right:6px">Randomize questions</label>
+            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-options" type="checkbox" ${current.randomizeOptions !== false ? "checked" : ""} style="margin-right:6px">Randomize options</label>
+          </div>
+          <div style="display:grid;gap:12px">
+            ${(Array.isArray(current.questions) ? current.questions : []).map((question, questionIndex) => `
+              <div data-interview-question style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)">
+                <div class="service-admin-item-top" style="margin-bottom:10px">
+                  <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
+                  <button class="btn-sm" type="button" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
+                </div>
+                <div class="form-field"><label>Prompt</label><textarea data-question-prompt placeholder="Write the MCQ prompt">${escapeHtml(question.prompt || "")}</textarea></div>
+                <div class="service-admin-form-row">
+                  ${(Array.isArray(question.options) ? question.options : ["","","",""]).map((option, optionIndex) => `
+                    <div class="form-field"><label>Option ${String.fromCharCode(65 + optionIndex)}</label><input type="text" data-question-option value="${escapeHtml(option)}" placeholder="Option ${String.fromCharCode(65 + optionIndex)}"></div>
+                  `).join("")}
+                </div>
+                <div class="service-admin-form-row">
+                  <div class="form-field"><label>Correct Option Index</label><input type="number" data-question-correct min="0" max="5" value="${Number(question.correctIndex || 0)}"></div>
+                  <div class="form-field"><label>Explanation</label><input type="text" data-question-explanation value="${escapeHtml(question.explanation || "")}" placeholder="Optional admin explanation"></div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-sm" type="button" onclick="addInterviewQuestion()">+ Add Question</button>
+            <button class="btn-sm primary" type="button" onclick="saveInterviewExam()" ${interviewState.saving ? "disabled" : ""}>${interviewState.saving ? "Saving…" : (current.id ? "Save Exam" : "Create Exam")}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="service-admin-layout" style="margin-top:14px">
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Assign Candidates</div>
+            <div class="service-admin-sub">Shortlisted candidates can use the public interview page with the credentials generated here.</div>
+          </div>
+        </div>
+        <div class="service-admin-form">
+          <div class="service-admin-form-row">
+            <div class="form-field"><label>Interview Password (optional shared password)</label><input id="interview-shared-password" type="text" placeholder="Leave empty to auto-generate per candidate"></div>
+            <div class="form-field"><label>Selected Exam</label><input type="text" value="${escapeHtml(current.title || "Create or select an exam first")}" readonly></div>
+          </div>
+          <div style="display:grid;gap:10px;max-height:320px;overflow:auto">
+            ${interviewCandidates.map(candidate => `
+              <label style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.02)">
+                <input type="checkbox" data-interview-candidate value="${escapeHtml(candidate.id)}">
+                <div style="display:grid;gap:4px">
+                  <strong>${escapeHtml(candidate.name || "Candidate")}</strong>
+                  <span class="meta">${escapeHtml(candidate.email || "No email")} · ${escapeHtml(candidate.skill || "No skill")} · ${escapeHtml(candidate.status || "new")}</span>
+                  <span class="meta">${candidate.hasInterviewAccess ? "Interview access already exists" : "Interview access not generated yet"}</span>
+                </div>
+              </label>
+            `).join("") || `<div class="empty"><div class="empty-title">No eligible candidates</div><div class="empty-sub">Candidates in new, reviewing, or accepted status will appear here.</div></div>`}
+          </div>
+          <div class="service-admin-actions">
+            <button class="btn-sm primary" type="button" onclick="assignInterviewToSelected()" ${!current.id || interviewState.saving ? "disabled" : ""}>Assign Interview</button>
+          </div>
+          ${interviewState.assignResult ? `<div class="service-admin-note" style="white-space:pre-wrap">${escapeHtml(interviewState.assignResult)}</div>` : ``}
+        </div>
+      </div>
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">Live Monitoring</div>
+            <div class="service-admin-sub">Watch warnings, recent thumbnails, and result state in real time while candidates are active.</div>
+          </div>
+        </div>
+        <div style="display:grid;gap:12px">
+          ${liveAttempts.map(attempt => `
+            <div style="border:1px solid var(--border);border-radius:16px;padding:14px;background:rgba(255,255,255,.02)">
+              <div class="service-admin-item-top">
+                <div>
+                  <div class="service-admin-item-name">${escapeHtml(attempt.candidateName || "Candidate")}</div>
+                  <div class="meta">${escapeHtml(formatInterviewStatus(attempt.status))} · ${escapeHtml(attempt.candidateSkill || "General")} · ${attempt.result && attempt.result.total ? `${attempt.result.percent}%` : "awaiting result"}</div>
+                </div>
+                <div class="service-admin-meta">
+                  <span class="service-admin-pill">${attempt.warningsCount || 0} warnings</span>
+                  <span class="service-admin-pill">${attempt.suspiciousScore || 0} score</span>
+                </div>
+              </div>
+              ${attempt.latestThumbnail ? `<img src="${attempt.latestThumbnail}" alt="Candidate live frame" style="width:100%;max-width:260px;margin-top:12px;border-radius:14px;border:1px solid var(--border)">` : `<div class="service-admin-note" style="margin-top:12px">No camera frame received yet.</div>`}
+              <div class="service-admin-actions" style="margin-top:12px">
+                <button class="btn-sm" type="button" onclick="selectInterviewAttempt('${escapeHtml(attempt.id)}')">View Logs</button>
+                <button class="btn-sm" type="button" onclick="loadInterviewData({ render: true })">Refresh</button>
+                <button class="btn-sm" type="button" onclick="terminateInterviewAttempt('${escapeHtml(attempt.id)}')" ${["submitted","terminated","expired"].includes(attempt.status) ? "disabled" : ""}>Terminate</button>
+              </div>
+            </div>
+          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No interview attempts yet</div><div class="empty-sub">Assigned interviews and live webcam frames will show up here.</div></div>`}
+        </div>
+        ${selectedAttempt ? `
+          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+            <div class="service-admin-title" style="margin-bottom:8px">Audit Log · ${escapeHtml(selectedAttempt.candidateName || "Candidate")}</div>
+            <div id="interview-log-panel" class="service-admin-note">Loading logs…</div>
+          </div>
+        ` : ``}
+      </div>
+    </div>
+  `;
+  if (selectedAttempt) {
+    loadInterviewAttemptLogs(selectedAttempt.id);
+  }
+}
+
+function startNewInterviewExam(){
+  interviewState.selectedExamId = "";
+  interviewExams = [createInterviewDraft(), ...interviewExams.filter(item => item.id)];
+  renderInterviewsManager();
+}
+
+function selectInterviewExam(examId){
+  interviewState.selectedExamId = String(examId || "");
+  interviewState.assignResult = "";
+  renderInterviewsManager();
+}
+
+function addInterviewQuestion(){
+  const current = getSelectedInterviewExam();
+  if(!current) return;
+  current.questions = Array.isArray(current.questions) ? current.questions : [];
+  current.questions.push({ prompt:"", options:["","","",""], correctIndex:0, explanation:"" });
+  renderInterviewsManager();
+}
+
+function removeInterviewQuestion(index){
+  const current = getSelectedInterviewExam();
+  if(!current || !Array.isArray(current.questions) || current.questions.length <= 1) return;
+  current.questions.splice(index, 1);
+  renderInterviewsManager();
+}
+
+async function saveInterviewExam(){
+  if(!currentAdminToken){
+    showToast("Admin session expired. Please sign in again.");
+    doLogout();
+    return;
+  }
+  const current = getSelectedInterviewExam() || createInterviewDraft();
+  const payload = {
+    title: document.getElementById("interview-title")?.value.trim(),
+    slug: document.getElementById("interview-slug")?.value.trim(),
+    description: document.getElementById("interview-description")?.value.trim(),
+    durationMinutes: Number(document.getElementById("interview-duration")?.value || 30),
+    warningLimit: Number(document.getElementById("interview-warning-limit")?.value || 3),
+    active: !!document.getElementById("interview-active")?.checked,
+    allowBacktracking: !!document.getElementById("interview-backtracking")?.checked,
+    oneQuestionAtTime: !!document.getElementById("interview-one-question")?.checked,
+    randomizeQuestions: !!document.getElementById("interview-randomize-questions")?.checked,
+    randomizeOptions: !!document.getElementById("interview-randomize-options")?.checked,
+    questions: [...document.querySelectorAll('[data-interview-question]')].map(card => ({
+      prompt: card.querySelector('[data-question-prompt]')?.value.trim() || "",
+      options: [...card.querySelectorAll('[data-question-option]')].map(input => input.value.trim()).filter(Boolean),
+      correctIndex: Number(card.querySelector('[data-question-correct]')?.value || 0),
+      explanation: card.querySelector('[data-question-explanation]')?.value.trim() || ""
+    }))
+  };
+  interviewState.saving = true;
+  interviewState.error = "";
+  renderInterviewsManager();
+  try{
+    const method = current.id ? "PUT" : "POST";
+    const url = current.id ? `${API}/api/interviews/exams/${current.id}` : `${API}/api/interviews/exams`;
+    const response = await fetch(url, {
+      method,
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok){
+      interviewState.error = data.error || "Could not save interview";
+      showToast(interviewState.error);
+      return;
+    }
+    interviewState.selectedExamId = data.id;
+    showToast(current.id ? "Interview updated" : "Interview created");
+    await loadInterviewData({ render: true });
+  }catch{
+    interviewState.error = "Could not save interview";
+    showToast("Could not save interview");
+  }finally{
+    interviewState.saving = false;
+    renderInterviewsManager();
+  }
+}
+
+async function assignInterviewToSelected(){
+  const current = getSelectedInterviewExam();
+  if(!current || !current.id){
+    showToast("Create or select an interview exam first");
+    return;
+  }
+  const applicationIds = [...document.querySelectorAll('[data-interview-candidate]:checked')].map(input => input.value).filter(Boolean);
+  if(!applicationIds.length){
+    showToast("Select at least one candidate");
+    return;
+  }
+  interviewState.saving = true;
+  interviewState.assignResult = "";
+  renderInterviewsManager();
+  try{
+    const response = await fetch(`${API}/api/interviews/exams/${current.id}/assign`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        applicationIds,
+        accessPassword: document.getElementById("interview-shared-password")?.value.trim() || ""
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok){
+      showToast(data.error || "Could not assign interview");
+      return;
+    }
+    interviewState.assignResult = (Array.isArray(data.assigned) ? data.assigned : []).map(item => `${item.candidateName} — ${item.email}\nPassword: ${item.password}`).join("\n\n");
+    showToast("Interview assigned");
+    await loadInterviewData({ render: true });
+  }catch{
+    showToast("Could not assign interview");
+  }finally{
+    interviewState.saving = false;
+    renderInterviewsManager();
+  }
+}
+
+function selectInterviewAttempt(attemptId){
+  interviewState.selectedAttemptId = String(attemptId || "");
+  renderInterviewsManager();
+}
+
+async function loadInterviewAttemptLogs(attemptId){
+  const mount = document.getElementById("interview-log-panel");
+  if(!mount || !attemptId) return;
+  mount.textContent = "Loading logs…";
+  try{
+    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/logs`, { headers: adminAuthHeaders() });
+    const data = await response.json().catch(() => []);
+    if(!response.ok){
+      mount.textContent = data.error || "Could not load logs";
+      return;
+    }
+    mount.innerHTML = Array.isArray(data) && data.length ? data.map(item => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${escapeHtml(item.type || "event")}</strong><span class="meta">${escapeHtml(fmtDate(item.createdAt || Date.now()))}</span></div>
+        <div style="margin-top:4px">${escapeHtml(item.message || "")}</div>
+      </div>
+    `).join("") : "No audit logs yet.";
+  }catch{
+    mount.textContent = "Could not load logs";
+  }
+}
+
+async function terminateInterviewAttempt(attemptId){
+  if(!attemptId) return;
+  try{
+    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/terminate`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" })
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok){
+      showToast(data.error || "Could not terminate interview");
+      return;
+    }
+    showToast("Interview terminated");
+    await loadInterviewData({ render: true });
+  }catch{
+    showToast("Could not terminate interview");
+  }
+}
+
+async function ensureSocketIoClient(){
+  if(window.io) return true;
+  return new Promise(resolve => {
+    const script = document.createElement("script");
+    script.src = "/socket.io/socket.io.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+}
+
+async function connectInterviewAdminSocket(){
+  if(!currentAdminToken) return;
+  const ok = await ensureSocketIoClient();
+  if(!ok || !window.io) return;
+  if(interviewAdminSocket){
+    interviewAdminSocket.disconnect();
+    interviewAdminSocket = null;
+  }
+  interviewAdminSocket = window.io(API, { auth: { token: currentAdminToken }, transports: ["websocket", "polling"] });
+  interviewAdminSocket.on("interview:presence", payload => {
+    interviewLive = Array.isArray(payload) ? payload : [];
+    if(activeAdminView === "interviews") renderInterviewsManager();
+  });
+  interviewAdminSocket.on("interview:thumb", payload => {
+    if(!payload || !payload.attemptId) return;
+    const index = interviewLive.findIndex(item => String(item.attemptId) === String(payload.attemptId));
+    if(index >= 0) interviewLive[index] = { ...interviewLive[index], ...payload };
+    else interviewLive.push(payload);
+    if(activeAdminView === "interviews") renderInterviewsManager();
+  });
 }
 
 async function saveBoardMember(){
@@ -3632,7 +4079,7 @@ const ADMIN_SESSION_KEY = "ym_admin_session";
 const ADMIN_REMEMBER_KEY = "ym_admin_remember";
 const ADMIN_USERNAME_KEY = "ym_admin_username";
 const ADMIN_PAGE_SET = new Set([
-  "overview", "revenue", "comm", "chat", "board", "services", "packages",
+  "overview", "revenue", "comm", "chat", "board", "services", "packages", "interviews",
   "app-new", "app-reviewing", "app-hired", "app-rejected",
   "prj-new", "prj-reviewing", "prj-accepted", "prj-assigning",
   "prj-assigned", "prj-inprogress", "prj-completed", "prj-rejected"
@@ -3682,14 +4129,15 @@ function getAdminPageFromLocation() {
   const pathname = String(window.location.pathname || "").replace(/\/+$/, "");
   if (pathname === "/admin/services") return "services";
   if (pathname === "/admin/packages-pricing") return "packages";
+  if (pathname === "/admin/interviews") return "interviews";
   const hash = String(window.location.hash || "").replace(/^#/, "");
   return sanitizeAdminPage(hash.startsWith("admin-") ? hash.slice(6) : "overview");
 }
 
 function setAdminHistory(page, mode = "push") {
   const cleanPage = sanitizeAdminPage(page);
-  const basePath = cleanPage === "services" ? "/admin/services" : cleanPage === "packages" ? "/admin/packages-pricing" : "/admin";
-  const hash = cleanPage === "services" || cleanPage === "packages" ? "" : `#admin-${cleanPage}`;
+  const basePath = cleanPage === "services" ? "/admin/services" : cleanPage === "packages" ? "/admin/packages-pricing" : cleanPage === "interviews" ? "/admin/interviews" : "/admin";
+  const hash = cleanPage === "services" || cleanPage === "packages" || cleanPage === "interviews" ? "" : `#admin-${cleanPage}`;
   const url = `${basePath}${window.location.search}${hash}`;
   const state = { panel: "admin", page: cleanPage };
   if (mode === "replace") history.replaceState(state, "", url);
@@ -3833,6 +4281,10 @@ function showAdminLogin() {
   document.getElementById("loginBtn").textContent = "Sign in →";
   document.getElementById("admin-user-chip").textContent = `👤 ${rememberedUsername || "admin"}`;
   disconnectAdminEvents();
+  if (interviewAdminSocket) {
+    interviewAdminSocket.disconnect();
+    interviewAdminSocket = null;
+  }
   closeSidebar();
   closeModal("adminCredentialsModal");
   history.replaceState({ panel: "admin-login" }, "", `${window.location.pathname}${window.location.search}`);
@@ -3926,6 +4378,10 @@ nav = function(page, options = {}) {
   baseAdminNav(cleanPage);
   if (cleanPage === "services" || cleanPage === "packages") {
     loadServicesData({ render: true });
+  }
+  if (cleanPage === "interviews") {
+    loadInterviewData({ render: true });
+    connectInterviewAdminSocket();
   }
   if (currentAdmin) {
     if (options.replace) setAdminHistory(cleanPage, "replace");

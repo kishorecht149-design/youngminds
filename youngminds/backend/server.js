@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express  = require("express");
 const fs       = require("fs");
+const http     = require("http");
 const path     = require("path");
 const mongoose = require("mongoose");
 const cors     = require("cors");
@@ -11,9 +12,13 @@ const { getAiAssistReply, getPasswordCoachReply } = require("./ai-assist");
 
 const app = express();
 const REMEMBER_ME_TTL_SECONDS = 60 * 60 * 24 * 30;
+const INTERVIEW_SESSION_TTL_SECONDS = 60 * 60 * 8;
 const ADMIN_ACCOUNT_KEY = "primary";
 const MAX_SUBMISSION_FILE_BYTES = 50 * 1024 * 1024;
 const realtimeClients = new Set();
+const interviewPresence = new Map();
+const candidateSocketIndex = new Map();
+const adminSocketIds = new Set();
 const SERVICE_SLUGS = [
   "web-development",
   "graphic-design",
@@ -23,6 +28,8 @@ const SERVICE_SLUGS = [
   "content-writing"
 ];
 const SERVICE_ICON_SET = ["01", "02", "03", "04", "05", "06"];
+const INTERVIEW_WARNING_LIMIT = 3;
+let SocketServer = null;
 
 /* ══════════════════════════════════════════
    CORS
@@ -393,8 +400,10 @@ function sendShellFile(res, fileName) {
 app.get("/admin",  (req, res) => sendShellFile(res, "n.html"));
 app.get("/admin/services",  (req, res) => sendShellFile(res, "n.html"));
 app.get("/admin/packages-pricing",  (req, res) => sendShellFile(res, "n.html"));
+app.get("/admin/interviews",  (req, res) => sendShellFile(res, "n.html"));
 app.get("/member", (req, res) => sendShellFile(res, "s.html"));
 app.get("/portal/projects", (req, res) => sendShellFile(res, "s.html"));
+app.get("/interview", (req, res) => sendShellFile(res, "interview.html"));
 app.get("/hire",   (req, res) => sendShellFile(res, "p.html"));
 app.get("/pricing-calculator", (req, res) => res.redirect("/packages-pricing"));
 app.use("/static", express.static(rootDir));
@@ -1114,6 +1123,79 @@ const leadSchema = new mongoose.Schema({
 const Service = mongoose.model("Service", serviceSchema);
 const Lead = mongoose.model("Lead", leadSchema);
 
+const interviewQuestionSchema = new mongoose.Schema({
+  prompt:        { type: String, required: true },
+  options:       { type: [String], default: [] },
+  correctIndex:  { type: Number, default: 0 },
+  explanation:   { type: String, default: "" }
+}, { _id: false });
+
+const interviewExamSchema = new mongoose.Schema({
+  title:            { type: String, required: true },
+  slug:             { type: String, required: true, unique: true },
+  description:      { type: String, default: "" },
+  durationMinutes:  { type: Number, default: 30 },
+  warningLimit:     { type: Number, default: INTERVIEW_WARNING_LIMIT },
+  active:           { type: Boolean, default: true },
+  allowBacktracking:{ type: Boolean, default: false },
+  oneQuestionAtTime:{ type: Boolean, default: true },
+  randomizeQuestions:{ type: Boolean, default: true },
+  randomizeOptions: { type: Boolean, default: true },
+  assignedCandidateIds: { type: [String], default: [] },
+  questions:        { type: [interviewQuestionSchema], default: [] },
+  createdAt:        { type: Date, default: Date.now },
+  updatedAt:        { type: Date, default: Date.now }
+}, { timestamps: false });
+
+const interviewAttemptLogSchema = new mongoose.Schema({
+  type:        { type: String, default: "event" },
+  message:     { type: String, default: "" },
+  severity:    { type: Number, default: 1 },
+  meta:        { type: mongoose.Schema.Types.Mixed, default: {} },
+  createdAt:   { type: Date, default: Date.now }
+}, { _id: false });
+
+const interviewAnswerSchema = new mongoose.Schema({
+  questionIndex: { type: Number, required: true },
+  selectedIndex: { type: Number, default: -1 },
+  savedAt:       { type: Date, default: Date.now }
+}, { _id: false });
+
+const interviewAttemptSchema = new mongoose.Schema({
+  examId:           { type: String, required: true, index: true },
+  applicationId:    { type: String, required: true, index: true },
+  candidateName:    { type: String, default: "" },
+  candidateEmail:   { type: String, default: "" },
+  candidateSkill:   { type: String, default: "" },
+  sessionId:        { type: String, default: "" },
+  status:           { type: String, default: "assigned", enum: ["assigned", "in_progress", "submitted", "terminated", "expired"] },
+  durationMinutes:  { type: Number, default: 30 },
+  warningLimit:     { type: Number, default: INTERVIEW_WARNING_LIMIT },
+  warningsCount:    { type: Number, default: 0 },
+  suspiciousScore:  { type: Number, default: 0 },
+  questionOrder:    { type: [Number], default: [] },
+  optionOrders:     { type: [[Number]], default: [] },
+  answers:          { type: [interviewAnswerSchema], default: [] },
+  currentIndex:     { type: Number, default: 0 },
+  result: {
+    correct:        { type: Number, default: 0 },
+    total:          { type: Number, default: 0 },
+    percent:        { type: Number, default: 0 }
+  },
+  terminatedBy:     { type: String, default: "" },
+  startedAt:        Date,
+  deadlineAt:       Date,
+  submittedAt:      Date,
+  lastActivityAt:   Date,
+  latestThumbnail:  { type: String, default: "" },
+  logs:             { type: [interviewAttemptLogSchema], default: [] },
+  createdAt:        { type: Date, default: Date.now },
+  updatedAt:        { type: Date, default: Date.now }
+}, { timestamps: false });
+
+const InterviewExam = mongoose.model("InterviewExam", interviewExamSchema);
+const InterviewAttempt = mongoose.model("InterviewAttempt", interviewAttemptSchema);
+
 function sanitizeAdminAccount(admin) {
   return {
     username: admin?.username || getDefaultAdminUsername()
@@ -1122,6 +1204,188 @@ function sanitizeAdminAccount(admin) {
 
 function serviceFallback(slug) {
   return SERVICE_DEFAULTS.find(item => item.slug === slug) || null;
+}
+
+function slugify(raw) {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || `item-${Date.now()}`;
+}
+
+function shuffleArray(items) {
+  const copy = Array.isArray(items) ? items.slice() : [];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function normalizeInterviewQuestions(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((item) => {
+    const options = (Array.isArray(item?.options) ? item.options : [])
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    const correctIndex = Math.max(0, Math.min(options.length - 1, Number(item?.correctIndex || 0)));
+    return {
+      prompt: String(item?.prompt || "").trim(),
+      options,
+      correctIndex,
+      explanation: String(item?.explanation || "").trim()
+    };
+  }).filter((item) => item.prompt && item.options.length >= 2);
+}
+
+function sanitizeInterviewExam(exam) {
+  return {
+    id: String(exam?._id || exam?.id || ""),
+    title: exam?.title || "",
+    slug: exam?.slug || "",
+    description: exam?.description || "",
+    durationMinutes: Number(exam?.durationMinutes || 30),
+    warningLimit: Number(exam?.warningLimit || INTERVIEW_WARNING_LIMIT),
+    active: Boolean(exam?.active),
+    allowBacktracking: Boolean(exam?.allowBacktracking),
+    oneQuestionAtTime: exam?.oneQuestionAtTime !== false,
+    randomizeQuestions: exam?.randomizeQuestions !== false,
+    randomizeOptions: exam?.randomizeOptions !== false,
+    assignedCandidateIds: Array.isArray(exam?.assignedCandidateIds) ? exam.assignedCandidateIds.map(String) : [],
+    questionCount: Array.isArray(exam?.questions) ? exam.questions.length : 0,
+    questions: Array.isArray(exam?.questions) ? exam.questions.map((question) => ({
+      prompt: question?.prompt || "",
+      options: Array.isArray(question?.options) ? question.options : [],
+      correctIndex: Number(question?.correctIndex || 0),
+      explanation: question?.explanation || ""
+    })) : [],
+    createdAt: exam?.createdAt || null,
+    updatedAt: exam?.updatedAt || null
+  };
+}
+
+function buildAttemptQuestionMaps(exam) {
+  const questions = Array.isArray(exam?.questions) ? exam.questions : [];
+  const baseOrder = questions.map((_, index) => index);
+  const questionOrder = exam?.randomizeQuestions === false ? baseOrder : shuffleArray(baseOrder);
+  const optionOrders = questionOrder.map((questionIndex) => {
+    const optionOrder = (questions[questionIndex]?.options || []).map((_, index) => index);
+    return exam?.randomizeOptions === false ? optionOrder : shuffleArray(optionOrder);
+  });
+  return { questionOrder, optionOrders };
+}
+
+function hydrateAttemptExam(exam, attempt) {
+  const rawQuestions = Array.isArray(exam?.questions) ? exam.questions : [];
+  const order = Array.isArray(attempt?.questionOrder) && attempt.questionOrder.length
+    ? attempt.questionOrder
+    : rawQuestions.map((_, index) => index);
+  const optionOrders = Array.isArray(attempt?.optionOrders) ? attempt.optionOrders : [];
+  return order.map((questionIndex, displayIndex) => {
+    const question = rawQuestions[questionIndex] || {};
+    const optionOrder = Array.isArray(optionOrders[displayIndex]) && optionOrders[displayIndex].length
+      ? optionOrders[displayIndex]
+      : (Array.isArray(question.options) ? question.options.map((_, index) => index) : []);
+    return {
+      originalIndex: questionIndex,
+      prompt: question.prompt || "",
+      options: optionOrder.map((optionIndex) => question.options?.[optionIndex] || ""),
+      optionOrder,
+      explanation: question.explanation || ""
+    };
+  });
+}
+
+function getAttemptAnswerMap(attempt) {
+  const map = new Map();
+  (Array.isArray(attempt?.answers) ? attempt.answers : []).forEach((answer) => {
+    map.set(Number(answer.questionIndex), Number(answer.selectedIndex));
+  });
+  return map;
+}
+
+function gradeInterviewAttempt(exam, attempt) {
+  const questions = Array.isArray(exam?.questions) ? exam.questions : [];
+  const hydrated = hydrateAttemptExam(exam, attempt);
+  const answers = getAttemptAnswerMap(attempt);
+  let correct = 0;
+  hydrated.forEach((question, displayIndex) => {
+    const selectedIndex = answers.get(displayIndex);
+    if (selectedIndex == null || selectedIndex < 0) return;
+    const sourceQuestion = questions[question.originalIndex];
+    const originalOptionIndex = question.optionOrder[selectedIndex];
+    if (originalOptionIndex === sourceQuestion?.correctIndex) correct += 1;
+  });
+  const total = hydrated.length;
+  return {
+    correct,
+    total,
+    percent: total ? Math.round((correct / total) * 100) : 0
+  };
+}
+
+function normalizeInterviewAttempt(attempt) {
+  return {
+    id: String(attempt?._id || attempt?.id || ""),
+    examId: String(attempt?.examId || ""),
+    applicationId: String(attempt?.applicationId || ""),
+    candidateName: attempt?.candidateName || "",
+    candidateEmail: attempt?.candidateEmail || "",
+    candidateSkill: attempt?.candidateSkill || "",
+    status: attempt?.status || "assigned",
+    durationMinutes: Number(attempt?.durationMinutes || 30),
+    warningLimit: Number(attempt?.warningLimit || INTERVIEW_WARNING_LIMIT),
+    warningsCount: Number(attempt?.warningsCount || 0),
+    suspiciousScore: Number(attempt?.suspiciousScore || 0),
+    currentIndex: Number(attempt?.currentIndex || 0),
+    result: {
+      correct: Number(attempt?.result?.correct || 0),
+      total: Number(attempt?.result?.total || 0),
+      percent: Number(attempt?.result?.percent || 0)
+    },
+    startedAt: attempt?.startedAt || null,
+    deadlineAt: attempt?.deadlineAt || null,
+    submittedAt: attempt?.submittedAt || null,
+    lastActivityAt: attempt?.lastActivityAt || null,
+    latestThumbnail: attempt?.latestThumbnail || "",
+    terminatedBy: attempt?.terminatedBy || "",
+    logCount: Array.isArray(attempt?.logs) ? attempt.logs.length : 0,
+    createdAt: attempt?.createdAt || null,
+    updatedAt: attempt?.updatedAt || null
+  };
+}
+
+function pushInterviewLog(attempt, type, message, severity = 1, meta = {}) {
+  if (!Array.isArray(attempt.logs)) attempt.logs = [];
+  attempt.logs.push({
+    type: String(type || "event"),
+    message: String(message || "").trim(),
+    severity: Number(severity || 1),
+    meta: meta && typeof meta === "object" ? meta : {},
+    createdAt: new Date()
+  });
+  if (attempt.logs.length > 120) {
+    attempt.logs = attempt.logs.slice(-120);
+  }
+}
+
+function scoreInterviewEvent(type) {
+  const weights = {
+    tab_switch: 2,
+    fullscreen_exit: 2,
+    camera_off: 3,
+    no_face: 2,
+    multiple_faces: 3,
+    looking_away: 2,
+    inactivity: 1,
+    blocked_shortcut: 1,
+    copy_attempt: 1,
+    paste_attempt: 1,
+    right_click: 1
+  };
+  return weights[String(type || "").trim()] || 1;
 }
 
 function slugifyServiceName(value) {
@@ -1715,6 +1979,42 @@ async function getMemberSessionFromToken(req) {
   return { payload, member };
 }
 
+async function getInterviewCandidateSessionFromToken(req) {
+  const payload = verifyAuthToken(readBearerToken(req));
+  if (!payload || payload.role !== "candidate" || !payload.sub || !payload.sid) {
+    return null;
+  }
+
+  const candidate = await Application.findById(payload.sub);
+  if (!candidate) return null;
+  if (String(candidate.interviewSessionNonce || "") !== String(payload.sid)) {
+    return null;
+  }
+  const interviewPassword = String(candidate.interviewPassword || "");
+  if (!interviewPassword) return null;
+
+  return { payload, candidate };
+}
+
+async function requireInterviewCandidateSession(req, res) {
+  const session = await getInterviewCandidateSessionFromToken(req);
+  if (!session) {
+    res.status(401).json({ error: "Interview session expired" });
+    return null;
+  }
+  return session;
+}
+
+async function loadInterviewAttemptForCandidate(attemptId, candidateId) {
+  if (!attemptId || !candidateId) return null;
+  return InterviewAttempt.findOne({ _id: attemptId, applicationId: String(candidateId) });
+}
+
+async function loadInterviewExamById(examId) {
+  if (!examId) return null;
+  return InterviewExam.findById(examId);
+}
+
 app.get("/api/events", async (req, res) => {
   try {
     const adminSession = await getAdminSessionFromToken(req);
@@ -2294,6 +2594,480 @@ app.get("/api/auth/session", async (req, res) => {
     }
 
     res.json({ member: sanitizeApp(session.member) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ══════════════════════════════════════════
+   INTERVIEWS: Admin + Candidate APIs
+══════════════════════════════════════════ */
+app.get("/api/interviews/dashboard", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const [exams, attempts, candidates] = await Promise.all([
+      InterviewExam.find({}).sort({ updatedAt: -1 }),
+      InterviewAttempt.find({}).sort({ updatedAt: -1 }).limit(160),
+      Application.find({ status: { $in: ["new", "reviewing", "accepted"] } }).sort({ timestamp: -1 }).limit(200)
+    ]);
+
+    res.json({
+      exams: exams.map((exam) => sanitizeInterviewExam(exam)),
+      attempts: attempts.map((attempt) => normalizeInterviewAttempt(attempt)),
+      candidates: candidates.map((candidate) => ({
+        id: String(candidate._id),
+        name: candidate.name || "",
+        email: candidate.gmail || candidate.email || "",
+        phone: candidate.phone || "",
+        status: candidate.status || "new",
+        skill: candidate.skill || "",
+        hasInterviewAccess: Boolean(candidate.interviewPassword)
+      })),
+      live: Array.from(interviewPresence.values())
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/exams", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const body = req.body || {};
+    const title = String(body.title || "").trim();
+    if (!title) return res.status(400).json({ error: "Exam title is required" });
+
+    const slugBase = slugify(body.slug || title);
+    const slug = slugBase;
+    const questions = normalizeInterviewQuestions(body.questions);
+    if (!questions.length) return res.status(400).json({ error: "Add at least one valid MCQ" });
+
+    const exam = await InterviewExam.create({
+      title,
+      slug,
+      description: String(body.description || "").trim(),
+      durationMinutes: Math.max(5, Math.min(180, Number(body.durationMinutes || 30))),
+      warningLimit: Math.max(1, Math.min(10, Number(body.warningLimit || INTERVIEW_WARNING_LIMIT))),
+      active: body.active !== false,
+      allowBacktracking: Boolean(body.allowBacktracking),
+      oneQuestionAtTime: body.oneQuestionAtTime !== false,
+      randomizeQuestions: body.randomizeQuestions !== false,
+      randomizeOptions: body.randomizeOptions !== false,
+      questions,
+      updatedAt: new Date()
+    });
+
+    emitRealtimeEvent("interview_exam_updated", { examId: String(exam._id), title: exam.title }, { roles: ["admin"] });
+    res.status(201).json(sanitizeInterviewExam(exam));
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ error: "An interview with that slug already exists" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put("/api/interviews/exams/:id", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const exam = await InterviewExam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ error: "Interview exam not found" });
+
+    const body = req.body || {};
+    const questions = normalizeInterviewQuestions(body.questions);
+    if (!questions.length) return res.status(400).json({ error: "Add at least one valid MCQ" });
+
+    exam.title = String(body.title || exam.title || "").trim() || exam.title;
+    exam.slug = slugify(body.slug || exam.slug || exam.title);
+    exam.description = String(body.description || "").trim();
+    exam.durationMinutes = Math.max(5, Math.min(180, Number(body.durationMinutes || exam.durationMinutes || 30)));
+    exam.warningLimit = Math.max(1, Math.min(10, Number(body.warningLimit || exam.warningLimit || INTERVIEW_WARNING_LIMIT)));
+    exam.active = body.active !== false;
+    exam.allowBacktracking = Boolean(body.allowBacktracking);
+    exam.oneQuestionAtTime = body.oneQuestionAtTime !== false;
+    exam.randomizeQuestions = body.randomizeQuestions !== false;
+    exam.randomizeOptions = body.randomizeOptions !== false;
+    exam.questions = questions;
+    exam.updatedAt = new Date();
+    await exam.save();
+
+    emitRealtimeEvent("interview_exam_updated", { examId: String(exam._id), title: exam.title }, { roles: ["admin"] });
+    res.json(sanitizeInterviewExam(exam));
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ error: "An interview with that slug already exists" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/exams/:id/assign", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const exam = await InterviewExam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ error: "Interview exam not found" });
+
+    const applicationIds = Array.isArray(req.body?.applicationIds)
+      ? req.body.applicationIds.map((item) => String(item || "").trim()).filter(Boolean)
+      : [];
+    if (!applicationIds.length) {
+      return res.status(400).json({ error: "Select at least one candidate" });
+    }
+
+    const candidates = await Application.find({ _id: { $in: applicationIds } });
+    const assigned = [];
+    for (const candidate of candidates) {
+      const generatedPassword = String(req.body?.accessPassword || "").trim() || crypto.randomBytes(4).toString("hex");
+      candidate.interviewPassword = hashPassword(generatedPassword);
+      candidate.interviewSessionNonce = "";
+      candidate.interviewAssignedAt = new Date();
+      await candidate.save();
+
+      exam.assignedCandidateIds = Array.from(new Set([...(exam.assignedCandidateIds || []).map(String), String(candidate._id)]));
+
+      let attempt = await InterviewAttempt.findOne({
+        examId: String(exam._id),
+        applicationId: String(candidate._id),
+        status: { $in: ["assigned", "in_progress"] }
+      });
+
+      if (!attempt) {
+        const maps = buildAttemptQuestionMaps(exam);
+        attempt = await InterviewAttempt.create({
+          examId: String(exam._id),
+          applicationId: String(candidate._id),
+          candidateName: candidate.name || "",
+          candidateEmail: candidate.gmail || candidate.email || "",
+          candidateSkill: candidate.skill || "",
+          durationMinutes: exam.durationMinutes,
+          warningLimit: exam.warningLimit,
+          questionOrder: maps.questionOrder,
+          optionOrders: maps.optionOrders,
+          logs: [{
+            type: "assigned",
+            message: `Assigned by ${session.admin.username}`,
+            severity: 1,
+            meta: { admin: session.admin.username },
+            createdAt: new Date()
+          }],
+          updatedAt: new Date()
+        });
+      }
+
+      assigned.push({
+        candidateId: String(candidate._id),
+        candidateName: candidate.name || "",
+        email: candidate.gmail || candidate.email || "",
+        password: generatedPassword,
+        attemptId: String(attempt._id)
+      });
+    }
+
+    exam.updatedAt = new Date();
+    await exam.save();
+    emitRealtimeEvent("interview_assignment_created", { examId: String(exam._id), count: assigned.length }, { roles: ["admin"] });
+    res.json({ success: true, assigned });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/attempts/:id/terminate", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const attempt = await InterviewAttempt.findById(req.params.id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    if (!["submitted", "terminated", "expired"].includes(attempt.status)) {
+      attempt.status = "terminated";
+      attempt.terminatedBy = session.admin.username;
+      attempt.submittedAt = attempt.submittedAt || new Date();
+      attempt.updatedAt = new Date();
+      pushInterviewLog(attempt, "terminated", `Terminated by ${session.admin.username}`, 3, {});
+      await attempt.save();
+    }
+    emitRealtimeEvent("interview_attempt_updated", normalizeInterviewAttempt(attempt), { roles: ["admin"] });
+    res.json({ success: true, attempt: normalizeInterviewAttempt(attempt) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/interviews/attempts/:id/logs", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const attempt = await InterviewAttempt.findById(req.params.id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    res.json((attempt.logs || []).slice().reverse());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/auth/login", async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email || req.body?.gmail || "");
+    const password = String(req.body?.password || "");
+    const remember = Boolean(req.body?.remember);
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    const candidate = await Application.findOne({
+      $or: [{ gmail: email }, { email }],
+      interviewPassword: hashPassword(password)
+    });
+    if (!candidate) {
+      return res.status(401).json({ error: "Invalid interview credentials" });
+    }
+
+    const nonce = crypto.randomUUID();
+    candidate.interviewSessionNonce = nonce;
+    candidate.interviewLastLoginAt = new Date();
+    await candidate.save();
+
+    const token = createAuthToken(
+      { role: "candidate", sub: String(candidate._id), sid: nonce, email },
+      { ttlSeconds: remember ? INTERVIEW_SESSION_TTL_SECONDS : Math.min(DEFAULT_TTL_SECONDS, INTERVIEW_SESSION_TTL_SECONDS) }
+    );
+
+    res.json({
+      candidate: {
+        id: String(candidate._id),
+        name: candidate.name || "",
+        email: candidate.gmail || candidate.email || "",
+        skill: candidate.skill || "",
+        status: candidate.status || "new"
+      },
+      token
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/interviews/session", async (req, res) => {
+  try {
+    const session = await requireInterviewCandidateSession(req, res);
+    if (!session) return;
+    const attempts = await InterviewAttempt.find({
+      applicationId: String(session.candidate._id),
+      status: { $in: ["assigned", "in_progress", "submitted", "terminated", "expired"] }
+    }).sort({ updatedAt: -1 });
+    const exams = await InterviewExam.find({ _id: { $in: attempts.map((item) => item.examId).filter(Boolean) } });
+    const examMap = new Map(exams.map((exam) => [String(exam._id), exam]));
+    res.json({
+      candidate: {
+        id: String(session.candidate._id),
+        name: session.candidate.name || "",
+        email: session.candidate.gmail || session.candidate.email || "",
+        skill: session.candidate.skill || "",
+        status: session.candidate.status || "new"
+      },
+      attempts: attempts.map((attempt) => ({
+        ...normalizeInterviewAttempt(attempt),
+        examTitle: examMap.get(String(attempt.examId))?.title || "Interview",
+        examSlug: examMap.get(String(attempt.examId))?.slug || ""
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/attempts/:id/start", async (req, res) => {
+  try {
+    const session = await requireInterviewCandidateSession(req, res);
+    if (!session) return;
+
+    const attempt = await loadInterviewAttemptForCandidate(req.params.id, session.candidate._id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    const exam = await loadInterviewExamById(attempt.examId);
+    if (!exam || !exam.active) return res.status(404).json({ error: "Interview exam is unavailable" });
+    if (["submitted", "terminated", "expired"].includes(attempt.status)) {
+      return res.json({ attempt: normalizeInterviewAttempt(attempt) });
+    }
+
+    const now = new Date();
+    if (!attempt.startedAt) {
+      attempt.startedAt = now;
+      attempt.deadlineAt = new Date(now.getTime() + (attempt.durationMinutes || exam.durationMinutes || 30) * 60 * 1000);
+      pushInterviewLog(attempt, "started", "Candidate started the interview", 1, {});
+    }
+    attempt.status = "in_progress";
+    attempt.sessionId = session.payload.sid;
+    attempt.lastActivityAt = now;
+    attempt.updatedAt = now;
+    await attempt.save();
+
+    const normalized = normalizeInterviewAttempt(attempt);
+    emitRealtimeEvent("interview_attempt_updated", normalized, { roles: ["admin"] });
+    res.json({ attempt: normalized });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/interviews/attempts/:id/exam", async (req, res) => {
+  try {
+    const session = await requireInterviewCandidateSession(req, res);
+    if (!session) return;
+
+    const attempt = await loadInterviewAttemptForCandidate(req.params.id, session.candidate._id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    const exam = await loadInterviewExamById(attempt.examId);
+    if (!exam) return res.status(404).json({ error: "Interview exam is unavailable" });
+
+    if (attempt.deadlineAt && new Date(attempt.deadlineAt).getTime() <= Date.now() && attempt.status === "in_progress") {
+      attempt.status = "expired";
+      attempt.submittedAt = new Date();
+      attempt.result = gradeInterviewAttempt(exam, attempt);
+      pushInterviewLog(attempt, "expired", "Interview auto-submitted because the timer ended", 2, {});
+      await attempt.save();
+    }
+
+    const hydratedQuestions = hydrateAttemptExam(exam, attempt);
+    res.json({
+      exam: {
+        id: String(exam._id),
+        title: exam.title || "Interview",
+        description: exam.description || "",
+        durationMinutes: attempt.durationMinutes || exam.durationMinutes || 30,
+        warningLimit: attempt.warningLimit || exam.warningLimit || INTERVIEW_WARNING_LIMIT,
+        allowBacktracking: Boolean(exam.allowBacktracking),
+        oneQuestionAtTime: exam.oneQuestionAtTime !== false,
+        questions: hydratedQuestions.map((question, displayIndex) => ({
+          index: displayIndex,
+          prompt: question.prompt,
+          options: question.options
+        }))
+      },
+      attempt: {
+        ...normalizeInterviewAttempt(attempt),
+        answers: Array.from(getAttemptAnswerMap(attempt).entries()).reduce((acc, [key, value]) => {
+          acc[key] = value;
+          return acc;
+        }, {})
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/attempts/:id/answer", async (req, res) => {
+  try {
+    const session = await requireInterviewCandidateSession(req, res);
+    if (!session) return;
+
+    const attempt = await loadInterviewAttemptForCandidate(req.params.id, session.candidate._id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    if (!["assigned", "in_progress"].includes(attempt.status)) {
+      return res.status(400).json({ error: "Interview is no longer active" });
+    }
+
+    const questionIndex = Number(req.body?.questionIndex);
+    const selectedIndex = Number(req.body?.selectedIndex);
+    if (questionIndex < 0 || selectedIndex < 0) {
+      return res.status(400).json({ error: "Question and selected option are required" });
+    }
+
+    const existingIndex = (attempt.answers || []).findIndex((answer) => Number(answer.questionIndex) === questionIndex);
+    const answerPayload = { questionIndex, selectedIndex, savedAt: new Date() };
+    if (existingIndex >= 0) attempt.answers[existingIndex] = answerPayload;
+    else attempt.answers.push(answerPayload);
+
+    attempt.currentIndex = Math.max(attempt.currentIndex || 0, questionIndex);
+    attempt.lastActivityAt = new Date();
+    attempt.updatedAt = new Date();
+    if (attempt.status === "assigned") attempt.status = "in_progress";
+    await attempt.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/attempts/:id/event", async (req, res) => {
+  try {
+    const session = await requireInterviewCandidateSession(req, res);
+    if (!session) return;
+
+    const attempt = await loadInterviewAttemptForCandidate(req.params.id, session.candidate._id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+
+    const type = String(req.body?.type || "event").trim();
+    const message = String(req.body?.message || "").trim() || type.replace(/_/g, " ");
+    const meta = req.body?.meta && typeof req.body.meta === "object" ? req.body.meta : {};
+    const severity = Math.max(1, Math.min(3, Number(req.body?.severity || scoreInterviewEvent(type))));
+
+    pushInterviewLog(attempt, type, message, severity, meta);
+    attempt.suspiciousScore = Number(attempt.suspiciousScore || 0) + severity;
+    if ([
+      "tab_switch",
+      "fullscreen_exit",
+      "camera_off",
+      "no_face",
+      "multiple_faces",
+      "looking_away"
+    ].includes(type)) {
+      attempt.warningsCount = Number(attempt.warningsCount || 0) + 1;
+    }
+    attempt.lastActivityAt = new Date();
+    attempt.updatedAt = new Date();
+
+    const exam = await loadInterviewExamById(attempt.examId);
+    const warningLimit = Number(attempt.warningLimit || exam?.warningLimit || INTERVIEW_WARNING_LIMIT);
+    let autoSubmitted = false;
+    if (attempt.warningsCount >= warningLimit && !["submitted", "terminated", "expired"].includes(attempt.status)) {
+      attempt.status = "submitted";
+      attempt.submittedAt = new Date();
+      attempt.result = gradeInterviewAttempt(exam, attempt);
+      pushInterviewLog(attempt, "auto_submit", "Interview auto-submitted after warning threshold", 3, { warningLimit });
+      autoSubmitted = true;
+    }
+    await attempt.save();
+
+    const normalized = normalizeInterviewAttempt(attempt);
+    emitRealtimeEvent("interview_attempt_updated", normalized, { roles: ["admin"] });
+    res.json({ success: true, warningsCount: attempt.warningsCount, autoSubmitted, attempt: normalized });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/attempts/:id/submit", async (req, res) => {
+  try {
+    const session = await requireInterviewCandidateSession(req, res);
+    if (!session) return;
+
+    const attempt = await loadInterviewAttemptForCandidate(req.params.id, session.candidate._id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    const exam = await loadInterviewExamById(attempt.examId);
+    if (!exam) return res.status(404).json({ error: "Interview exam is unavailable" });
+
+    attempt.status = "submitted";
+    attempt.submittedAt = new Date();
+    attempt.lastActivityAt = new Date();
+    attempt.updatedAt = new Date();
+    attempt.result = gradeInterviewAttempt(exam, attempt);
+    pushInterviewLog(attempt, "submitted", "Candidate submitted the interview", 1, {});
+    await attempt.save();
+
+    const normalized = normalizeInterviewAttempt(attempt);
+    emitRealtimeEvent("interview_attempt_updated", normalized, { roles: ["admin"] });
+    res.json({ success: true, attempt: normalized });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -3183,6 +3957,146 @@ app.post("/api/ai/password-coach", async (req, res) => {
   }
 });
 
+function getSocketToken(socket) {
+  return socket.handshake?.auth?.token
+    || socket.handshake?.query?.token
+    || "";
+}
+
+function getSocketServerClass() {
+  if (SocketServer) return SocketServer;
+  try {
+    SocketServer = require("socket.io").Server;
+  } catch (err) {
+    console.warn("⚠️  socket.io is not installed locally. Interview realtime is disabled until dependencies are installed.");
+    return null;
+  }
+  return SocketServer;
+}
+
+async function resolveSocketSession(socket) {
+  const payload = verifyAuthToken(getSocketToken(socket));
+  if (!payload) return null;
+  if (payload.role === "admin" && payload.sub === ADMIN_ACCOUNT_KEY) {
+    const admin = await getOrCreateAdminAccount();
+    return { role: "admin", payload, admin };
+  }
+  if (payload.role === "candidate" && payload.sub && payload.sid) {
+    const candidate = await Application.findById(payload.sub);
+    if (!candidate) return null;
+    if (String(candidate.interviewSessionNonce || "") !== String(payload.sid)) return null;
+    return { role: "candidate", payload, candidate };
+  }
+  return null;
+}
+
+function compactInterviewPresence() {
+  return Array.from(interviewPresence.values());
+}
+
+function buildPresenceRecord(attempt, candidate, extra = {}) {
+  return {
+    attemptId: String(attempt?._id || extra.attemptId || ""),
+    applicationId: String(candidate?._id || attempt?.applicationId || extra.applicationId || ""),
+    candidateName: candidate?.name || attempt?.candidateName || "",
+    candidateEmail: candidate?.gmail || candidate?.email || attempt?.candidateEmail || "",
+    status: attempt?.status || extra.status || "assigned",
+    warningsCount: Number(attempt?.warningsCount || extra.warningsCount || 0),
+    suspiciousScore: Number(attempt?.suspiciousScore || extra.suspiciousScore || 0),
+    latestThumbnail: attempt?.latestThumbnail || extra.latestThumbnail || "",
+    lastActivityAt: attempt?.lastActivityAt || extra.lastActivityAt || new Date().toISOString(),
+    socketId: extra.socketId || ""
+  };
+}
+
+function attachInterviewSockets(server) {
+  const ServerClass = getSocketServerClass();
+  if (!ServerClass) return null;
+
+  const io = new ServerClass(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+
+  function broadcastInterviewPresence() {
+    io.to("admins").emit("interview:presence", compactInterviewPresence());
+  }
+
+  io.use(async (socket, next) => {
+    try {
+      const session = await resolveSocketSession(socket);
+      if (!session) return next(new Error("unauthorized"));
+      socket.data.session = session;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  io.on("connection", (socket) => {
+    const session = socket.data.session || {};
+
+    if (session.role === "admin") {
+      adminSocketIds.add(socket.id);
+      socket.join("admins");
+      socket.emit("interview:presence", compactInterviewPresence());
+    }
+
+    if (session.role === "candidate") {
+      candidateSocketIndex.set(String(session.candidate._id), socket.id);
+    }
+
+    socket.on("interview:watch-join", ({ attemptId } = {}) => {
+      if (session.role !== "admin" || !attemptId) return;
+      socket.join(`attempt:${attemptId}`);
+    });
+
+    socket.on("interview:thumb", async ({ attemptId, imageData } = {}) => {
+      if (session.role !== "candidate" || !attemptId || !imageData) return;
+      const attempt = await loadInterviewAttemptForCandidate(attemptId, session.candidate._id);
+      if (!attempt) return;
+      attempt.latestThumbnail = String(imageData || "").slice(0, 2_000_000);
+      attempt.lastActivityAt = new Date();
+      attempt.updatedAt = new Date();
+      await attempt.save();
+
+      const presence = buildPresenceRecord(attempt, session.candidate, {
+        socketId: socket.id,
+        latestThumbnail: attempt.latestThumbnail
+      });
+      interviewPresence.set(String(attempt._id), presence);
+      io.to("admins").emit("interview:thumb", presence);
+      broadcastInterviewPresence();
+    });
+
+    socket.on("interview:signal", ({ targetSocketId, attemptId, signal } = {}) => {
+      if (!targetSocketId || !signal) return;
+      io.to(String(targetSocketId)).emit("interview:signal", {
+        fromSocketId: socket.id,
+        attemptId: attemptId || "",
+        signal
+      });
+    });
+
+    socket.on("disconnect", () => {
+      if (session.role === "admin") adminSocketIds.delete(socket.id);
+      if (session.role === "candidate") {
+        candidateSocketIndex.delete(String(session.candidate._id));
+        for (const [attemptId, presence] of interviewPresence.entries()) {
+          if (presence.socketId === socket.id) {
+            interviewPresence.delete(attemptId);
+          }
+        }
+        broadcastInterviewPresence();
+      }
+    });
+  });
+
+  return io;
+}
+
 /* ══════════════════════════════════════════
    404 CATCH-ALL
 ══════════════════════════════════════════ */
@@ -3198,7 +4112,9 @@ let serverInstance = null;
 
 async function startServer() {
   await connectToDatabase();
-  serverInstance = app.listen(PORT, () => {
+  const server = http.createServer(app);
+  attachInterviewSockets(server);
+  serverInstance = server.listen(PORT, () => {
     console.log("🚀 YoungMinds server running on http://localhost:" + PORT);
   });
   return serverInstance;

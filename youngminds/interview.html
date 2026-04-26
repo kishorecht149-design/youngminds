@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YoungMinds Interview Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070808;--bg2:#101214;--panel:#111315;--panel2:#171a1d;--text:#f3f4f6;--muted:#9ba1a9;--border:rgba(255,255,255,.09);--accent:#e8c547;--danger:#ff6b6b;--green:#4cd97b;--shadow:0 26px 80px rgba(0,0,0,.34)}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:radial-gradient(circle at top right,rgba(232,197,71,.08),transparent 28%),linear-gradient(180deg,#060707,#0f1113 38%,#060707);color:var(--text);font-family:"DM Sans",system-ui,sans-serif}
+button,input,textarea{font:inherit}a{text-decoration:none;color:inherit}
+.topbar{position:sticky;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 24px;background:rgba(7,8,8,.84);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800}.brand-mark{width:34px;height:34px;border-radius:12px;background:var(--accent);color:#000;display:grid;place-items:center;font-size:14px;font-weight:900}.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chip,.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--border)}
+.chip{padding:8px 12px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.03)}
+.btn{padding:12px 18px;font-weight:700;background:transparent;color:var(--text);cursor:pointer;transition:transform .2s ease,border-color .2s ease,background .2s ease}.btn:hover{transform:translateY(-1px);border-color:rgba(232,197,71,.38);background:rgba(232,197,71,.06)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#000;box-shadow:0 16px 36px rgba(232,197,71,.22)}.btn.danger{border-color:rgba(255,107,107,.35);color:#ffd3d3}
+.shell{max-width:1240px;margin:0 auto;padding:28px 24px 70px}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:20px;align-items:start;margin-bottom:22px}
+.card{background:rgba(17,19,21,.92);border:1px solid var(--border);border-radius:28px;box-shadow:var(--shadow)}
+.hero-card{padding:28px}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(232,197,71,.12);color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+h1{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(2.6rem,6vw,5rem);line-height:.92;letter-spacing:-.06em;margin:18px 0 14px}.accent{color:var(--accent)}.hero-copy{font-size:15px;line-height:1.9;color:var(--muted);max-width:58ch}
+.hero-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}.hero-pill{padding:12px 14px;border-radius:18px;border:1px solid var(--border);background:rgba(255,255,255,.02);font-size:13px;color:var(--muted)}
+.login-card,.dashboard-card,.exam-card,.monitor-card{padding:22px}
+.grid{display:grid;gap:18px}.dashboard-grid{grid-template-columns:1.2fr .8fr}.attempts{display:grid;gap:14px}.attempt-card{padding:18px;border-radius:22px;border:1px solid var(--border);background:rgba(255,255,255,.025);display:grid;gap:12px}.attempt-head,.question-head,.exam-actions,.monitor-meta,.monitor-grid{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.meta{font-size:12px;color:var(--muted)}.muted{color:var(--muted)}.status-live{color:var(--green)}.status-warn{color:var(--accent)}.status-risk{color:var(--danger)}
+.field{display:grid;gap:8px;margin-bottom:14px}.field label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}.field input,.field textarea,.field select{width:100%;padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:#0d0f11;color:var(--text);outline:none}.field textarea{min-height:120px;resize:vertical}
+.status-note{margin-top:10px;font-size:13px;color:var(--muted)}.status-note.error{color:#ffb1b1}.status-note.ok{color:#b7f5cb}
+.hidden{display:none!important}.section-title{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin:0 0 6px}.section-copy{font-size:14px;line-height:1.8;color:var(--muted)}
+.question-box{padding:18px;border-radius:24px;border:1px solid var(--border);background:rgba(255,255,255,.025)}.question-title{font-size:1.2rem;font-weight:800;letter-spacing:-.02em;line-height:1.45}.option-list{display:grid;gap:12px;margin-top:18px}.option-btn{width:100%;text-align:left;padding:15px 16px;border-radius:18px;border:1px solid var(--border);background:#101214;color:var(--text);cursor:pointer;transition:all .2s ease}.option-btn:hover{border-color:rgba(232,197,71,.32);transform:translateY(-1px)}.option-btn.active{border-color:var(--accent);background:rgba(232,197,71,.1);box-shadow:0 14px 30px rgba(232,197,71,.12)}
+.exam-shell{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.sticky{position:sticky;top:96px}.monitor-video{width:100%;aspect-ratio:4/3;border-radius:22px;background:#050607;object-fit:cover;border:1px solid var(--border)}.monitor-grid{justify-content:flex-start}.metric{padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:12px;color:var(--muted)}.timer{font-family:"Space Grotesk",system-ui,sans-serif;font-size:2.1rem;letter-spacing:-.04em}.warning-banner{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);min-width:min(92vw,560px);padding:14px 18px;border-radius:18px;border:1px solid rgba(255,107,107,.35);background:rgba(20,8,8,.96);box-shadow:0 18px 40px rgba(0,0,0,.34);display:none;z-index:70}.warning-banner.show{display:block}.warning-title{font-size:13px;font-weight:800;color:#ffd7d7;text-transform:uppercase;letter-spacing:.08em}.warning-copy{font-size:14px;color:#ffd7d7;margin-top:6px;line-height:1.6}
+.score-card{padding:18px;border-radius:22px;border:1px solid var(--border);background:rgba(255,255,255,.025)}.score{font-family:"Space Grotesk",system-ui,sans-serif;font-size:2.6rem;letter-spacing:-.05em}
+@media (max-width:1080px){.hero,.dashboard-grid,.exam-shell{grid-template-columns:1fr}.sticky{position:static}}
+@media (max-width:720px){.topbar,.shell{padding-left:16px;padding-right:16px}.topbar{align-items:flex-start}.hero-card,.login-card,.dashboard-card,.exam-card,.monitor-card{padding:18px}.hero-list{grid-template-columns:1fr}.btn{width:100%}.exam-actions .btn,.attempt-head .btn{width:auto;flex:1 1 180px}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="/"><span class="brand-mark">Y</span><span>YoungMinds Interview Portal</span></a>
+  <div class="top-actions">
+    <a class="chip" href="/">Public Website</a>
+    <button class="btn hidden" id="logoutBtn" type="button" onclick="logoutInterview()">Sign out</button>
+  </div>
+</div>
+
+<main class="shell">
+  <section class="hero" id="heroSection">
+    <div class="hero-card card">
+      <div class="eyebrow">Interview Ready</div>
+      <h1>Focused interviews with <span class="accent">clean signals</span>.</h1>
+      <div class="hero-copy">YoungMinds uses a structured interview system with timed MCQs, secure login, webcam validation, tab and fullscreen checks, and real-time admin monitoring. Sign in only when you are ready to stay on one device until the interview is complete.</div>
+      <div class="hero-list">
+        <div class="hero-pill">One question at a time</div>
+        <div class="hero-pill">Auto-save answers</div>
+        <div class="hero-pill">Warnings tracked live</div>
+        <div class="hero-pill">Timer-based auto submit</div>
+      </div>
+    </div>
+    <div class="login-card card" id="loginCard">
+      <div class="section-title">Candidate Sign In</div>
+      <div class="section-copy">Use the interview credentials shared by the YoungMinds team.</div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@example.com"></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Interview password"></div>
+      <div class="field"><label style="display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;color:var(--text)"><input id="rememberInterview" type="checkbox" style="width:16px;height:16px">Remember this device for the interview session</label></div>
+      <button class="btn primary" id="loginBtn" type="button" onclick="loginInterview()">Sign in to interview</button>
+      <div class="status-note" id="loginStatus">Camera permission is requested only when you start the interview.</div>
+    </div>
+  </section>
+
+  <section class="dashboard-grid hidden" id="dashboardSection">
+    <div class="dashboard-card card">
+      <div class="question-head">
+        <div>
+          <div class="section-title">Assigned Interviews</div>
+          <div class="section-copy">Start only when you can stay fullscreen and keep your camera on.</div>
+        </div>
+        <div class="chip" id="candidateChip">Candidate</div>
+      </div>
+      <div class="attempts" id="attemptList"></div>
+    </div>
+    <div class="monitor-card card">
+      <div class="section-title">Interview Rules</div>
+      <div class="section-copy">Switching tabs, turning off the camera, repeated face-detection issues, or leaving fullscreen creates warnings. Too many warnings auto-submit the exam.</div>
+      <div class="hero-list" style="margin-top:18px">
+        <div class="hero-pill">Keep one face in frame</div>
+        <div class="hero-pill">Stay on fullscreen</div>
+        <div class="hero-pill">Do not copy or paste</div>
+        <div class="hero-pill">Do not open other tabs</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="exam-shell hidden" id="examSection">
+    <div class="exam-card card">
+      <div class="question-head">
+        <div>
+          <div class="eyebrow">Live Interview</div>
+          <div class="section-title" id="examTitle">Interview</div>
+          <div class="section-copy" id="examDescription">Stay focused until the exam is submitted.</div>
+        </div>
+        <div class="chip" id="questionCounter">Question 1</div>
+      </div>
+      <div class="question-box">
+        <div class="question-head">
+          <div class="timer" id="timerText">00:00</div>
+          <div class="monitor-grid">
+            <div class="metric" id="warningMetric">Warnings: 0</div>
+            <div class="metric" id="scoreMetric">Suspicion: 0</div>
+          </div>
+        </div>
+        <div class="question-title" id="questionPrompt">Question prompt</div>
+        <div class="option-list" id="optionList"></div>
+      </div>
+      <div class="exam-actions" style="margin-top:18px">
+        <button class="btn" id="prevBtn" type="button" onclick="goQuestion(-1)">Previous</button>
+        <button class="btn" id="nextBtn" type="button" onclick="goQuestion(1)">Next</button>
+        <button class="btn primary" type="button" onclick="submitInterview(false)">Submit interview</button>
+      </div>
+      <div class="status-note" id="examStatus">Answers auto-save every time you choose an option.</div>
+    </div>
+    <aside class="grid">
+      <div class="monitor-card card sticky">
+        <div class="section-title">Proctoring Monitor</div>
+        <div class="section-copy">Keep your face visible and avoid leaving the interview screen.</div>
+        <video class="monitor-video" id="candidateVideo" autoplay muted playsinline></video>
+        <div class="monitor-meta" style="margin-top:14px">
+          <div class="chip" id="cameraStateChip">Camera offline</div>
+          <div class="chip" id="faceStateChip">Face check idle</div>
+        </div>
+        <div class="status-note" id="proctorStatus">Once the interview starts, camera frames and activity alerts sync to the admin panel.</div>
+      </div>
+      <div class="monitor-card card hidden" id="resultCard">
+        <div class="section-title">Interview Result</div>
+        <div class="score" id="resultPercent">0%</div>
+        <div class="status-note" id="resultMeta">Result summary appears after submit.</div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<div class="warning-banner" id="warningBanner">
+  <div class="warning-title">Interview warning</div>
+  <div class="warning-copy" id="warningCopy">Stay on the interview screen.</div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const API = window.location.origin;
+const SESSION_KEY = "ym_interview_session";
+const REMEMBER_KEY = "ym_interview_remember";
+let interviewToken = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || "";
+let candidateState = null;
+let interviewAttempts = [];
+let activeAttempt = null;
+let activeExam = null;
+let activeQuestionIndex = 0;
+let timerInterval = null;
+let socket = null;
+let localStream = null;
+let snapshotInterval = null;
+let inactivityTimer = null;
+let faceInterval = null;
+let warningBannerTimer = null;
+let lastActivityAt = Date.now();
+let faceApiReady = false;
+let peerConnection = null;
+
+function headers(extra = {}) {
+  const out = { ...extra };
+  if (interviewToken) out.Authorization = `Bearer ${interviewToken}`;
+  return out;
+}
+
+function setRememberSession(token, remember) {
+  localStorage.setItem(REMEMBER_KEY, remember ? "1" : "0");
+  if (remember) {
+    localStorage.setItem(SESSION_KEY, token);
+    sessionStorage.removeItem(SESSION_KEY);
+  } else {
+    sessionStorage.setItem(SESSION_KEY, token);
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
+
+function clearInterviewSession() {
+  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+function showWarning(message) {
+  const banner = document.getElementById("warningBanner");
+  document.getElementById("warningCopy").textContent = message;
+  banner.classList.add("show");
+  clearTimeout(warningBannerTimer);
+  warningBannerTimer = setTimeout(() => banner.classList.remove("show"), 4200);
+}
+
+function setLoginStatus(message, type = "") {
+  const el = document.getElementById("loginStatus");
+  el.textContent = message;
+  el.className = `status-note ${type}`.trim();
+}
+
+function setExamStatus(message, type = "") {
+  const el = document.getElementById("examStatus");
+  el.textContent = message;
+  el.className = `status-note ${type}`.trim();
+}
+
+async function loginInterview() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const remember = document.getElementById("rememberInterview").checked;
+  const button = document.getElementById("loginBtn");
+  if (!email || !password) {
+    setLoginStatus("Enter your email and interview password.", "error");
+    return;
+  }
+  button.disabled = true;
+  button.textContent = "Signing in…";
+  try {
+    const response = await fetch(`${API}/api/interviews/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, remember })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not sign in");
+    interviewToken = data.token;
+    setRememberSession(interviewToken, remember);
+    await restoreInterviewSession();
+    document.getElementById("loginPassword").value = "";
+  } catch (err) {
+    setLoginStatus(err.message || "Could not sign in", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Sign in to interview";
+  }
+}
+
+function logoutInterview() {
+  stopExamRuntime();
+  interviewToken = "";
+  candidateState = null;
+  interviewAttempts = [];
+  activeAttempt = null;
+  activeExam = null;
+  clearInterviewSession();
+  document.getElementById("logoutBtn").classList.add("hidden");
+  document.getElementById("dashboardSection").classList.add("hidden");
+  document.getElementById("examSection").classList.add("hidden");
+  document.getElementById("heroSection").classList.remove("hidden");
+  document.getElementById("loginCard").classList.remove("hidden");
+  setLoginStatus("Signed out from the interview portal.");
+}
+
+function renderAttempts() {
+  const mount = document.getElementById("attemptList");
+  document.getElementById("candidateChip").textContent = candidateState ? `${candidateState.name} · ${candidateState.skill || "Candidate"}` : "Candidate";
+  if (!interviewAttempts.length) {
+    mount.innerHTML = `<div class="attempt-card"><div class="section-title">No assigned interview yet</div><div class="section-copy">Once the YoungMinds team assigns an interview, it will appear here automatically.</div></div>`;
+    return;
+  }
+  mount.innerHTML = interviewAttempts.map((attempt) => `
+    <article class="attempt-card">
+      <div class="attempt-head">
+        <div>
+          <div class="section-title" style="font-size:1.1rem">${attempt.examTitle || "Interview"}</div>
+          <div class="meta">${attempt.status.replace(/_/g," ")} · ${attempt.durationMinutes} mins · warnings ${attempt.warningsCount}/${attempt.warningLimit}</div>
+        </div>
+        <button class="btn primary" type="button" onclick="openAttempt('${attempt.id}')">${attempt.status === "submitted" || attempt.status === "terminated" || attempt.status === "expired" ? "View summary" : (attempt.startedAt ? "Resume" : "Start")}</button>
+      </div>
+      <div class="section-copy">${attempt.result && attempt.result.total ? `Score: ${attempt.result.percent}% (${attempt.result.correct}/${attempt.result.total})` : "Timed MCQ interview with live monitoring and auto-save."}</div>
+    </article>
+  `).join("");
+}
+
+async function restoreInterviewSession() {
+  if (!interviewToken) {
+    logoutInterview();
+    return;
+  }
+  try {
+    const response = await fetch(`${API}/api/interviews/session`, { headers: headers() });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Session expired");
+    candidateState = data.candidate || null;
+    interviewAttempts = Array.isArray(data.attempts) ? data.attempts : [];
+    document.getElementById("heroSection").classList.add("hidden");
+    document.getElementById("dashboardSection").classList.remove("hidden");
+    document.getElementById("logoutBtn").classList.remove("hidden");
+    renderAttempts();
+    connectSocket();
+  } catch (err) {
+    logoutInterview();
+    setLoginStatus(err.message || "Session expired", "error");
+  }
+}
+
+function connectSocket() {
+  if (!interviewToken || typeof io === "undefined") return;
+  if (socket) socket.disconnect();
+  socket = io(API, { auth: { token: interviewToken }, transports: ["websocket", "polling"] });
+  socket.on("connect", () => {});
+  socket.on("interview:signal", async ({ signal, fromSocketId } = {}) => {
+    if (!signal) return;
+    if (!peerConnection) await createPeerConnection();
+    if (signal.type === "offer") {
+      await peerConnection.setRemoteDescription(signal);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      socket.emit("interview:signal", { targetSocketId: fromSocketId, attemptId: activeAttempt?.id, signal: peerConnection.localDescription });
+    } else if (signal.type === "answer") {
+      await peerConnection.setRemoteDescription(signal);
+    } else if (signal.candidate) {
+      await peerConnection.addIceCandidate(signal.candidate).catch(() => {});
+    }
+  });
+}
+
+async function createPeerConnection() {
+  if (peerConnection) return peerConnection;
+  peerConnection = new RTCPeerConnection();
+  if (localStream) {
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  }
+  peerConnection.onicecandidate = (event) => {
+    if (!event.candidate || !socket) return;
+    socket.emit("interview:signal", { attemptId: activeAttempt?.id, signal: { candidate: event.candidate } });
+  };
+  return peerConnection;
+}
+
+async function openAttempt(attemptId) {
+  const attempt = interviewAttempts.find(item => item.id === attemptId);
+  if (!attempt) return;
+  activeAttempt = attempt;
+  document.getElementById("dashboardSection").classList.add("hidden");
+  document.getElementById("examSection").classList.remove("hidden");
+  document.getElementById("resultCard").classList.toggle("hidden", !attempt.result || !attempt.result.total);
+  if (attempt.result && attempt.result.total) {
+    document.getElementById("resultPercent").textContent = `${attempt.result.percent}%`;
+    document.getElementById("resultMeta").textContent = `${attempt.result.correct} correct out of ${attempt.result.total}`;
+  }
+  if (!["submitted", "terminated", "expired"].includes(attempt.status)) {
+    await startAttempt(attemptId);
+  } else {
+    await loadExam(attemptId);
+  }
+}
+
+async function startAttempt(attemptId) {
+  try {
+    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/start`, {
+      method: "POST",
+      headers: headers({ "Content-Type": "application/json" })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not start interview");
+    activeAttempt = data.attempt || activeAttempt;
+    await loadExam(attemptId);
+    await ensureExamEnvironment();
+  } catch (err) {
+    setExamStatus(err.message || "Could not start interview", "error");
+  }
+}
+
+async function loadExam(attemptId) {
+  try {
+    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/exam`, { headers: headers() });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not load interview");
+    activeExam = data.exam;
+    activeAttempt = { ...(activeAttempt || {}), ...(data.attempt || {}) };
+    activeQuestionIndex = Math.min(Number(activeAttempt.currentIndex || 0), Math.max((activeExam.questions?.length || 1) - 1, 0));
+    renderExam();
+    startTimer();
+  } catch (err) {
+    setExamStatus(err.message || "Could not load interview", "error");
+  }
+}
+
+function renderExam() {
+  if (!activeExam) return;
+  document.getElementById("examTitle").textContent = activeExam.title || "Interview";
+  document.getElementById("examDescription").textContent = activeExam.description || "Stay on this screen until you submit.";
+  document.getElementById("warningMetric").textContent = `Warnings: ${activeAttempt?.warningsCount || 0}/${activeExam.warningLimit || 3}`;
+  document.getElementById("scoreMetric").textContent = `Suspicion: ${activeAttempt?.suspiciousScore || 0}`;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  if (!activeExam || !Array.isArray(activeExam.questions) || !activeExam.questions.length) return;
+  const question = activeExam.questions[activeQuestionIndex];
+  const answerMap = activeAttempt?.answers || {};
+  const selected = typeof answerMap[activeQuestionIndex] === "number" ? answerMap[activeQuestionIndex] : -1;
+  document.getElementById("questionCounter").textContent = `Question ${activeQuestionIndex + 1} / ${activeExam.questions.length}`;
+  document.getElementById("questionPrompt").textContent = question.prompt || "Question";
+  document.getElementById("optionList").innerHTML = (question.options || []).map((option, index) => `
+    <button class="option-btn ${selected === index ? "active" : ""}" type="button" onclick="selectOption(${activeQuestionIndex}, ${index})">${option}</button>
+  `).join("");
+  document.getElementById("prevBtn").style.display = activeExam.allowBacktracking ? "inline-flex" : "none";
+  document.getElementById("prevBtn").disabled = activeQuestionIndex === 0;
+  document.getElementById("nextBtn").disabled = activeQuestionIndex >= activeExam.questions.length - 1;
+}
+
+async function selectOption(questionIndex, optionIndex) {
+  if (!activeAttempt) return;
+  activeAttempt.answers = activeAttempt.answers || {};
+  activeAttempt.answers[questionIndex] = optionIndex;
+  renderQuestion();
+  lastActivityAt = Date.now();
+  try {
+    await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/answer`, {
+      method: "POST",
+      headers: headers({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ questionIndex, selectedIndex: optionIndex })
+    });
+    setExamStatus("Answer saved.");
+  } catch {
+    setExamStatus("Answer could not be saved right now.", "error");
+  }
+}
+
+function goQuestion(direction) {
+  if (!activeExam) return;
+  if (direction < 0 && activeExam.allowBacktracking && activeQuestionIndex > 0) {
+    activeQuestionIndex -= 1;
+  } else if (direction > 0 && activeQuestionIndex < activeExam.questions.length - 1) {
+    activeQuestionIndex += 1;
+  }
+  renderQuestion();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  const target = activeAttempt?.deadlineAt ? new Date(activeAttempt.deadlineAt).getTime() : 0;
+  function tick() {
+    if (!target) {
+      document.getElementById("timerText").textContent = "--:--";
+      return;
+    }
+    const diff = Math.max(0, target - Date.now());
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    document.getElementById("timerText").textContent = `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+    if (diff <= 0) {
+      clearInterval(timerInterval);
+      submitInterview(true);
+    }
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+async function submitInterview(autoSubmitted) {
+  if (!activeAttempt) return;
+  try {
+    const response = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/submit`, {
+      method: "POST",
+      headers: headers({ "Content-Type": "application/json" })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not submit");
+    activeAttempt = data.attempt || activeAttempt;
+    stopExamRuntime();
+    document.getElementById("resultCard").classList.remove("hidden");
+    document.getElementById("resultPercent").textContent = `${activeAttempt.result.percent}%`;
+    document.getElementById("resultMeta").textContent = `${activeAttempt.result.correct} correct out of ${activeAttempt.result.total}`;
+    setExamStatus(autoSubmitted ? "Interview auto-submitted." : "Interview submitted successfully.", "ok");
+    await restoreInterviewSession();
+    document.getElementById("dashboardSection").classList.remove("hidden");
+    document.getElementById("examSection").classList.add("hidden");
+  } catch (err) {
+    setExamStatus(err.message || "Could not submit interview", "error");
+  }
+}
+
+async function sendViolation(type, message, severity = 1, meta = {}) {
+  if (!activeAttempt || ["submitted", "terminated", "expired"].includes(activeAttempt.status)) return;
+  showWarning(message);
+  try {
+    const response = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/event`, {
+      method: "POST",
+      headers: headers({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ type, message, severity, meta })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (data.attempt) activeAttempt = { ...activeAttempt, ...data.attempt };
+    if (data.autoSubmitted) {
+      setExamStatus("Interview auto-submitted after warning limit.", "error");
+      await submitInterview(true);
+      return;
+    }
+    document.getElementById("warningMetric").textContent = `Warnings: ${activeAttempt?.warningsCount || 0}/${activeExam?.warningLimit || 3}`;
+    document.getElementById("scoreMetric").textContent = `Suspicion: ${activeAttempt?.suspiciousScore || 0}`;
+  } catch {}
+}
+
+async function ensureExamEnvironment() {
+  await startCamera();
+  await ensureFullscreen();
+  bindExamProtection();
+  startInactivityWatch();
+  startFaceChecks();
+}
+
+async function ensureFullscreen() {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen?.();
+    }
+  } catch {
+    await sendViolation("fullscreen_exit", "Fullscreen was not enabled.", 2, {});
+  }
+}
+
+async function startCamera() {
+  if (localStream) return localStream;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    document.getElementById("candidateVideo").srcObject = localStream;
+    document.getElementById("cameraStateChip").textContent = "Camera live";
+    document.getElementById("proctorStatus").textContent = "Camera connected. Face checks are running.";
+    document.getElementById("cameraStateChip").style.color = "var(--green)";
+    if (socket && activeAttempt) {
+      startSnapshotStream();
+    }
+    await createPeerConnection();
+    return localStream;
+  } catch (err) {
+    document.getElementById("cameraStateChip").textContent = "Camera blocked";
+    await sendViolation("camera_off", "Camera access is required for the interview.", 3, {});
+    throw err;
+  }
+}
+
+function startSnapshotStream() {
+  clearInterval(snapshotInterval);
+  snapshotInterval = setInterval(() => {
+    if (!socket || !activeAttempt || !localStream) return;
+    const video = document.getElementById("candidateVideo");
+    if (!video.videoWidth || !video.videoHeight) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = 220;
+    canvas.height = 160;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    socket.emit("interview:thumb", { attemptId: activeAttempt.id, imageData: canvas.toDataURL("image/jpeg", 0.45) });
+  }, 7000);
+}
+
+function bindExamProtection() {
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  document.addEventListener("contextmenu", handleRightClick);
+  document.addEventListener("copy", handleCopy);
+  document.addEventListener("paste", handlePaste);
+  document.addEventListener("keydown", handleShortcuts, true);
+  document.addEventListener("mousemove", markActivity, true);
+  document.addEventListener("click", markActivity, true);
+  document.addEventListener("touchstart", markActivity, true);
+}
+
+function unbindExamProtection() {
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  document.removeEventListener("contextmenu", handleRightClick);
+  document.removeEventListener("copy", handleCopy);
+  document.removeEventListener("paste", handlePaste);
+  document.removeEventListener("keydown", handleShortcuts, true);
+  document.removeEventListener("mousemove", markActivity, true);
+  document.removeEventListener("click", markActivity, true);
+  document.removeEventListener("touchstart", markActivity, true);
+}
+
+function markActivity() {
+  lastActivityAt = Date.now();
+}
+
+function startInactivityWatch() {
+  clearInterval(inactivityTimer);
+  lastActivityAt = Date.now();
+  inactivityTimer = setInterval(() => {
+    if (Date.now() - lastActivityAt > 60000) {
+      lastActivityAt = Date.now();
+      sendViolation("inactivity", "Inactivity detected for more than one minute.", 1, {});
+    }
+  }, 15000);
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) sendViolation("tab_switch", "Tab switching was detected.", 2, {});
+}
+
+function handleFullscreenChange() {
+  if (!document.fullscreenElement) sendViolation("fullscreen_exit", "You exited fullscreen mode.", 2, {});
+}
+
+function handleRightClick(event) {
+  event.preventDefault();
+  sendViolation("right_click", "Right-click is disabled during the interview.", 1, {});
+}
+
+function handleCopy(event) {
+  event.preventDefault();
+  sendViolation("copy_attempt", "Copy is disabled during the interview.", 1, {});
+}
+
+function handlePaste(event) {
+  event.preventDefault();
+  sendViolation("paste_attempt", "Paste is disabled during the interview.", 1, {});
+}
+
+function handleShortcuts(event) {
+  const key = String(event.key || "").toLowerCase();
+  if ((event.ctrlKey || event.metaKey) && ["c", "v", "x", "u", "s", "p"].includes(key)) {
+    event.preventDefault();
+    sendViolation("blocked_shortcut", `Blocked shortcut ${key.toUpperCase()}.`, 1, { key });
+  }
+  if (event.altKey && key === "tab") {
+    event.preventDefault();
+    sendViolation("blocked_shortcut", "App switching shortcut detected.", 2, { key: "Alt+Tab" });
+  }
+}
+
+async function loadFaceApi() {
+  if (window.faceapi) return true;
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+}
+
+async function startFaceChecks() {
+  if (faceInterval) return;
+  faceApiReady = await loadFaceApi();
+  if (faceApiReady && window.faceapi?.nets?.tinyFaceDetector) {
+    try {
+      await window.faceapi.nets.tinyFaceDetector.loadFromUri("https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights");
+    } catch {}
+  }
+  const video = document.getElementById("candidateVideo");
+  faceInterval = setInterval(async () => {
+    if (!video.srcObject) return;
+    try {
+      if (faceApiReady && window.faceapi?.detectAllFaces) {
+        const detections = await window.faceapi.detectAllFaces(video, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }));
+        if (!detections.length) {
+          document.getElementById("faceStateChip").textContent = "No face";
+          await sendViolation("no_face", "No face detected in the camera frame.", 2, {});
+          return;
+        }
+        if (detections.length > 1) {
+          document.getElementById("faceStateChip").textContent = "Multiple faces";
+          await sendViolation("multiple_faces", "Multiple faces detected in the frame.", 3, { count: detections.length });
+          return;
+        }
+        const box = detections[0].box || {};
+        const centerX = (box.x || 0) + (box.width || 0) / 2;
+        if (video.videoWidth && (centerX < video.videoWidth * 0.2 || centerX > video.videoWidth * 0.8)) {
+          document.getElementById("faceStateChip").textContent = "Looking away";
+          await sendViolation("looking_away", "Please face the screen directly.", 2, {});
+          return;
+        }
+        document.getElementById("faceStateChip").textContent = "Face aligned";
+      } else {
+        document.getElementById("faceStateChip").textContent = "Camera active";
+      }
+    } catch {
+      document.getElementById("faceStateChip").textContent = "Face check retrying";
+    }
+  }, 12000);
+}
+
+function stopExamRuntime() {
+  clearInterval(timerInterval);
+  clearInterval(snapshotInterval);
+  clearInterval(inactivityTimer);
+  clearInterval(faceInterval);
+  timerInterval = null;
+  snapshotInterval = null;
+  inactivityTimer = null;
+  faceInterval = null;
+  unbindExamProtection();
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+  }
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+  document.getElementById("candidateVideo").srcObject = null;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const remember = localStorage.getItem(REMEMBER_KEY) === "1";
+  document.getElementById("rememberInterview").checked = remember;
+  restoreInterviewSession();
+});
+</script>
+</body>
+</html>
