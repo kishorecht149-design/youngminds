@@ -344,4 +344,98 @@ async function getPasswordCoachReply(message) {
   return PASSWORD_COACH_LOCAL;
 }
 
-module.exports = { getAiAssistReply, buildLocalAssistReply, normalizeMessage, getPasswordCoachReply };
+async function gradeDescriptiveAnswer(question, answer) {
+  if (!answer || !answer.trim()) {
+    return { score: 0, outOf: 10, feedback: "No answer provided.", aiGraded: true };
+  }
+
+  const prompt = [
+    "You are an expert interviewer grading a descriptive interview answer.",
+    "Question: " + String(question || "").slice(0, 500),
+    "Candidate Answer: " + String(answer || "").slice(0, 1000),
+    "",
+    "Grade this answer from 0 to 10 based on:",
+    "- Relevance to the question (is it on topic?)",
+    "- Depth and accuracy of knowledge",
+    "- Clarity and communication",
+    "",
+    "Respond ONLY with valid JSON in this exact format (no extra text):",
+    '{"score": 7, "outOf": 10, "feedback": "Short one sentence reason."}'
+  ].join("\n");
+
+  // Try Gemini first (free)
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 200 }
+          })
+        }
+      );
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) {
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (typeof parsed.score === "number") {
+              return { score: Math.min(10, Math.max(0, parsed.score)), outOf: 10, feedback: parsed.feedback || "", aiGraded: true };
+            }
+          }
+        }
+      }
+    } catch { /* fallthrough */ }
+  }
+
+  // Try OpenAI as fallback
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+          temperature: 0.2,
+          max_tokens: 120,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content?.trim();
+        if (text) {
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (typeof parsed.score === "number") {
+              return { score: Math.min(10, Math.max(0, parsed.score)), outOf: 10, feedback: parsed.feedback || "", aiGraded: true };
+            }
+          }
+        }
+      }
+    } catch { /* fallthrough */ }
+  }
+
+  // Fallback: keyword relevance heuristic
+  const words = String(answer || "").trim().split(/\s+/).filter(Boolean).length;
+  const score = Math.min(10, Math.max(1, Math.round(words / 10)));
+  return { score, outOf: 10, feedback: "AI grading unavailable — scored by response length.", aiGraded: false };
+}
+
+module.exports = { getAiAssistReply, buildLocalAssistReply, normalizeMessage, getPasswordCoachReply, gradeDescriptiveAnswer };

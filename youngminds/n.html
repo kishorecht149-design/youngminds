@@ -3562,12 +3562,11 @@ function syncInterviewData() {
   });
 }
 
-// KEY FIX: Mutate state FIRST, then mutate only the affected DOM card (no full re-render).
 function updateInterviewQuestionType(index, type) {
-  flagAdminEditing();
+  markAdminEditing("editing");
   syncInterviewData(); // save text fields first
   const current = getSelectedInterviewExam();
-  if(current && current.questions && current.questions[index]) {
+  if (current && current.questions && current.questions[index]) {
     current.questions[index].type = type;
   }
   // Only mutate the single card's visibility — no full re-render, so no state loss
@@ -3585,7 +3584,8 @@ function updateInterviewQuestionType(index, type) {
   }
 }
 
-function addInterviewQuestion(){
+function addInterviewQuestion() {
+  markAdminEditing("editing");
   syncInterviewData();
   const current = getSelectedInterviewExam();
   if(!current) return;
@@ -3598,7 +3598,8 @@ function addInterviewQuestion(){
   }, 50);
 }
 
-function removeInterviewQuestion(index){
+function removeInterviewQuestion(index) {
+  markAdminEditing("editing");
   syncInterviewData();
   const current = getSelectedInterviewExam();
   if(!current || !Array.isArray(current.questions)) return;
@@ -3606,6 +3607,11 @@ function removeInterviewQuestion(index){
   current.questions.splice(index, 1);
   renderInterviewsManager();
 }
+
+// Expose question-bank functions to window so inline onclick handlers work
+window.updateInterviewQuestionType = updateInterviewQuestionType;
+window.addInterviewQuestion = addInterviewQuestion;
+window.removeInterviewQuestion = removeInterviewQuestion;
 
 function refreshInterviewPasswordDraft(){
   syncInterviewData();

@@ -8,7 +8,7 @@ const mongoose = require("mongoose");
 const cors     = require("cors");
 const crypto   = require("crypto");
 const { createAuthToken, verifyAuthToken, DEFAULT_TTL_SECONDS } = require("./auth");
-const { getAiAssistReply, getPasswordCoachReply } = require("./ai-assist");
+const { getAiAssistReply, getPasswordCoachReply, gradeDescriptiveAnswer } = require("./ai-assist");
 
 const app = express();
 const REMEMBER_ME_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -1335,18 +1335,40 @@ function gradeInterviewAttempt(exam, attempt) {
   const hydrated = hydrateAttemptExam(exam, attempt);
   const answers = getAttemptAnswerMap(attempt);
   let correct = 0;
+  let mcqTotal = 0;
+  let descriptiveTotal = 0;
+  let descriptiveAiScore = 0;
+
   hydrated.forEach((question, displayIndex) => {
-    const selectedIndex = answers.get(displayIndex);
-    if (selectedIndex == null || selectedIndex < 0) return;
     const sourceQuestion = questions[question.originalIndex];
-    const originalOptionIndex = question.optionOrder[selectedIndex];
-    if (originalOptionIndex === sourceQuestion?.correctIndex) correct += 1;
+    const qType = sourceQuestion?.type || "mcq";
+    if (qType === "descriptive") {
+      descriptiveTotal += 1;
+      // AI grades are stored separately in attempt.aiGrades
+      const aiGrade = Array.isArray(attempt.aiGrades)
+        ? attempt.aiGrades.find(g => g.originalIndex === question.originalIndex)
+        : null;
+      if (aiGrade) descriptiveAiScore += (aiGrade.score / aiGrade.outOf);
+    } else {
+      mcqTotal += 1;
+      const selectedIndex = answers.get(displayIndex);
+      if (selectedIndex == null || typeof selectedIndex !== "number" || selectedIndex < 0) return;
+      const originalOptionIndex = question.optionOrder[selectedIndex];
+      if (originalOptionIndex === sourceQuestion?.correctIndex) correct += 1;
+    }
   });
+
   const total = hydrated.length;
+  // Combine: MCQ correct + descriptive AI score (weighted equally)
+  const effectiveCorrect = correct + Math.round(descriptiveAiScore);
   return {
-    correct,
+    correct: effectiveCorrect,
+    mcqCorrect: correct,
+    mcqTotal,
+    descriptiveTotal,
+    descriptiveAiScore: Math.round(descriptiveAiScore * 10) / 10,
     total,
-    percent: total ? Math.round((correct / total) * 100) : 0
+    percent: total ? Math.round((effectiveCorrect / total) * 100) : 0
   };
 }
 
@@ -1374,10 +1396,15 @@ function normalizeInterviewAttempt(attempt) {
     submittedAt: attempt?.submittedAt || null,
     lastActivityAt: attempt?.lastActivityAt || null,
     latestThumbnail: attempt?.latestThumbnail || "",
-    terminatedBy: attempt?.terminatedBy || "",
-    logCount: Array.isArray(attempt?.logs) ? attempt.logs.length : 0,
-    createdAt: attempt?.createdAt || null,
-    updatedAt: attempt?.updatedAt || null
+    aiGrades: Array.isArray(attempt?.aiGrades) ? attempt.aiGrades.map(g => ({
+      originalIndex: g.originalIndex,
+      question: g.question,
+      answer: g.answer,
+      score: g.score,
+      outOf: g.outOf,
+      feedback: g.feedback,
+      aiGraded: g.aiGraded
+    })) : []
   };
 }
 
@@ -3210,6 +3237,32 @@ app.post("/api/interviews/attempts/:id/finish", async (req, res) => {
     attempt.submittedAt = new Date();
     attempt.lastActivityAt = new Date();
     attempt.updatedAt = new Date();
+
+    // AI-grade all descriptive answers
+    const questions = Array.isArray(exam.questions) ? exam.questions : [];
+    const answersMap = getAttemptAnswerMap(attempt);
+    const hydrated = hydrateAttemptExam(exam, attempt);
+    const aiGrades = [];
+    await Promise.all(
+      hydrated.map(async (hq, displayIndex) => {
+        const sourceQ = questions[hq.originalIndex];
+        if (sourceQ?.type !== "descriptive") return;
+        const answerText = answersMap.get(displayIndex);
+        if (typeof answerText !== "string") return;
+        const grade = await gradeDescriptiveAnswer(sourceQ.prompt, answerText);
+        aiGrades.push({
+          displayIndex,
+          originalIndex: hq.originalIndex,
+          question: sourceQ.prompt,
+          answer: answerText.slice(0, 500),
+          score: grade.score,
+          outOf: grade.outOf,
+          feedback: grade.feedback,
+          aiGraded: grade.aiGraded
+        });
+      })
+    );
+    attempt.aiGrades = aiGrades;
     attempt.result = gradeInterviewAttempt(exam, attempt);
     pushInterviewLog(attempt, "submitted", "Candidate submitted the interview", 1, {});
     await attempt.save();
@@ -3221,6 +3274,7 @@ app.post("/api/interviews/attempts/:id/finish", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 /* ══════════════════════════════════════════
    AUTH: Set / Change Password
