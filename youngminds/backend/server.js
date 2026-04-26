@@ -1238,18 +1238,27 @@ function shuffleArray(items) {
 function normalizeInterviewQuestions(raw) {
   const list = Array.isArray(raw) ? raw : [];
   return list.map((item) => {
-    const options = (Array.isArray(item?.options) ? item.options : [])
-      .map((entry) => String(entry || "").trim())
-      .filter(Boolean)
-      .slice(0, 6);
-    const correctIndex = Math.max(0, Math.min(options.length - 1, Number(item?.correctIndex || 0)));
+    const type = item?.type || "mcq";
+    const options = type === "mcq" 
+      ? (Array.isArray(item?.options) ? item.options : [])
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean)
+          .slice(0, 6)
+      : [];
+    const correctIndex = type === "mcq" 
+      ? Math.max(0, Math.min(options.length - 1, Number(item?.correctIndex || 0)))
+      : 0;
     return {
+      type,
       prompt: String(item?.prompt || "").trim(),
       options,
       correctIndex,
       explanation: String(item?.explanation || "").trim()
     };
-  }).filter((item) => item.prompt && item.options.length >= 2);
+  }).filter((item) => {
+    if (item.type === "descriptive") return !!item.prompt;
+    return item.prompt && item.options.length >= 2;
+  });
 }
 
 function sanitizeInterviewExam(exam) {
