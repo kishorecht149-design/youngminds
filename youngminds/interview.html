@@ -6,181 +6,384 @@
 <title>YoungMinds Interview Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#070808;--bg2:#101214;--panel:#111315;--panel2:#171a1d;--text:#f3f4f6;--muted:#9ba1a9;--border:rgba(255,255,255,.09);--accent:#e8c547;--danger:#ff6b6b;--green:#4cd97b;--shadow:0 26px 80px rgba(0,0,0,.34)}
-*{box-sizing:border-box}html,body{margin:0;padding:0;background:radial-gradient(circle at top right,rgba(232,197,71,.08),transparent 28%),linear-gradient(180deg,#060707,#0f1113 38%,#060707);color:var(--text);font-family:"DM Sans",system-ui,sans-serif;overflow-x:hidden}
-button,input,textarea{font:inherit}a{text-decoration:none;color:inherit}
-.topbar{position:sticky;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 24px calc(16px + env(safe-area-inset-top,0px));background:rgba(7,8,8,.84);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
-.brand{display:flex;align-items:center;gap:12px;font-weight:800;min-width:0}.brand span:last-child{min-width:0}.brand-mark{width:34px;height:34px;border-radius:12px;background:var(--accent);color:#000;display:grid;place-items:center;font-size:14px;font-weight:900;flex-shrink:0}.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.chip,.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--border)}
-.chip{padding:8px 12px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.03)}
-.btn{padding:12px 18px;font-weight:700;background:transparent;color:var(--text);cursor:pointer;transition:transform .2s ease,border-color .2s ease,background .2s ease}.btn:hover{transform:translateY(-1px);border-color:rgba(232,197,71,.38);background:rgba(232,197,71,.06)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#000;box-shadow:0 16px 36px rgba(232,197,71,.22)}.btn.danger{border-color:rgba(255,107,107,.35);color:#ffd3d3}
-.shell{max-width:1240px;margin:0 auto;padding:28px 24px calc(88px + env(safe-area-inset-bottom,0px))}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:20px;align-items:start;margin-bottom:22px}
-.card{background:rgba(17,19,21,.92);border:1px solid var(--border);border-radius:28px;box-shadow:var(--shadow)}
-.hero-card{padding:28px}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(232,197,71,.12);color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-h1{font-family:"Space Grotesk",system-ui,sans-serif;font-size:clamp(2.6rem,6vw,5rem);line-height:.92;letter-spacing:-.06em;margin:18px 0 14px}.accent{color:var(--accent)}.hero-copy{font-size:15px;line-height:1.9;color:var(--muted);max-width:58ch}
-.hero-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}.hero-pill{padding:12px 14px;border-radius:18px;border:1px solid var(--border);background:rgba(255,255,255,.02);font-size:13px;color:var(--muted)}
-.login-card,.dashboard-card,.exam-card,.monitor-card{padding:22px}
-.grid{display:grid;gap:18px}.dashboard-grid{grid-template-columns:1.2fr .8fr}.attempts{display:grid;gap:14px}.attempt-card{padding:18px;border-radius:22px;border:1px solid var(--border);background:rgba(255,255,255,.025);display:grid;gap:12px}.attempt-head,.question-head,.exam-actions,.monitor-meta,.monitor-grid{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.meta{font-size:12px;color:var(--muted)}.muted{color:var(--muted)}.status-live{color:var(--green)}.status-warn{color:var(--accent)}.status-risk{color:var(--danger)}
-.field{display:grid;gap:8px;margin-bottom:14px}.field label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}.field input,.field textarea,.field select{width:100%;padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:#0d0f11;color:var(--text);outline:none}.field textarea{min-height:120px;resize:vertical}
-.status-note{margin-top:10px;font-size:13px;color:var(--muted)}.status-note.error{color:#ffb1b1}.status-note.ok{color:#b7f5cb}
-.hidden{display:none!important}.section-title{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin:0 0 6px}.section-copy{font-size:14px;line-height:1.8;color:var(--muted)}
-.question-box{padding:18px;border-radius:24px;border:1px solid var(--border);background:rgba(255,255,255,.025)}.question-title{font-size:1.2rem;font-weight:800;letter-spacing:-.02em;line-height:1.45}.option-list{display:grid;gap:12px;margin-top:18px}.option-btn{width:100%;text-align:left;padding:15px 16px;border-radius:18px;border:1px solid var(--border);background:#101214;color:var(--text);cursor:pointer;transition:all .2s ease;word-break:break-word}.option-btn:hover{border-color:rgba(232,197,71,.32);transform:translateY(-1px)}.option-btn.active{border-color:var(--accent);background:rgba(232,197,71,.1);box-shadow:0 14px 30px rgba(232,197,71,.12)}
-.exam-shell{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.sticky{position:sticky;top:96px}.monitor-video{width:100%;aspect-ratio:4/3;border-radius:22px;background:#050607;object-fit:cover;border:1px solid var(--border)}.monitor-grid{justify-content:flex-start}.metric{padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:12px;color:var(--muted)}.timer{font-family:"Space Grotesk",system-ui,sans-serif;font-size:2.1rem;letter-spacing:-.04em}.warning-banner{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);min-width:min(92vw,560px);padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));border-radius:18px;border:1px solid rgba(255,107,107,.35);background:rgba(20,8,8,.96);box-shadow:0 18px 40px rgba(0,0,0,.34);display:none;z-index:70}.warning-banner.show{display:block}.warning-title{font-size:13px;font-weight:800;color:#ffd7d7;text-transform:uppercase;letter-spacing:.08em}.warning-copy{font-size:14px;color:#ffd7d7;margin-top:6px;line-height:1.6}
-.score-card{padding:18px;border-radius:22px;border:1px solid var(--border);background:rgba(255,255,255,.025)}.score{font-family:"Space Grotesk",system-ui,sans-serif;font-size:2.6rem;letter-spacing:-.05em}
-body.authenticated .shell{max-width:1080px}
-body.exam-active .shell{max-width:980px;padding-top:18px}
-body.exam-active .topbar{padding-bottom:14px}
-@media (max-width:1080px){.hero,.dashboard-grid,.exam-shell{grid-template-columns:1fr}.sticky{position:static}}
-@media (max-width:720px){
-  .topbar{padding:14px 16px calc(14px + env(safe-area-inset-top,0px));align-items:flex-start;flex-direction:column}
-  .brand{width:100%;justify-content:flex-start}
-  .brand span:last-child{font-size:14px;line-height:1.2}
-  .top-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}
-  .top-actions .chip,.top-actions .btn{width:100%}
-  .shell{padding:18px 16px calc(104px + env(safe-area-inset-bottom,0px))}
-  .hero{gap:14px}
-  .card{border-radius:24px}
-  .hero-card,.login-card,.dashboard-card,.exam-card,.monitor-card{padding:18px}
-  h1{font-size:clamp(2rem,12vw,3.2rem)}
-  .hero-copy,.section-copy{font-size:13px;line-height:1.7}
-  .hero-list{grid-template-columns:1fr}
-  .attempt-card{padding:16px}
-  .attempt-head{align-items:flex-start}
-  .attempt-head .btn{width:100%}
-  .question-box{padding:16px;border-radius:20px}
-  .question-title{font-size:1.05rem;line-height:1.5}
-  .option-list{gap:10px}
-  .option-btn{padding:14px 15px;border-radius:16px;font-size:14px}
-  .question-head{align-items:flex-start}
-  .timer{font-size:1.8rem}
-  .monitor-grid,.monitor-meta{width:100%}
-  .metric,.chip{font-size:11px}
-  .exam-actions{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:25;padding:12px;border:1px solid var(--border);border-radius:20px;background:rgba(11,12,14,.96);backdrop-filter:blur(16px);box-shadow:0 20px 40px rgba(0,0,0,.32)}
-  .exam-actions .btn{flex:1 1 calc(50% - 6px);min-width:0}
-  .exam-actions .btn.primary{flex-basis:100%}
-  .monitor-video{border-radius:18px}
-  .warning-banner{left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:none;min-width:0}
+:root {
+  --bg: #09090b;
+  --surface: #121214;
+  --surface-hover: #1c1c1f;
+  --text: #f8f9fa;
+  --muted: #a1a1aa;
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #e8c547;
+  --accent-glow: rgba(232, 197, 71, 0.15);
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.15);
+  --green: #10b981;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
 }
-@media (max-width:480px){
-  .top-actions{grid-template-columns:1fr}
-  .shell{padding-left:12px;padding-right:12px}
-  .hero-card,.login-card,.dashboard-card,.exam-card,.monitor-card{padding:16px}
-  .eyebrow,.chip,.metric{font-size:10px}
-  .exam-actions{padding:10px}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+.bg-mesh {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+  background: radial-gradient(circle at 80% 20%, rgba(232, 197, 71, 0.06), transparent 40%),
+              radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.02), transparent 40%);
+}
+button, input, textarea { font: inherit; }
+a { text-decoration: none; color: inherit; }
+.hidden { display: none !important; }
+
+/* ── Typography ── */
+h1, h2, h3, .brand, .timer { font-family: 'Outfit', system-ui, sans-serif; }
+h1 { font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin: 0 0 16px; }
+h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8px; }
+.text-muted { color: var(--muted); line-height: 1.6; font-size: 0.95rem; }
+.text-accent { color: var(--accent); }
+
+/* ── Topbar ── */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 16px 32px calc(16px + env(safe-area-inset-top, 0px));
+  background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.02em; }
+.brand-img { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; }
+
+/* ── Layout & Cards ── */
+.shell { max-width: 1280px; margin: 0 auto; padding: 40px 32px 80px; display: flex; flex-direction: column; gap: 32px; }
+.glass-card {
+  background: rgba(18, 18, 20, 0.6); backdrop-filter: blur(24px);
+  border: 1px solid var(--border); border-radius: 24px; padding: 32px;
+  box-shadow: var(--shadow);
+}
+.grid-2 { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; align-items: start; }
+@media(max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ── Buttons & Inputs ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 0.95rem;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; transition: all 0.2s ease; outline: none;
+}
+.btn:hover:not(:disabled) { background: var(--surface-hover); transform: translateY(-1px); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #000; box-shadow: 0 8px 24px var(--accent-glow); }
+.btn.primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 32px var(--accent-glow); }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.field label { font-size: 0.85rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.field input {
+  padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.4); color: var(--text); font-size: 1rem;
+  transition: border-color 0.2s;
+}
+.field input:focus { border-color: var(--accent); }
+
+/* ── Pills & Badges ── */
+.pill {
+  display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px;
+  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text);
+}
+.pill.accent { background: var(--accent-glow); color: var(--accent); border-color: rgba(232, 197, 71, 0.3); }
+
+/* ── Hero / Login ── */
+.hero-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 32px; }
+.hero-item { display: flex; align-items: center; gap: 12px; font-size: 0.95rem; color: var(--muted); }
+.hero-item-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; color: var(--accent); }
+
+/* ── Dashboard Attempts ── */
+.attempt-card {
+  padding: 24px; border-radius: 16px; background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px;
+  transition: border-color 0.2s;
+}
+.attempt-card:hover { border-color: rgba(255, 255, 255, 0.15); }
+
+/* ── Pre-Flight Modal ── */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 100;
+  background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.modal-content {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+  width: 100%; max-width: 540px; padding: 32px; display: flex; flex-direction: column; gap: 24px;
+  box-shadow: var(--shadow); animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.checklist-item { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); }
+.check-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center; transition: all 0.2s; }
+.checklist-item.active .check-circle { border-color: var(--accent); background: var(--accent); color: #000; }
+.checklist-text { flex: 1; font-weight: 500; }
+
+/* ── Exam Interface ── */
+.exam-layout { display: grid; grid-template-columns: 280px 1fr 300px; gap: 24px; align-items: start; }
+@media(max-width: 1100px) {
+  .exam-layout { grid-template-columns: 1fr; }
+  .exam-nav, .proctor-panel { display: none; } /* On mobile, we might simplify or stack. Actually let's stack them at bottom or toggle them. */
+}
+.exam-nav { background: rgba(18, 18, 20, 0.6); border: 1px solid var(--border); border-radius: 20px; padding: 24px; position: sticky; top: 96px; }
+.nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+.nav-dot {
+  aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--border); background: transparent;
+  color: var(--muted); display: grid; place-items: center; font-weight: 600; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-dot:hover { border-color: rgba(255, 255, 255, 0.3); }
+.nav-dot.answered { background: var(--surface-hover); border-color: var(--accent); color: var(--accent); }
+.nav-dot.current { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); color: #fff; }
+
+.question-area { display: flex; flex-direction: column; gap: 24px; }
+.progress-bar-bg { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+.progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+
+.option-list { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+.option-btn {
+  width: 100%; text-align: left; padding: 18px 24px; border-radius: 16px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-size: 1.05rem; cursor: pointer; transition: all 0.2s ease; line-height: 1.5;
+}
+.option-btn:hover { border-color: rgba(255, 255, 255, 0.2); background: var(--surface-hover); transform: translateX(4px); }
+.option-btn.active { border-color: var(--accent); background: var(--accent-glow); box-shadow: inset 4px 0 0 var(--accent); }
+
+.proctor-panel { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 16px; }
+.proctor-video-wrap { position: relative; width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: #000; }
+.monitor-video { width: 100%; height: 100%; object-fit: cover; }
+.ai-status-overlay {
+  position: absolute; bottom: 12px; left: 12px; right: 12px;
+  padding: 8px 12px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
+  border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.status-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.warn { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+/* ── Toasts ── */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 20px; box-shadow: var(--shadow); color: var(--text); font-size: 0.95rem; font-weight: 500;
+  display: flex; align-items: center; gap: 12px; width: 320px;
+  animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes toastSlideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+.toast.toast-error { border-color: var(--danger); background: rgba(20, 8, 8, 0.95); }
+.toast.toast-error .toast-icon { color: var(--danger); }
+
+/* Mobile Tweaks */
+@media(max-width: 768px) {
+  .topbar { padding: 12px 16px; flex-direction: column; gap: 12px; }
+  .shell { padding: 24px 16px 80px; }
+  .glass-card { padding: 24px; }
+  .exam-layout { display: flex; flex-direction: column; }
+  .exam-nav { display: block; position: static; width: 100%; order: 3; }
+  .proctor-panel { display: block; position: static; width: 100%; order: 2; margin-bottom: 24px; }
+  .question-area { order: 1; }
 }
 </style>
 </head>
 <body>
+<div class="bg-mesh"></div>
+
 <div class="topbar">
-  <a class="brand" href="/"><span class="brand-mark">Y</span><span>YoungMinds Interview Portal</span></a>
-  <div class="top-actions">
-    <a class="chip" href="/">Public Website</a>
-    <button class="btn hidden" id="logoutBtn" type="button" onclick="logoutInterview()">Sign out</button>
+  <div class="brand">
+    <img src="/assets/logo-ym.jpg" alt="YoungMinds" class="brand-img" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'36\' height=\'36\' viewBox=\'0 0 36 36\'%3E%3Crect width=\'36\' height=\'36\' rx=\'8\' fill=\'%23E8C547\'/%3E%3Ctext x=\'18\' y=\'24\' font-family=\'sans-serif\' font-size=\'16\' font-weight=\'bold\' fill=\'%23000\' text-anchor=\'middle\'%3EY/A%3C/text%3E%3C/svg%3E'">
+    <span>Interview Portal</span>
+  </div>
+  <div style="display: flex; gap: 12px;">
+    <button class="btn hidden" id="logoutBtn" onclick="logoutInterview()">Sign out</button>
   </div>
 </div>
 
 <main class="shell">
-  <section class="hero" id="heroSection">
-    <div class="hero-card card">
-      <div class="eyebrow">Interview Ready</div>
-      <h1>Focused interviews with <span class="accent">clean signals</span>.</h1>
-      <div class="hero-copy">YoungMinds uses a structured interview system with timed MCQs, secure login, webcam validation, tab and fullscreen checks, and real-time admin monitoring. Sign in only when you are ready to stay on one device until the interview is complete.</div>
+  <!-- HERO / LOGIN -->
+  <section class="grid-2" id="heroSection">
+    <div class="glass-card">
+      <div class="pill accent" style="margin-bottom: 16px;">Secure Assessment</div>
+      <h1>Focused interviews with <span class="text-accent">clean signals.</span></h1>
+      <p class="text-muted" style="max-width: 50ch; font-size: 1.05rem;">YoungMinds uses a structured interview system with timed MCQs, secure login, webcam validation, tab checks, and real-time AI monitoring. Stay on one device until the interview is complete.</p>
+      
       <div class="hero-list">
-        <div class="hero-pill">One question at a time</div>
-        <div class="hero-pill">Auto-save answers</div>
-        <div class="hero-pill">Warnings tracked live</div>
-        <div class="hero-pill">Timer-based auto submit</div>
+        <div class="hero-item"><div class="hero-item-icon">1</div> One question at a time</div>
+        <div class="hero-item"><div class="hero-item-icon">2</div> Live AI face checks</div>
+        <div class="hero-item"><div class="hero-item-icon">3</div> Auto-save protection</div>
+        <div class="hero-item"><div class="hero-item-icon">4</div> Fullscreen enforcement</div>
       </div>
     </div>
-    <div class="login-card card" id="loginCard">
-      <div class="section-title">Candidate Sign In</div>
-      <div class="section-copy">Use the exact email and interview password shared by the YoungMinds team. The email must match your application record.</div>
-      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="Use your application email"></div>
-      <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Interview password from admin"></div>
-      <div class="field"><label style="display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;color:var(--text)"><input id="rememberInterview" type="checkbox" style="width:16px;height:16px">Remember this device for the interview session</label></div>
-      <button class="btn primary" id="loginBtn" type="button" onclick="loginInterview()">Sign in to interview</button>
-      <div class="status-note" id="loginStatus">Camera permission is requested only when you start the interview. If login fails, ask admin to reset your interview credentials.</div>
-    </div>
-  </section>
-
-  <section class="dashboard-grid hidden" id="dashboardSection">
-    <div class="dashboard-card card">
-      <div class="question-head">
-        <div>
-          <div class="section-title">Assigned Interviews</div>
-          <div class="section-copy">Start only when you can stay fullscreen and keep your camera on.</div>
-        </div>
-        <div class="chip" id="candidateChip">Candidate</div>
-      </div>
-      <div class="attempts" id="attemptList"></div>
-    </div>
-    <div class="monitor-card card">
-      <div class="section-title">Interview Rules</div>
-      <div class="section-copy">Switching tabs, turning off the camera, repeated face-detection issues, or leaving fullscreen creates warnings. Too many warnings auto-submit the exam.</div>
-      <div class="hero-list" style="margin-top:18px">
-        <div class="hero-pill">Keep one face in frame</div>
-        <div class="hero-pill">Stay on fullscreen</div>
-        <div class="hero-pill">Do not copy or paste</div>
-        <div class="hero-pill">Do not open other tabs</div>
+    
+    <div class="glass-card" id="loginCard">
+      <h2>Candidate Sign In</h2>
+      <p class="text-muted">Use the exact email and interview password shared by the YoungMinds team.</p>
+      
+      <div style="margin-top: 24px;">
+        <div class="field"><label>Email Address</label><input id="loginEmail" type="email" placeholder="name@example.com"></div>
+        <div class="field"><label>Interview Password</label><input id="loginPassword" type="password" placeholder="••••••••"></div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:0.9rem;color:var(--text);cursor:pointer;margin-bottom:24px;">
+          <input id="rememberInterview" type="checkbox" style="width:16px;height:16px;"> Remember this device
+        </label>
+        
+        <button class="btn primary" id="loginBtn" style="width:100%" onclick="loginInterview()">Access Interview</button>
       </div>
     </div>
   </section>
 
-  <section class="exam-shell hidden" id="examSection">
-    <div class="exam-card card">
-      <div class="question-head">
+  <!-- DASHBOARD -->
+  <section class="hidden" id="dashboardSection">
+    <div class="glass-card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 32px; flex-wrap:wrap; gap: 16px;">
         <div>
-          <div class="eyebrow">Live Interview</div>
-          <div class="section-title" id="examTitle">Interview</div>
-          <div class="section-copy" id="examDescription">Stay focused until the exam is submitted.</div>
+          <h2>Assigned Interviews</h2>
+          <p class="text-muted">Start only when you are in a quiet room and can stay fullscreen.</p>
         </div>
-        <div class="chip" id="questionCounter">Question 1</div>
+        <div class="pill" id="candidateNamePill">Welcome</div>
       </div>
-      <div class="question-box">
-        <div class="question-head">
-          <div class="timer" id="timerText">00:00</div>
-          <div class="monitor-grid">
-            <div class="metric" id="warningMetric">Warnings: 0</div>
-            <div class="metric" id="scoreMetric">Suspicion: 0</div>
-          </div>
+      
+      <div id="attemptList" style="display:flex; flex-direction:column; gap:16px;"></div>
+    </div>
+  </section>
+
+  <!-- EXAM INTERFACE -->
+  <section class="exam-layout hidden" id="examSection">
+    <!-- Left Nav -->
+    <div class="exam-nav">
+      <h3 style="margin:0 0 4px;font-size:1.1rem;">Questions</h3>
+      <p class="text-muted" style="font-size:0.8rem;margin:0 0 16px;">Navigate your exam</p>
+      <div class="nav-grid" id="navGrid"></div>
+      
+      <div style="margin-top:32px; padding-top:24px; border-top:1px solid var(--border);">
+        <h3 style="margin:0 0 8px;font-size:1.1rem;">Exam Progress</h3>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600; margin-bottom:4px;">
+          <span id="progressText">0 / 0 Answered</span>
+          <span class="text-accent" id="progressPercent">0%</span>
         </div>
-        <div class="question-title" id="questionPrompt">Question prompt</div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <!-- Center Question Area -->
+    <div class="question-area">
+      <div class="glass-card" style="padding: 40px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div class="pill accent" id="questionCounter">Question 1</div>
+          <div class="timer text-accent" id="timerText" style="font-weight:700;">00:00</div>
+        </div>
+        
+        <h2 id="questionPrompt" style="font-size:1.4rem; line-height:1.5; margin-bottom:32px; font-family:'Inter',sans-serif; font-weight:600;">Loading prompt...</h2>
+        
         <div class="option-list" id="optionList"></div>
       </div>
-      <div class="exam-actions" style="margin-top:18px">
-        <button class="btn" id="prevBtn" type="button" onclick="goQuestion(-1)">Previous</button>
-        <button class="btn" id="nextBtn" type="button" onclick="goQuestion(1)">Next</button>
-        <button class="btn primary" type="button" onclick="submitInterview(false)">Submit interview</button>
-      </div>
-      <div class="status-note" id="examStatus">Answers auto-save every time you choose an option.</div>
-    </div>
-    <aside class="grid">
-      <div class="monitor-card card sticky">
-        <div class="section-title">Proctoring Monitor</div>
-        <div class="section-copy">Keep your face visible and avoid leaving the interview screen.</div>
-        <video class="monitor-video" id="candidateVideo" autoplay muted playsinline></video>
-        <div class="monitor-meta" style="margin-top:14px">
-          <div class="chip" id="cameraStateChip">Camera offline</div>
-          <div class="chip" id="faceStateChip">Face check idle</div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn" id="prevBtn" onclick="goQuestion(-1)">← Previous</button>
+        <div style="display:flex; gap:12px; margin-left:auto;">
+          <button class="btn" id="nextBtn" onclick="goQuestion(1)">Next →</button>
+          <button class="btn primary" id="submitBtn" onclick="requestSubmit()">Submit Exam</button>
         </div>
-        <div class="status-note" id="proctorStatus">Once the interview starts, camera frames and activity alerts sync to the admin panel.</div>
       </div>
-      <div class="monitor-card card hidden" id="resultCard">
-        <div class="section-title">Interview Result</div>
-        <div class="score" id="resultPercent">0%</div>
-        <div class="status-note" id="resultMeta">Result summary appears after submit.</div>
+    </div>
+
+    <!-- Right Proctor Area -->
+    <div class="proctor-panel">
+      <div class="glass-card" style="padding: 24px;">
+        <h3 style="margin:0 0 16px;font-size:1.1rem;">Live Proctoring</h3>
+        <div class="proctor-video-wrap">
+          <video class="monitor-video" id="candidateVideo" autoplay muted playsinline></video>
+          <div class="ai-status-overlay">
+            <div class="status-dot" id="aiStatusDot"></div>
+            <span id="aiStatusText">Initializing AI...</span>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+          <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border); padding:12px; border-radius:12px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; font-weight:700;">Warnings</div>
+            <div style="font-size:1.4rem; font-weight:700; margin-top:4px;" id="warningMetric">0/3</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border); padding:12px; border-radius:12px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; font-weight:700;">Suspicion</div>
+            <div style="font-size:1.4rem; font-weight:700; margin-top:4px;" id="scoreMetric">0</div>
+          </div>
+        </div>
       </div>
-    </aside>
+    </div>
+  </section>
+  
+  <!-- RESULT CARD -->
+  <section class="hidden" id="resultSection">
+    <div class="glass-card" style="max-width:540px; margin:0 auto; text-align:center; padding: 60px 32px;">
+      <div style="width:80px; height:80px; border-radius:50%; background:var(--accent-glow); color:var(--accent); display:grid; place-items:center; font-size:40px; margin:0 auto 24px;">✓</div>
+      <h2>Interview Submitted</h2>
+      <p class="text-muted">Your responses have been successfully recorded.</p>
+      <div style="margin:32px 0; padding:24px; border:1px solid var(--border); border-radius:16px; background:rgba(0,0,0,0.3);">
+        <div style="font-size:0.9rem; text-transform:uppercase; font-weight:600; color:var(--muted); margin-bottom:8px;">Final Score</div>
+        <div style="font-family:'Outfit',sans-serif; font-size:4rem; font-weight:800; color:var(--accent); line-height:1;" id="resultPercent">0%</div>
+        <div style="font-size:1rem; font-weight:500; margin-top:12px;" id="resultMeta">0 correct out of 0</div>
+      </div>
+      <button class="btn" onclick="window.location.href='/'">Return to Home</button>
+    </div>
   </section>
 </main>
 
-<div class="warning-banner" id="warningBanner">
-  <div class="warning-title">Interview warning</div>
-  <div class="warning-copy" id="warningCopy">Stay on the interview screen.</div>
+<!-- MODALS -->
+<div class="modal-overlay hidden" id="preFlightModal">
+  <div class="modal-content">
+    <div>
+      <h2 style="margin:0 0 8px;">Pre-Exam Checklist</h2>
+      <p class="text-muted" style="margin:0;">Please complete the setup to begin your interview.</p>
+    </div>
+    
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="checklist-item" id="checkCamera">
+        <div class="check-circle"></div>
+        <div class="checklist-text">Allow Camera Access</div>
+        <button class="btn-sm btn" style="padding:6px 12px;font-size:0.8rem;" onclick="testCamera()">Enable</button>
+      </div>
+      <div class="checklist-item" id="checkFullscreen">
+        <div class="check-circle"></div>
+        <div class="checklist-text">Enter Fullscreen Mode</div>
+        <button class="btn-sm btn" style="padding:6px 12px;font-size:0.8rem;" onclick="enableFullscreen()">Enable</button>
+      </div>
+      <div class="checklist-item" id="checkRules">
+        <div class="check-circle"></div>
+        <label class="checklist-text" style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <input type="checkbox" id="rulesCheckbox" onchange="checkRulesToggle()" style="width:18px;height:18px;">
+          I agree to the strict proctoring rules (no tab switching).
+        </label>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+      <button class="btn" onclick="closePreFlight()">Cancel</button>
+      <button class="btn primary" id="startExamBtn" disabled onclick="executeStartAttempt()">Start Interview</button>
+    </div>
+  </div>
 </div>
+
+<div class="modal-overlay hidden" id="submitModal">
+  <div class="modal-content" style="max-width:400px; text-align:center;">
+    <h2 style="margin:0 0 8px;">Submit Exam?</h2>
+    <p class="text-muted" id="submitModalText">You have answered X out of Y questions.</p>
+    <div style="display:flex; gap:12px; margin-top:24px;">
+      <button class="btn" style="flex:1;" onclick="closeSubmitModal()">Review Answers</button>
+      <button class="btn primary" style="flex:1;" onclick="confirmSubmit()">Yes, Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -188,414 +391,374 @@ const API = window.location.origin;
 const SESSION_KEY = "ym_interview_session";
 const REMEMBER_KEY = "ym_interview_remember";
 let interviewToken = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || "";
-let candidateState = null;
-let interviewAttempts = [];
-let activeAttempt = null;
-let activeExam = null;
-let activeQuestionIndex = 0;
-let timerInterval = null;
-let socket = null;
-let localStream = null;
-let snapshotInterval = null;
-let inactivityTimer = null;
-let faceInterval = null;
-let warningBannerTimer = null;
-let lastActivityAt = Date.now();
-let faceApiReady = false;
-let peerConnection = null;
+let candidateState = null, interviewAttempts = [], activeAttempt = null, activeExam = null;
+let activeQuestionIndex = 0, timerInterval = null, socket = null, localStream = null;
+let snapshotInterval = null, inactivityTimer = null, faceInterval = null;
+let lastActivityAt = Date.now(), faceApiReady = false, peerConnection = null;
+
+// UI Helpers
+function showToast(msg, type = "info") {
+  const container = document.getElementById("toastContainer");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
+  toast.innerHTML = `<span class="toast-icon">${type === "error" ? "⚠️" : "✓"}</span> <span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 4000);
+}
 
 function setViewState(state) {
-  document.body.classList.toggle("authenticated", state === "dashboard" || state === "exam");
-  document.body.classList.toggle("exam-active", state === "exam");
+  document.getElementById("heroSection").classList.add("hidden");
+  document.getElementById("dashboardSection").classList.add("hidden");
+  document.getElementById("examSection").classList.add("hidden");
+  document.getElementById("resultSection").classList.add("hidden");
+  document.getElementById("logoutBtn").classList.toggle("hidden", state === "guest");
+  
+  if(state === "guest") document.getElementById("heroSection").classList.remove("hidden");
+  if(state === "dashboard") document.getElementById("dashboardSection").classList.remove("hidden");
+  if(state === "exam") document.getElementById("examSection").classList.remove("hidden");
+  if(state === "result") document.getElementById("resultSection").classList.remove("hidden");
 }
 
 function headers(extra = {}) {
-  const out = { ...extra };
-  if (interviewToken) out.Authorization = `Bearer ${interviewToken}`;
-  return out;
+  return { ...extra, ...(interviewToken ? { Authorization: `Bearer ${interviewToken}` } : {}) };
 }
 
 function setRememberSession(token, remember) {
   localStorage.setItem(REMEMBER_KEY, remember ? "1" : "0");
-  if (remember) {
-    localStorage.setItem(SESSION_KEY, token);
-    sessionStorage.removeItem(SESSION_KEY);
-  } else {
-    sessionStorage.setItem(SESSION_KEY, token);
-    localStorage.removeItem(SESSION_KEY);
-  }
+  if (remember) { localStorage.setItem(SESSION_KEY, token); sessionStorage.removeItem(SESSION_KEY); }
+  else { sessionStorage.setItem(SESSION_KEY, token); localStorage.removeItem(SESSION_KEY); }
 }
 
-function clearInterviewSession() {
-  localStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_KEY);
-}
-
-function showWarning(message) {
-  const banner = document.getElementById("warningBanner");
-  document.getElementById("warningCopy").textContent = message;
-  banner.classList.add("show");
-  clearTimeout(warningBannerTimer);
-  warningBannerTimer = setTimeout(() => banner.classList.remove("show"), 4200);
-}
-
-function setLoginStatus(message, type = "") {
-  const el = document.getElementById("loginStatus");
-  el.textContent = message;
-  el.className = `status-note ${type}`.trim();
-}
-
-function setExamStatus(message, type = "") {
-  const el = document.getElementById("examStatus");
-  el.textContent = message;
-  el.className = `status-note ${type}`.trim();
-}
-
+// Authentication
 async function loginInterview() {
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value;
   const remember = document.getElementById("rememberInterview").checked;
-  const button = document.getElementById("loginBtn");
-  if (!email || !password) {
-    setLoginStatus("Enter your email and interview password.", "error");
-    return;
-  }
-  button.disabled = true;
-  button.textContent = "Signing in…";
+  const btn = document.getElementById("loginBtn");
+  if (!email || !password) return showToast("Enter email and password.", "error");
+  
+  btn.disabled = true; btn.textContent = "Authenticating...";
   try {
-    const response = await fetch(`${API}/api/interviews/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch(`${API}/api/interviews/auth/login`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, remember })
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Could not sign in");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Login failed");
     interviewToken = data.token;
     setRememberSession(interviewToken, remember);
     await restoreInterviewSession();
-    document.getElementById("loginPassword").value = "";
   } catch (err) {
-    setLoginStatus(err.message || "Could not sign in", "error");
+    showToast(err.message, "error");
   } finally {
-    button.disabled = false;
-    button.textContent = "Sign in to interview";
+    btn.disabled = false; btn.textContent = "Access Interview";
   }
 }
 
 function logoutInterview() {
   stopExamRuntime();
-  interviewToken = "";
-  candidateState = null;
-  interviewAttempts = [];
-  activeAttempt = null;
-  activeExam = null;
-  clearInterviewSession();
-  document.getElementById("logoutBtn").classList.add("hidden");
-  document.getElementById("dashboardSection").classList.add("hidden");
-  document.getElementById("examSection").classList.add("hidden");
-  document.getElementById("heroSection").classList.remove("hidden");
-  document.getElementById("loginCard").classList.remove("hidden");
+  interviewToken = ""; candidateState = null; interviewAttempts = [];
+  activeAttempt = null; activeExam = null;
+  localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY);
   setViewState("guest");
-  setLoginStatus("Signed out from the interview portal.");
-}
-
-function renderAttempts() {
-  const mount = document.getElementById("attemptList");
-  document.getElementById("candidateChip").textContent = candidateState ? `${candidateState.name} · ${candidateState.skill || "Candidate"}` : "Candidate";
-  if (!interviewAttempts.length) {
-    mount.innerHTML = `<div class="attempt-card"><div class="section-title">No assigned interview yet</div><div class="section-copy">Once the YoungMinds team assigns an interview, it will appear here automatically.</div></div>`;
-    return;
-  }
-  mount.innerHTML = interviewAttempts.map((attempt) => `
-    <article class="attempt-card">
-      <div class="attempt-head">
-        <div>
-          <div class="section-title" style="font-size:1.1rem">${attempt.examTitle || "Interview"}</div>
-          <div class="meta">${attempt.status.replace(/_/g," ")} · ${attempt.durationMinutes} mins · warnings ${attempt.warningsCount}/${attempt.warningLimit}</div>
-        </div>
-        <button class="btn primary" type="button" onclick="openAttempt('${attempt.id}')">${attempt.status === "submitted" || attempt.status === "terminated" || attempt.status === "expired" ? "View summary" : (attempt.startedAt ? "Resume" : "Start")}</button>
-      </div>
-      <div class="section-copy">${attempt.result && attempt.result.total ? `Score: ${attempt.result.percent}% (${attempt.result.correct}/${attempt.result.total})` : "Timed MCQ interview with live monitoring and auto-save."}</div>
-    </article>
-  `).join("");
+  showToast("Signed out successfully");
 }
 
 async function restoreInterviewSession() {
-  if (!interviewToken) {
-    logoutInterview();
-    return;
-  }
+  if (!interviewToken) return logoutInterview();
   try {
-    const response = await fetch(`${API}/api/interviews/session`, { headers: headers() });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Session expired");
-    candidateState = data.candidate || null;
-    interviewAttempts = Array.isArray(data.attempts) ? data.attempts : [];
-    document.getElementById("heroSection").classList.add("hidden");
-    document.getElementById("dashboardSection").classList.remove("hidden");
-    document.getElementById("examSection").classList.add("hidden");
-    document.getElementById("logoutBtn").classList.remove("hidden");
+    const res = await fetch(`${API}/api/interviews/session`, { headers: headers() });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Session expired");
+    candidateState = data.candidate;
+    interviewAttempts = data.attempts || [];
+    document.getElementById("candidateNamePill").innerHTML = `<b>${candidateState.name}</b> &middot; ${candidateState.skill || "Candidate"}`;
     setViewState("dashboard");
     renderAttempts();
     connectSocket();
   } catch (err) {
-    logoutInterview();
-    setLoginStatus(err.message || "Session expired", "error");
+    logoutInterview(); showToast(err.message, "error");
   }
 }
 
-function connectSocket() {
-  if (!interviewToken || typeof io === "undefined") return;
-  if (socket) socket.disconnect();
-  socket = io(API, { auth: { token: interviewToken }, transports: ["websocket", "polling"] });
-  socket.on("connect", () => {});
-  socket.on("interview:signal", async ({ signal, fromSocketId } = {}) => {
-    if (!signal) return;
-    if (!peerConnection) await createPeerConnection();
-    if (signal.type === "offer") {
-      await peerConnection.setRemoteDescription(signal);
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      socket.emit("interview:signal", { targetSocketId: fromSocketId, attemptId: activeAttempt?.id, signal: peerConnection.localDescription });
-    } else if (signal.type === "answer") {
-      await peerConnection.setRemoteDescription(signal);
-    } else if (signal.candidate) {
-      await peerConnection.addIceCandidate(signal.candidate).catch(() => {});
-    }
-  });
+// Dashboard
+function renderAttempts() {
+  const list = document.getElementById("attemptList");
+  if (!interviewAttempts.length) {
+    list.innerHTML = `<div class="attempt-card"><h3 style="margin:0 0 8px;">No assigned interview yet</h3><p class="text-muted" style="margin:0;">Once the team assigns an interview, it will appear here.</p></div>`;
+    return;
+  }
+  list.innerHTML = interviewAttempts.map(a => {
+    const isDone = ["submitted","terminated","expired"].includes(a.status);
+    let scoreText = isDone && a.result && a.result.total ? `<div style="font-weight:700;color:var(--accent);margin-top:8px;">Score: ${a.result.percent}%</div>` : '';
+    let btnText = isDone ? "View Result" : (a.startedAt ? "Resume Exam" : "Start Exam");
+    return `
+      <div class="attempt-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h3 style="margin:0 0 4px;font-size:1.15rem;">${a.examTitle || "Interview"}</h3>
+            <div class="text-muted" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">
+              ${a.status.replace(/_/g," ")} &middot; ${a.durationMinutes} MINS &middot; ${a.warningsCount}/${a.warningLimit} WARNINGS
+            </div>
+            ${scoreText}
+          </div>
+          <button class="btn ${!isDone ? 'primary' : ''}" onclick="openAttempt('${a.id}')">${btnText}</button>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
-async function createPeerConnection() {
-  if (peerConnection) return peerConnection;
-  peerConnection = new RTCPeerConnection();
-  if (localStream) {
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-  }
-  peerConnection.onicecandidate = (event) => {
-    if (!event.candidate || !socket) return;
-    socket.emit("interview:signal", { attemptId: activeAttempt?.id, signal: { candidate: event.candidate } });
-  };
-  return peerConnection;
-}
+// Pre-Flight & Setup
+let pendingStartAttemptId = null;
+let preflightState = { cam: false, full: false, rules: false };
 
-async function openAttempt(attemptId) {
-  const attempt = interviewAttempts.find(item => item.id === attemptId);
-  if (!attempt) return;
-  activeAttempt = attempt;
-  document.getElementById("dashboardSection").classList.add("hidden");
-  document.getElementById("examSection").classList.remove("hidden");
-  setViewState("exam");
-  document.getElementById("resultCard").classList.toggle("hidden", !attempt.result || !attempt.result.total);
-  if (attempt.result && attempt.result.total) {
-    document.getElementById("resultPercent").textContent = `${attempt.result.percent}%`;
-    document.getElementById("resultMeta").textContent = `${attempt.result.correct} correct out of ${attempt.result.total}`;
-  }
-  if (!["submitted", "terminated", "expired"].includes(attempt.status)) {
-    await startAttempt(attemptId);
+async function openAttempt(id) {
+  const a = interviewAttempts.find(x => x.id === id);
+  if (!a) return;
+  activeAttempt = a;
+  
+  if (["submitted","terminated","expired","completed","malpractice"].includes(a.status)) {
+    showResultScreen(a);
   } else {
-    await loadExam(attemptId);
+    pendingStartAttemptId = id;
+    document.getElementById("preFlightModal").classList.remove("hidden");
+    checkPreflightStatus();
   }
 }
 
-async function startAttempt(attemptId) {
+function closePreFlight() {
+  document.getElementById("preFlightModal").classList.add("hidden");
+  pendingStartAttemptId = null;
+}
+
+async function testCamera() {
   try {
-    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/start`, {
-      method: "POST",
-      headers: headers({ "Content-Type": "application/json" })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Could not start interview");
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    stream.getTracks().forEach(t => t.stop()); // close temp stream
+    preflightState.cam = true;
+    document.getElementById("checkCamera").classList.add("active");
+    checkPreflightStatus();
+  } catch (err) {
+    showToast("Camera access denied or unavailable", "error");
+  }
+}
+
+async function enableFullscreen() {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+    preflightState.full = true;
+    document.getElementById("checkFullscreen").classList.add("active");
+    checkPreflightStatus();
+  } catch {
+    showToast("Fullscreen request failed", "error");
+  }
+}
+
+function checkRulesToggle() {
+  preflightState.rules = document.getElementById("rulesCheckbox").checked;
+  document.getElementById("checkRules").classList.toggle("active", preflightState.rules);
+  checkPreflightStatus();
+}
+
+function checkPreflightStatus() {
+  const ready = preflightState.cam && preflightState.full && preflightState.rules;
+  document.getElementById("startExamBtn").disabled = !ready;
+}
+
+async function executeStartAttempt() {
+  closePreFlight();
+  try {
+    const res = await fetch(`${API}/api/interviews/attempts/${pendingStartAttemptId}/start`, { method: "POST", headers: headers() });
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok) throw new Error(data.error || "Failed to start");
     activeAttempt = data.attempt || activeAttempt;
-    await loadExam(attemptId);
+    await loadExam(pendingStartAttemptId);
+    setViewState("exam");
     await ensureExamEnvironment();
-  } catch (err) {
-    setExamStatus(err.message || "Could not start interview", "error");
+  } catch(err) {
+    showToast(err.message, "error");
   }
 }
 
-async function loadExam(attemptId) {
-  try {
-    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/exam`, { headers: headers() });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Could not load interview");
-    activeExam = data.exam;
-    activeAttempt = { ...(activeAttempt || {}), ...(data.attempt || {}) };
-    activeQuestionIndex = Math.min(Number(activeAttempt.currentIndex || 0), Math.max((activeExam.questions?.length || 1) - 1, 0));
-    renderExam();
-    startTimer();
-  } catch (err) {
-    setExamStatus(err.message || "Could not load interview", "error");
-  }
-}
-
-function renderExam() {
-  if (!activeExam) return;
-  document.getElementById("examTitle").textContent = activeExam.title || "Interview";
-  document.getElementById("examDescription").textContent = activeExam.description || "Stay on this screen until you submit.";
-  document.getElementById("warningMetric").textContent = `Warnings: ${activeAttempt?.warningsCount || 0}/${activeExam.warningLimit || 3}`;
-  document.getElementById("scoreMetric").textContent = `Suspicion: ${activeAttempt?.suspiciousScore || 0}`;
+// Exam Core
+async function loadExam(id) {
+  const res = await fetch(`${API}/api/interviews/attempts/${id}/exam`, { headers: headers() });
+  const data = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error("Could not load exam data");
+  activeExam = data.exam;
+  activeAttempt = { ...activeAttempt, ...data.attempt };
+  activeQuestionIndex = Math.min(Number(activeAttempt.currentIndex || 0), Math.max((activeExam.questions?.length || 1) - 1, 0));
+  renderExamNav();
   renderQuestion();
+  startTimer();
+}
+
+function renderExamNav() {
+  const grid = document.getElementById("navGrid");
+  const total = activeExam.questions.length;
+  const answers = activeAttempt.answers || {};
+  let answeredCount = 0;
+  
+  grid.innerHTML = activeExam.questions.map((_, i) => {
+    const isAns = typeof answers[i] === "number";
+    if (isAns) answeredCount++;
+    let cls = "nav-dot";
+    if (isAns) cls += " answered";
+    if (i === activeQuestionIndex) cls += " current";
+    return `<button class="${cls}" onclick="jumpQuestion(${i})">${i + 1}</button>`;
+  }).join("");
+  
+  document.getElementById("progressText").textContent = `${answeredCount} / ${total} Answered`;
+  const pct = total ? Math.round((answeredCount/total)*100) : 0;
+  document.getElementById("progressPercent").textContent = `${pct}%`;
+  document.getElementById("progressBar").style.width = `${pct}%`;
+}
+
+function jumpQuestion(idx) {
+  if (!activeExam.allowBacktracking && idx < activeQuestionIndex) return showToast("Backtracking is disabled", "error");
+  activeQuestionIndex = idx;
+  renderQuestion();
+  renderExamNav();
 }
 
 function renderQuestion() {
-  if (!activeExam || !Array.isArray(activeExam.questions) || !activeExam.questions.length) return;
-  const question = activeExam.questions[activeQuestionIndex];
-  const answerMap = activeAttempt?.answers || {};
-  const selected = typeof answerMap[activeQuestionIndex] === "number" ? answerMap[activeQuestionIndex] : -1;
-  document.getElementById("questionCounter").textContent = `Question ${activeQuestionIndex + 1} / ${activeExam.questions.length}`;
-  document.getElementById("questionPrompt").textContent = question.prompt || "Question";
-  document.getElementById("optionList").innerHTML = (question.options || []).map((option, index) => `
-    <button class="option-btn ${selected === index ? "active" : ""}" type="button" onclick="selectOption(${activeQuestionIndex}, ${index})">${option}</button>
-  `).join("");
-  document.getElementById("prevBtn").style.display = activeExam.allowBacktracking ? "inline-flex" : "none";
-  document.getElementById("prevBtn").disabled = activeQuestionIndex === 0;
-  document.getElementById("nextBtn").disabled = activeQuestionIndex >= activeExam.questions.length - 1;
-}
-
-async function selectOption(questionIndex, optionIndex) {
-  if (!activeAttempt) return;
-  activeAttempt.answers = activeAttempt.answers || {};
-  activeAttempt.answers[questionIndex] = optionIndex;
-  renderQuestion();
-  lastActivityAt = Date.now();
-  try {
-    await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/answer`, {
-      method: "POST",
-      headers: headers({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ questionIndex, selectedIndex: optionIndex })
-    });
-    setExamStatus("Answer saved.");
-  } catch {
-    setExamStatus("Answer could not be saved right now.", "error");
-  }
-}
-
-function goQuestion(direction) {
   if (!activeExam) return;
-  if (direction < 0 && activeExam.allowBacktracking && activeQuestionIndex > 0) {
-    activeQuestionIndex -= 1;
-  } else if (direction > 0 && activeQuestionIndex < activeExam.questions.length - 1) {
-    activeQuestionIndex += 1;
+  const q = activeExam.questions[activeQuestionIndex];
+  const ans = activeAttempt.answers || {};
+  const sel = typeof ans[activeQuestionIndex] === "number" ? ans[activeQuestionIndex] : -1;
+  
+  document.getElementById("questionCounter").textContent = `Question ${activeQuestionIndex + 1} of ${activeExam.questions.length}`;
+  document.getElementById("questionPrompt").textContent = q.prompt;
+  
+  document.getElementById("optionList").innerHTML = (q.options || []).map((opt, i) => `
+    <button class="option-btn ${sel === i ? 'active' : ''}" onclick="selectOption(${activeQuestionIndex}, ${i})">
+      <div style="display:flex; gap:16px; align-items:center;">
+        <div style="width:24px;height:24px;border-radius:50%;border:2px solid ${sel===i?'var(--accent)':'var(--border)'};display:grid;place-items:center;flex-shrink:0;">
+          ${sel===i ? `<div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>` : ''}
+        </div>
+        <div>${opt}</div>
+      </div>
+    </button>
+  `).join("");
+  
+  document.getElementById("prevBtn").style.visibility = (activeExam.allowBacktracking && activeQuestionIndex > 0) ? "visible" : "hidden";
+  const isLast = activeQuestionIndex >= activeExam.questions.length - 1;
+  document.getElementById("nextBtn").style.display = isLast ? "none" : "inline-flex";
+  document.getElementById("submitBtn").style.display = isLast ? "inline-flex" : "none";
+  
+  document.getElementById("warningMetric").textContent = `${activeAttempt.warningsCount || 0}/${activeExam.warningLimit || 3}`;
+  document.getElementById("scoreMetric").textContent = `${activeAttempt.suspiciousScore || 0}`;
+}
+
+async function selectOption(qIdx, optIdx) {
+  activeAttempt.answers = activeAttempt.answers || {};
+  activeAttempt.answers[qIdx] = optIdx;
+  renderQuestion(); renderExamNav();
+  lastActivityAt = Date.now();
+  fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/answer`, {
+    method: "POST", headers: headers({"Content-Type":"application/json"}),
+    body: JSON.stringify({ questionIndex: qIdx, selectedIndex: optIdx })
+  }).catch(()=>{});
+}
+
+function goQuestion(dir) {
+  if(dir < 0 && activeExam.allowBacktracking && activeQuestionIndex > 0) activeQuestionIndex--;
+  else if(dir > 0 && activeQuestionIndex < activeExam.questions.length - 1) activeQuestionIndex++;
+  renderQuestion(); renderExamNav();
+}
+
+function requestSubmit() {
+  const total = activeExam.questions.length;
+  const answered = Object.keys(activeAttempt.answers || {}).length;
+  document.getElementById("submitModalText").textContent = `You have answered ${answered} out of ${total} questions.`;
+  document.getElementById("submitModal").classList.remove("hidden");
+}
+
+function closeSubmitModal() {
+  document.getElementById("submitModal").classList.add("hidden");
+}
+
+async function confirmSubmit() {
+  closeSubmitModal();
+  submitInterview(false);
+}
+
+async function submitInterview(auto) {
+  try {
+    const res = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/submit`, { method: "POST", headers: headers() });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error);
+    activeAttempt = data.attempt || activeAttempt;
+    stopExamRuntime();
+    showResultScreen(activeAttempt);
+    showToast(auto ? "Auto-submitted due to time or warnings" : "Submitted successfully");
+  } catch(err) {
+    showToast(err.message, "error");
   }
-  renderQuestion();
+}
+
+function showResultScreen(attempt) {
+  setViewState("result");
+  if(attempt.result && attempt.result.total) {
+    document.getElementById("resultPercent").textContent = `${attempt.result.percent}%`;
+    document.getElementById("resultMeta").textContent = `${attempt.result.correct} correct out of ${attempt.result.total} questions`;
+  } else {
+    document.getElementById("resultPercent").textContent = "N/A";
+    document.getElementById("resultMeta").textContent = "Evaluation pending";
+  }
 }
 
 function startTimer() {
   clearInterval(timerInterval);
-  const target = activeAttempt?.deadlineAt ? new Date(activeAttempt.deadlineAt).getTime() : 0;
+  const tgt = activeAttempt.deadlineAt ? new Date(activeAttempt.deadlineAt).getTime() : 0;
   function tick() {
-    if (!target) {
-      document.getElementById("timerText").textContent = "--:--";
-      return;
-    }
-    const diff = Math.max(0, target - Date.now());
-    const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    document.getElementById("timerText").textContent = `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
-    if (diff <= 0) {
-      clearInterval(timerInterval);
-      submitInterview(true);
-    }
+    if(!tgt) return document.getElementById("timerText").textContent = "--:--";
+    const d = Math.max(0, tgt - Date.now());
+    const m = Math.floor(d/60000), s = Math.floor((d%60000)/1000);
+    document.getElementById("timerText").textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    if (d <= 300000) document.getElementById("timerText").style.color = "var(--danger)"; // last 5 mins
+    if(d<=0) { clearInterval(timerInterval); submitInterview(true); }
   }
-  tick();
-  timerInterval = setInterval(tick, 1000);
+  tick(); timerInterval = setInterval(tick, 1000);
 }
 
-async function submitInterview(autoSubmitted) {
-  if (!activeAttempt) return;
-  try {
-    const response = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/submit`, {
-      method: "POST",
-      headers: headers({ "Content-Type": "application/json" })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Could not submit");
-    activeAttempt = data.attempt || activeAttempt;
-    stopExamRuntime();
-    document.getElementById("resultCard").classList.remove("hidden");
-    document.getElementById("resultPercent").textContent = `${activeAttempt.result.percent}%`;
-    document.getElementById("resultMeta").textContent = `${activeAttempt.result.correct} correct out of ${activeAttempt.result.total}`;
-    setExamStatus(autoSubmitted ? "Interview auto-submitted." : "Interview submitted successfully.", "ok");
-    await restoreInterviewSession();
-    document.getElementById("dashboardSection").classList.remove("hidden");
-    document.getElementById("examSection").classList.add("hidden");
-    setViewState("dashboard");
-  } catch (err) {
-    setExamStatus(err.message || "Could not submit interview", "error");
-  }
-}
-
-async function sendViolation(type, message, severity = 1, meta = {}) {
-  if (!activeAttempt || ["submitted", "terminated", "expired"].includes(activeAttempt.status)) return;
-  showWarning(message);
-  try {
-    const response = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/event`, {
-      method: "POST",
-      headers: headers({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ type, message, severity, meta })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (data.attempt) activeAttempt = { ...activeAttempt, ...data.attempt };
-    if (data.autoSubmitted) {
-      setExamStatus("Interview auto-submitted after warning limit.", "error");
-      await submitInterview(true);
-      return;
-    }
-    document.getElementById("warningMetric").textContent = `Warnings: ${activeAttempt?.warningsCount || 0}/${activeExam?.warningLimit || 3}`;
-    document.getElementById("scoreMetric").textContent = `Suspicion: ${activeAttempt?.suspiciousScore || 0}`;
-  } catch {}
-}
-
+// Security & Proctoring
 async function ensureExamEnvironment() {
   await startCamera();
-  await ensureFullscreen();
   bindExamProtection();
   startInactivityWatch();
   startFaceChecks();
 }
 
-async function ensureFullscreen() {
-  try {
-    if (!document.fullscreenElement) {
-      await document.documentElement.requestFullscreen?.();
-    }
-  } catch {
-    await sendViolation("fullscreen_exit", "Fullscreen was not enabled.", 2, {});
-  }
-}
-
 async function startCamera() {
-  if (localStream) return localStream;
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     document.getElementById("candidateVideo").srcObject = localStream;
-    document.getElementById("cameraStateChip").textContent = "Camera live";
-    document.getElementById("proctorStatus").textContent = "Camera connected. Face checks are running.";
-    document.getElementById("cameraStateChip").style.color = "var(--green)";
-    if (socket && activeAttempt) {
-      startSnapshotStream();
-    }
+    updateAiStatus("Camera active. Loading AI...", "warn");
+    if(socket && activeAttempt) startSnapshotStream();
     await createPeerConnection();
-    return localStream;
-  } catch (err) {
-    document.getElementById("cameraStateChip").textContent = "Camera blocked";
-    await sendViolation("camera_off", "Camera access is required for the interview.", 3, {});
-    throw err;
+  } catch(err) {
+    updateAiStatus("Camera blocked", "warn");
+    sendViolation("camera_off", "Camera access denied.", 3);
   }
+}
+
+function updateAiStatus(text, state) {
+  const dot = document.getElementById("aiStatusDot");
+  document.getElementById("aiStatusText").textContent = text;
+  dot.className = "status-dot " + (state === "warn" ? "warn" : (state === "ok" ? "active" : ""));
 }
 
 function startSnapshotStream() {
   clearInterval(snapshotInterval);
   snapshotInterval = setInterval(() => {
-    if (!socket || !activeAttempt || !localStream) return;
-    const video = document.getElementById("candidateVideo");
-    if (!video.videoWidth || !video.videoHeight) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = 220;
-    canvas.height = 160;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    socket.emit("interview:thumb", { attemptId: activeAttempt.id, imageData: canvas.toDataURL("image/jpeg", 0.45) });
+    if(!socket || !activeAttempt || !localStream) return;
+    const v = document.getElementById("candidateVideo");
+    if(!v.videoWidth) return;
+    const c = document.createElement("canvas"); c.width = 220; c.height = 160;
+    c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+    socket.emit("interview:thumb", { attemptId: activeAttempt.id, imageData: c.toDataURL("image/jpeg", 0.4) });
   }, 7000);
 }
 
@@ -608,9 +771,7 @@ function bindExamProtection() {
   document.addEventListener("keydown", handleShortcuts, true);
   document.addEventListener("mousemove", markActivity, true);
   document.addEventListener("click", markActivity, true);
-  document.addEventListener("touchstart", markActivity, true);
 }
-
 function unbindExamProtection() {
   document.removeEventListener("visibilitychange", handleVisibilityChange);
   document.removeEventListener("fullscreenchange", handleFullscreenChange);
@@ -620,135 +781,112 @@ function unbindExamProtection() {
   document.removeEventListener("keydown", handleShortcuts, true);
   document.removeEventListener("mousemove", markActivity, true);
   document.removeEventListener("click", markActivity, true);
-  document.removeEventListener("touchstart", markActivity, true);
 }
 
-function markActivity() {
-  lastActivityAt = Date.now();
-}
-
+function markActivity() { lastActivityAt = Date.now(); }
 function startInactivityWatch() {
-  clearInterval(inactivityTimer);
-  lastActivityAt = Date.now();
+  clearInterval(inactivityTimer); lastActivityAt = Date.now();
   inactivityTimer = setInterval(() => {
-    if (Date.now() - lastActivityAt > 60000) {
-      lastActivityAt = Date.now();
-      sendViolation("inactivity", "Inactivity detected for more than one minute.", 1, {});
-    }
+    if(Date.now() - lastActivityAt > 60000) { lastActivityAt = Date.now(); sendViolation("inactivity", "Inactive for 1 minute", 1); }
   }, 15000);
 }
 
-function handleVisibilityChange() {
-  if (document.hidden) sendViolation("tab_switch", "Tab switching was detected.", 2, {});
+function handleVisibilityChange() { if(document.hidden) sendViolation("tab_switch", "Tab switched", 2); }
+function handleFullscreenChange() { if(!document.fullscreenElement) sendViolation("fullscreen_exit", "Exited fullscreen", 2); }
+function handleRightClick(e) { e.preventDefault(); sendViolation("right_click", "Right-click disabled", 1); }
+function handleCopy(e) { e.preventDefault(); sendViolation("copy_attempt", "Copy disabled", 1); }
+function handlePaste(e) { e.preventDefault(); sendViolation("paste_attempt", "Paste disabled", 1); }
+function handleShortcuts(e) {
+  const k = String(e.key||"").toLowerCase();
+  if((e.ctrlKey||e.metaKey) && ["c","v","x","u","s","p"].includes(k)) { e.preventDefault(); sendViolation("blocked_shortcut", `Shortcut ${k}`, 1); }
+  if(e.altKey && k === "tab") { e.preventDefault(); sendViolation("blocked_shortcut", "Alt+Tab", 2); }
 }
 
-function handleFullscreenChange() {
-  if (!document.fullscreenElement) sendViolation("fullscreen_exit", "You exited fullscreen mode.", 2, {});
-}
-
-function handleRightClick(event) {
-  event.preventDefault();
-  sendViolation("right_click", "Right-click is disabled during the interview.", 1, {});
-}
-
-function handleCopy(event) {
-  event.preventDefault();
-  sendViolation("copy_attempt", "Copy is disabled during the interview.", 1, {});
-}
-
-function handlePaste(event) {
-  event.preventDefault();
-  sendViolation("paste_attempt", "Paste is disabled during the interview.", 1, {});
-}
-
-function handleShortcuts(event) {
-  const key = String(event.key || "").toLowerCase();
-  if ((event.ctrlKey || event.metaKey) && ["c", "v", "x", "u", "s", "p"].includes(key)) {
-    event.preventDefault();
-    sendViolation("blocked_shortcut", `Blocked shortcut ${key.toUpperCase()}.`, 1, { key });
-  }
-  if (event.altKey && key === "tab") {
-    event.preventDefault();
-    sendViolation("blocked_shortcut", "App switching shortcut detected.", 2, { key: "Alt+Tab" });
-  }
+async function sendViolation(type, msg, sev=1) {
+  if(!activeAttempt || ["submitted","terminated","expired"].includes(activeAttempt.status)) return;
+  showToast(msg, "error");
+  try {
+    const res = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/event`, {
+      method:"POST", headers:headers({"Content-Type":"application/json"}),
+      body:JSON.stringify({ type, message:msg, severity:sev })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(data.attempt) activeAttempt = {...activeAttempt, ...data.attempt};
+    if(data.autoSubmitted) { submitInterview(true); return; }
+    document.getElementById("warningMetric").textContent = `${activeAttempt.warningsCount}/${activeExam.warningLimit}`;
+    document.getElementById("scoreMetric").textContent = `${activeAttempt.suspiciousScore}`;
+  } catch{}
 }
 
 async function loadFaceApi() {
-  if (window.faceapi) return true;
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
+  if(window.faceapi) return true;
+  return new Promise(res => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
+    s.onload = () => res(true); s.onerror = () => res(false);
+    document.head.appendChild(s);
   });
 }
 
 async function startFaceChecks() {
-  if (faceInterval) return;
+  if(faceInterval) return;
   faceApiReady = await loadFaceApi();
-  if (faceApiReady && window.faceapi?.nets?.tinyFaceDetector) {
-    try {
-      await window.faceapi.nets.tinyFaceDetector.loadFromUri("https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights");
-    } catch {}
+  if(faceApiReady && window.faceapi?.nets?.tinyFaceDetector) {
+    try { await window.faceapi.nets.tinyFaceDetector.loadFromUri("https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights"); updateAiStatus("AI Active", "ok"); } 
+    catch { updateAiStatus("AI load failed", "warn"); }
   }
-  const video = document.getElementById("candidateVideo");
+  const v = document.getElementById("candidateVideo");
   faceInterval = setInterval(async () => {
-    if (!video.srcObject) return;
+    if(!v.srcObject || !faceApiReady || !window.faceapi?.detectAllFaces) return;
     try {
-      if (faceApiReady && window.faceapi?.detectAllFaces) {
-        const detections = await window.faceapi.detectAllFaces(video, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }));
-        if (!detections.length) {
-          document.getElementById("faceStateChip").textContent = "No face";
-          await sendViolation("no_face", "No face detected in the camera frame.", 2, {});
-          return;
-        }
-        if (detections.length > 1) {
-          document.getElementById("faceStateChip").textContent = "Multiple faces";
-          await sendViolation("multiple_faces", "Multiple faces detected in the frame.", 3, { count: detections.length });
-          return;
-        }
-        const box = detections[0].box || {};
-        const centerX = (box.x || 0) + (box.width || 0) / 2;
-        if (video.videoWidth && (centerX < video.videoWidth * 0.2 || centerX > video.videoWidth * 0.8)) {
-          document.getElementById("faceStateChip").textContent = "Looking away";
-          await sendViolation("looking_away", "Please face the screen directly.", 2, {});
-          return;
-        }
-        document.getElementById("faceStateChip").textContent = "Face aligned";
-      } else {
-        document.getElementById("faceStateChip").textContent = "Camera active";
-      }
-    } catch {
-      document.getElementById("faceStateChip").textContent = "Face check retrying";
-    }
+      const dets = await window.faceapi.detectAllFaces(v, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }));
+      if(!dets.length) { updateAiStatus("No face detected", "warn"); sendViolation("no_face", "No face detected", 2); return; }
+      if(dets.length > 1) { updateAiStatus("Multiple faces", "warn"); sendViolation("multiple_faces", "Multiple faces detected", 3); return; }
+      const cx = (dets[0].box.x||0) + (dets[0].box.width||0)/2;
+      if(v.videoWidth && (cx < v.videoWidth*0.2 || cx > v.videoWidth*0.8)) { updateAiStatus("Looking away", "warn"); sendViolation("looking_away", "Looking away", 2); return; }
+      updateAiStatus("Face aligned", "ok");
+    } catch {}
   }, 12000);
 }
 
 function stopExamRuntime() {
-  clearInterval(timerInterval);
-  clearInterval(snapshotInterval);
-  clearInterval(inactivityTimer);
-  clearInterval(faceInterval);
-  timerInterval = null;
-  snapshotInterval = null;
-  inactivityTimer = null;
-  faceInterval = null;
+  clearInterval(timerInterval); clearInterval(snapshotInterval); clearInterval(inactivityTimer); clearInterval(faceInterval);
+  timerInterval = snapshotInterval = inactivityTimer = faceInterval = null;
   unbindExamProtection();
-  if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
-    localStream = null;
-  }
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
+  if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if(peerConnection) { peerConnection.close(); peerConnection = null; }
   document.getElementById("candidateVideo").srcObject = null;
 }
 
+function connectSocket() {
+  if(!interviewToken || typeof io === "undefined") return;
+  if(socket) socket.disconnect();
+  socket = io(API, { auth: { token: interviewToken }, transports: ["websocket", "polling"] });
+  socket.on("interview:signal", async ({ signal, fromSocketId }={}) => {
+    if(!signal) return;
+    if(!peerConnection) await createPeerConnection();
+    if(signal.type === "offer") {
+      await peerConnection.setRemoteDescription(signal);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      socket.emit("interview:signal", { targetSocketId: fromSocketId, attemptId: activeAttempt?.id, signal: peerConnection.localDescription });
+    } else if(signal.type === "answer") { await peerConnection.setRemoteDescription(signal); }
+    else if(signal.candidate) { await peerConnection.addIceCandidate(signal.candidate).catch(()=>{}); }
+  });
+}
+
+async function createPeerConnection() {
+  if(peerConnection) return peerConnection;
+  peerConnection = new RTCPeerConnection();
+  if(localStream) localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+  peerConnection.onicecandidate = (e) => {
+    if(e.candidate && socket) socket.emit("interview:signal", { attemptId: activeAttempt?.id, signal: { candidate: e.candidate } });
+  };
+  return peerConnection;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const remember = localStorage.getItem(REMEMBER_KEY) === "1";
-  document.getElementById("rememberInterview").checked = remember;
+  document.getElementById("rememberInterview").checked = localStorage.getItem(REMEMBER_KEY) === "1";
   setViewState(interviewToken ? "dashboard" : "guest");
   restoreInterviewSession();
 });
