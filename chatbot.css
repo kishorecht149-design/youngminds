@@ -235,27 +235,32 @@
   justify-content : center;
   cursor          : pointer;
   transition      : all 0.2s;
-  position        : relative;
 }
 
-#ym-close-btn::after {
-  content: "Back";
-  position: absolute;
-  right: 100%;
-  margin-right: 8px;
+.ym-btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ym-surface-2);
+  border: 1px solid var(--ym-border);
+  color: var(--ym-text-pri);
+  padding: 6px 12px;
+  border-radius: 100px;
+  cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ym-text-pri);
-  display: none;
+  transition: all 0.2s;
+  height: 36px;
 }
 
-@media (max-width: 520px) {
-  #ym-close-btn::after {
-    display: block;
-  }
+.ym-btn-back svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
 
-.ym-btn-ghost:hover {
+.ym-btn-ghost:hover,
+.ym-btn-back:hover {
   background : rgba(255, 255, 255, 0.1);
   color      : var(--ym-text-pri);
   border-color: var(--ym-accent);
