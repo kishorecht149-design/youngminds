@@ -3536,7 +3536,8 @@ function syncInterviewData() {
   cards.forEach((card, i) => {
     if (!current.questions[i]) return;
     const q = current.questions[i];
-    q.type = card.querySelector('[data-question-type]')?.value || q.type || "mcq";
+    const typeSelect = card.querySelector('[data-question-type]');
+    if (typeSelect) q.type = typeSelect.value;
     q.prompt = card.querySelector('[data-question-prompt]')?.value?.trim() || q.prompt || "";
     const optionInputs = [...card.querySelectorAll('[data-question-option]')];
     if (optionInputs.length > 0) {
