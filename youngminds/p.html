@@ -19,7 +19,7 @@ input,select,textarea{font-family:var(--font)}
 
 nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(5,5,7,0.72);backdrop-filter:blur(22px);border-bottom:1px solid rgba(255,255,255,0.05);box-shadow:0 12px 40px rgba(0,0,0,0.24)}
 .nav-logo{font-size:16px;font-weight:800;letter-spacing:-0.5px;display:flex;align-items:center;gap:12px}
-.nav-logo-mark{width:34px;height:34px;border-radius:10px;object-fit:cover;display:block;box-shadow:0 8px 18px rgba(0,0,0,0.28);flex-shrink:0}
+.nav-logo-mark{height:34px;width:auto;border-radius:6px;object-fit:contain;display:block;flex-shrink:0}
 .nav-logo-text{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .nav-toggle{display:none;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--text);font-size:18px;font-weight:700}
 .nav-panel{display:flex;align-items:center;gap:12px;flex:1;justify-content:space-between}
@@ -251,7 +251,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 
 footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;background:linear-gradient(180deg,transparent,rgba(255,215,0,0.02))}
 .ft-logo{font-size:14px;font-weight:800;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.ft-dot{width:26px;height:26px;border-radius:8px;object-fit:cover;display:block}
+.ft-dot{height:26px;width:auto;border-radius:4px;object-fit:contain;display:block}
 .ft-links{display:flex;gap:28px}
 .ft-links a{font-size:13px;color:var(--muted);transition:all .3s;font-weight:500}
 .ft-links a:hover{color:var(--accent)}
@@ -312,7 +312,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .faq-sec{padding:0 20px 50px}
   nav{padding:12px 16px;height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .nav-logo{font-size:14px}
-  .nav-logo-mark{width:28px;height:28px;border-radius:8px}
+  .nav-logo-mark{height:28px;width:auto}
   .nav-logo-text{display:block;font-size:14px}
   .nav-toggle{display:flex;flex-shrink:0}
   .nav-panel{position:absolute;top:calc(100% + 10px);left:16px;right:16px;display:none;flex-direction:column;align-items:stretch;gap:12px;padding:14px;border:1px solid var(--border2);border-radius:16px;background:rgba(10,10,12,0.96);box-shadow:0 24px 48px rgba(0,0,0,0.45);backdrop-filter:blur(18px)}
@@ -366,7 +366,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
 <body>
 
 <nav>
-  <div class="nav-logo"><img class="nav-logo-mark" src="/assets/logo.png" alt="YoungMinds logo"><span class="nav-logo-text">YoungMinds</span></div>
+  <div class="nav-logo"><img class="nav-logo-mark" src="/assets/logo.png" alt="YoungMinds logo"><span class="nav-logo-text" style="display:none">YoungMinds</span></div>
   <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="toggleMobileNav()">☰</button>
   <div class="nav-panel" id="navPanel">
     <div class="nav-links">
@@ -623,7 +623,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
 </section>
 
 <footer>
-  <div class="ft-logo"><img class="ft-dot" src="/assets/logo.png" alt="YoungMinds logo">YoungMinds Agency</div>
+  <div class="ft-logo"><img class="ft-dot" src="/assets/logo.png" alt="YoungMinds logo"></div>
   <div class="ft-links"><a href="#services">Services</a><a href="/packages-pricing/">Packages & Pricing</a><a href="#process">Process</a><a href="#forms">Join</a><a href="#forms">Hire</a></div>
   <div class="ft-copy">© 2026 YoungMinds Agency</div>
 </footer>
