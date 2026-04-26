@@ -1317,16 +1317,24 @@ function renderView(type,status){
   let colsCss,colsHdr,rowsFn;
   if(isApp){
     if(status === 'reviewing'){
-      colsCss='grid-template-columns:1.5fr 1fr 1fr 1fr 0.8fr 1fr';
-      colsHdr=`<span class="th">Name</span><span class="th">Skill</span><span class="th">College</span><span class="th">Score</span><span class="th">Date</span><span class="th">Status</span>`;
+      colsCss='grid-template-columns:1.5fr 1fr 1fr 1fr 0.8fr 1fr 1.2fr';
+      colsHdr=`<span class="th">Name</span><span class="th">Skill</span><span class="th">College</span><span class="th">Score</span><span class="th">Date</span><span class="th">Status</span><span class="th">Action</span>`;
       rowsFn=a=>{
         const attempt = getLatestInterviewAttempt(a._id);
         let scoreStr = '—';
+        let actionHtml = '—';
         if(attempt && attempt.result && attempt.result.total) {
           scoreStr = `${attempt.result.percent}% (${attempt.result.score}/${attempt.result.total})`;
         } else if (attempt && attempt.status !== 'completed') {
           scoreStr = 'Pending';
         }
+        
+        if (attempt && attempt.status !== 'malpractice') {
+          actionHtml = `<button class="btn-sm" style="color:var(--red);border-color:rgba(248,113,113,.2);padding:4px 8px;font-size:0.75rem" onclick="event.stopPropagation(); markInterviewMalpractice('${attempt.id}')">Mark Malpractice</button>`;
+        } else if (attempt && attempt.status === 'malpractice') {
+          actionHtml = `<span style="color:var(--red);font-size:0.75rem;font-weight:600">Malpractice</span>`;
+        }
+
         return `<div class="trow" style="${colsCss}" onclick="openRecord(this)" data-record='${enc(a)}'>
           <div class="td name">${a.name||'—'}</div>
           <div class="td">${a.skill||'—'}</div>
@@ -1334,6 +1342,7 @@ function renderView(type,status){
           <div class="td"><b>${scoreStr}</b></div>
           <div class="td muted">${fmtDate(a.timestamp)}</div>
           <div class="td"><span class="badge ${a.status}">${LABEL[a.status]||a.status}</span></div>
+          <div class="td">${actionHtml}</div>
         </div>`;
       };
     } else {
