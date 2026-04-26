@@ -2707,6 +2707,48 @@ app.put("/api/interviews/exams/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/interviews/exams/:id", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const exam = await InterviewExam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ error: "Question bank not found" });
+
+    const attempts = await InterviewAttempt.find({ examId: String(exam._id) });
+    const candidateIds = Array.from(new Set(attempts.map((item) => String(item.applicationId || "")).filter(Boolean)));
+
+    await InterviewAttempt.deleteMany({ examId: String(exam._id) });
+    await InterviewExam.deleteOne({ _id: exam._id });
+
+    if (candidateIds.length) {
+      for (const candidateId of candidateIds) {
+        const candidate = await Application.findById(candidateId);
+        if (!candidate) continue;
+        const remainingAttempts = await InterviewAttempt.countDocuments({
+          applicationId: String(candidate._id),
+          status: { $in: ["assigned", "in_progress"] }
+        });
+        if (!remainingAttempts) {
+          candidate.interviewPassword = "";
+          candidate.interviewSessionNonce = "";
+          await candidate.save();
+        }
+      }
+    }
+
+    emitRealtimeEvent("interview_exam_deleted", {
+      examId: String(exam._id),
+      title: exam.title || "",
+      deletedBy: session.admin.username
+    }, { roles: ["admin"] });
+
+    res.json({ success: true, deletedId: String(exam._id) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/interviews/exams/:id/assign", async (req, res) => {
   try {
     const session = await requireAdminSession(req, res);

@@ -262,6 +262,26 @@ a{text-decoration:none;color:inherit}
 .service-admin-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .service-admin-note{font-size:12px;color:var(--muted3);line-height:1.6}
 
+/* ── INTERVIEW MANAGER ── */
+.interview-admin-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1.2fr;gap:16px;align-items:start}
+.interview-stack{display:grid;gap:16px}
+.interview-member-list,.interview-monitor-list,.interview-log-list{display:grid;gap:10px}
+.interview-member-card,.interview-monitor-card,.interview-bank-card{padding:14px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))}
+.interview-member-card{cursor:pointer;transition:border-color .18s,transform .18s,background .18s,box-shadow .18s}
+.interview-member-card:hover,.interview-bank-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.interview-member-card.active,.interview-bank-card.active{border-color:var(--accent);background:linear-gradient(180deg,rgba(232,197,71,.12),rgba(232,197,71,.05))}
+.interview-member-top,.interview-bank-top,.interview-monitor-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.interview-member-name,.interview-bank-name,.interview-monitor-name{font-size:14px;font-weight:800;letter-spacing:-.2px}
+.interview-member-sub,.interview-bank-copy,.interview-monitor-copy{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:6px}
+.interview-member-meta,.interview-monitor-meta,.interview-bank-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.interview-form-shell{display:grid;gap:14px}
+.interview-credentials{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.interview-log-list{max-height:340px;overflow:auto;padding-right:4px}
+.interview-log-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.interview-log-item:last-child{border-bottom:none}
+.interview-action-row{display:flex;gap:8px;flex-wrap:wrap}
+.interview-access-box{padding:12px 14px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);font-size:12px;color:var(--muted3);line-height:1.7;white-space:pre-wrap;word-break:break-word}
+
 /* ── GROUP PILL ── */
 .group-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--purple2);border:1px solid rgba(167,139,250,.2);color:var(--purple);padding:4px 10px;border-radius:100px}
 .group-pill .rm{cursor:pointer;color:var(--muted3);transition:color .15s;font-size:14px;line-height:1}
@@ -359,7 +379,7 @@ canvas#revChart{max-height:220px}
 .ai-foot{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
 
 @media(max-width:960px){
-  .comm-grid,.chat-shell,.board-admin-layout,.service-admin-layout{grid-template-columns:1fr}
+  .comm-grid,.chat-shell,.board-admin-layout,.service-admin-layout,.interview-admin-grid,.interview-credentials{grid-template-columns:1fr}
   .ov-sections,.rev-grid{grid-template-columns:1fr}
   .service-admin-layout .service-admin-card:first-child{position:static}
 }
@@ -410,6 +430,8 @@ canvas#revChart{max-height:220px}
   .service-admin-form-row,.service-admin-deliverables{grid-template-columns:1fr}
   .service-admin-actions{justify-content:stretch}
   .service-admin-actions .btn-sm{width:100%}
+  .interview-action-row{flex-direction:column}
+  .interview-action-row .btn-sm{width:100%}
 }
 </style>
 </head>
@@ -971,7 +993,7 @@ let interviewAttempts = [];
 let interviewCandidates = [];
 let interviewLive = [];
 let interviewDraft = null;
-let interviewState = { loading: false, saving: false, error: "", selectedExamId: "", selectedAttemptId: "", assignResult: "", accessResult: "" };
+let interviewState = { loading: false, saving: false, error: "", selectedExamId: "", selectedAttemptId: "", selectedCandidateId: "", assignResult: "", accessResult: "", draftPassword: "" };
 let interviewAdminSocket = null;
 let adminEditState = { dirty: false, lastInputAt: 0, pauseReason: "" };
 let currentBoardEditId = null;
@@ -1115,6 +1137,12 @@ async function loadInterviewData(options = {}){
       interviewState.selectedExamId = "";
     }
     if (!interviewState.selectedExamId && interviewExams[0]) interviewState.selectedExamId = interviewExams[0].id;
+    if (interviewState.selectedCandidateId && !interviewCandidates.find(item => String(item.id) === String(interviewState.selectedCandidateId))) {
+      interviewState.selectedCandidateId = "";
+    }
+    if (!interviewState.selectedCandidateId && interviewCandidates[0]) {
+      interviewState.selectedCandidateId = interviewCandidates[0].id;
+    }
     return data;
   }catch(err){
     interviewState.error = err.message || "Could not load interview dashboard";
@@ -3109,178 +3137,244 @@ function mergeInterviewPresence(attempt){
   return live ? { ...attempt, ...live } : attempt;
 }
 
+function createInterviewPasswordDraft(){
+  return `ym${Math.random().toString(36).slice(2, 8)}${Math.floor(Math.random() * 90 + 10)}`;
+}
+
+function getEligibleInterviewCandidates(){
+  return interviewCandidates
+    .filter(candidate => !["hired", "rejected"].includes(String(candidate.status || "").toLowerCase()))
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+}
+
+function getSelectedInterviewCandidate(){
+  const eligible = getEligibleInterviewCandidates();
+  return eligible.find(item => String(item.id) === String(interviewState.selectedCandidateId)) || eligible[0] || null;
+}
+
+function getLatestInterviewAttempt(candidateId){
+  return interviewAttempts.find(item => String(item.applicationId) === String(candidateId)) || null;
+}
+
+function ensureInterviewPasswordDraft(force = false){
+  if (force || !String(interviewState.draftPassword || "").trim()) {
+    interviewState.draftPassword = createInterviewPasswordDraft();
+  }
+  return interviewState.draftPassword;
+}
+
 function renderInterviewsManager(){
   const el = document.getElementById("interviews-admin-content");
   if(!el) return;
   const current = getSelectedInterviewExam() || createInterviewDraft();
-  const liveAttempts = interviewAttempts.map(mergeInterviewPresence);
-  const selectedAttempt = liveAttempts.find(item => String(item.id) === String(interviewState.selectedAttemptId)) || liveAttempts[0] || null;
-  const candidateRows = interviewCandidates.map(candidate => {
-    const attemptsForCandidate = interviewAttempts.filter(item => String(item.applicationId) === String(candidate.id));
-    const latestAttempt = attemptsForCandidate[0] || null;
-    const examTitle = interviewExams.find(item => String(item.id) === String(latestAttempt?.examId || ""))?.title || "No exam";
-    return { candidate, latestAttempt, examTitle };
-  });
+  const eligibleCandidates = getEligibleInterviewCandidates();
+  const selectedCandidate = getSelectedInterviewCandidate();
+  const liveAttempts = interviewAttempts
+    .map(mergeInterviewPresence)
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+  const selectedAttempt = liveAttempts.find(item => String(item.id) === String(interviewState.selectedAttemptId))
+    || (selectedCandidate ? liveAttempts.find(item => String(item.applicationId) === String(selectedCandidate.id)) : null)
+    || liveAttempts[0]
+    || null;
+  if (selectedCandidate && String(interviewState.selectedCandidateId) !== String(selectedCandidate.id)) {
+    interviewState.selectedCandidateId = String(selectedCandidate.id);
+  }
+  const resolvedPassword = ensureInterviewPasswordDraft();
 
-  if(interviewState.loading && !interviewExams.length && !interviewAttempts.length){
-    el.innerHTML = `<div class="empty"><div class="empty-icon">🎥</div><div class="empty-title">Loading interviews</div><div class="empty-sub">Syncing exams, candidates, and live monitoring data.</div></div>`;
+  if(interviewState.loading && !interviewExams.length && !interviewAttempts.length && !eligibleCandidates.length){
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🎥</div><div class="empty-title">Loading interviews</div><div class="empty-sub">Syncing question banks, candidate access, and live monitoring data.</div></div>`;
     return;
   }
 
   el.innerHTML = `
     <div class="view-hdr">
       <span class="view-hdr-title">Interviews</span>
-      <span class="view-hdr-count">${interviewExams.length} exam${interviewExams.length!==1?'s':''} · ${liveAttempts.length} attempts · ${interviewLive.length} live</span>
+      <span class="view-hdr-count">${eligibleCandidates.length} eligible members · ${interviewExams.length} question bank${interviewExams.length!==1?'s':''} · ${liveAttempts.length} attempts · ${interviewLive.length} live</span>
       <div class="vhdr-right">
         <button class="btn-sm" type="button" onclick="loadInterviewData({ render: true })" ${interviewState.loading ? "disabled" : ""}>Refresh Interviews</button>
-        <button class="btn-sm primary" type="button" onclick="startNewInterviewExam()">+ New Exam</button>
+        <button class="btn-sm primary" type="button" onclick="startNewInterviewExam()">+ New Qn Bank</button>
       </div>
     </div>
     ${interviewState.error ? `<div class="service-admin-note" style="margin-bottom:12px;color:var(--orange)">${escapeHtml(interviewState.error)}</div>` : ``}
-    <div class="service-admin-layout">
+    <div class="interview-admin-grid">
       <div class="service-admin-card">
         <div class="service-admin-head">
           <div>
-            <div class="service-admin-title">Exam Builder</div>
-            <div class="service-admin-sub">Keep the exam clean: title, duration, warning limit, and MCQs in one place.</div>
+            <div class="service-admin-title">1. Eligible Members</div>
+            <div class="service-admin-sub">Only members not moved to hired or rejected are shown here. Pick one person first, then create or assign their interview access.</div>
           </div>
         </div>
-        <div class="service-admin-list">
-          ${interviewExams.map(item => `
-            <button class="service-admin-item ${String(item.id)===String(current.id) ? "active" : ""}" type="button" onclick="selectInterviewExam('${escapeHtml(item.id)}')">
-              <div class="service-admin-item-top">
-                <div class="service-admin-item-name">${escapeHtml(item.title || "Interview")}</div>
-                <div class="service-admin-item-price">${item.questionCount || 0} MCQs</div>
-              </div>
-              <div class="service-admin-meta"><span class="service-admin-pill">${escapeHtml(item.slug || "slug")}</span><span class="service-admin-pill">${item.durationMinutes || 30} min</span></div>
-              <div class="service-admin-item-copy" style="margin-top:10px">${escapeHtml(item.description || "No description added yet.")}</div>
-            </button>
-          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No exam templates yet</div><div class="empty-sub">Create one exam first, then use it for candidate access.</div></div>`}
-        </div>
-      </div>
-      <div class="service-admin-card">
-        <div class="service-admin-head">
-          <div>
-            <div class="service-admin-title">${current.id ? `Edit ${escapeHtml(current.title || "exam")}` : "Create Interview Exam"}</div>
-            <div class="service-admin-sub">Question order and option order are randomized per candidate unless you switch those controls off.</div>
-          </div>
-        </div>
-        <div class="service-admin-form">
-          <div class="service-admin-form-row">
-            <div class="form-field"><label>Exam Title</label><input id="interview-title" type="text" value="${escapeHtml(current.title || "")}" placeholder="Frontend Screening Interview"></div>
-            <div class="form-field"><label>Slug</label><input id="interview-slug" type="text" value="${escapeHtml(current.slug || "")}" placeholder="frontend-screening"></div>
-          </div>
-          <div class="form-row full">
-            <div class="form-field"><label>Description</label><textarea id="interview-description" placeholder="What this interview is for and what the candidate should expect.">${escapeHtml(current.description || "")}</textarea></div>
-          </div>
-          <div class="service-admin-form-row">
-            <div class="form-field"><label>Duration (minutes)</label><input id="interview-duration" type="number" min="5" max="180" value="${Number(current.durationMinutes || 30)}"></div>
-            <div class="form-field"><label>Warning Limit</label><input id="interview-warning-limit" type="number" min="1" max="10" value="${Number(current.warningLimit || 3)}"></div>
-          </div>
-          <div class="service-admin-meta" style="margin-bottom:12px">
-            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-active" type="checkbox" ${current.active !== false ? "checked" : ""} style="margin-right:6px">Active</label>
-            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-one-question" type="checkbox" ${current.oneQuestionAtTime !== false ? "checked" : ""} style="margin-right:6px">One question at a time</label>
-            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-backtracking" type="checkbox" ${current.allowBacktracking ? "checked" : ""} style="margin-right:6px">Allow backtracking</label>
-            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-questions" type="checkbox" ${current.randomizeQuestions !== false ? "checked" : ""} style="margin-right:6px">Randomize questions</label>
-            <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-options" type="checkbox" ${current.randomizeOptions !== false ? "checked" : ""} style="margin-right:6px">Randomize options</label>
-          </div>
-          <div style="display:grid;gap:12px">
-            ${(Array.isArray(current.questions) ? current.questions : []).map((question, questionIndex) => `
-              <div data-interview-question style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)">
-                <div class="service-admin-item-top" style="margin-bottom:10px">
-                  <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
-                  <button class="btn-sm" type="button" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
-                </div>
-                <div class="form-field"><label>Prompt</label><textarea data-question-prompt placeholder="Write the MCQ prompt">${escapeHtml(question.prompt || "")}</textarea></div>
-                <div class="service-admin-form-row">
-                  ${(Array.isArray(question.options) ? question.options : ["","","",""]).map((option, optionIndex) => `
-                    <div class="form-field"><label>Option ${String.fromCharCode(65 + optionIndex)}</label><input type="text" data-question-option value="${escapeHtml(option)}" placeholder="Option ${String.fromCharCode(65 + optionIndex)}"></div>
-                  `).join("")}
-                </div>
-                <div class="service-admin-form-row">
-                  <div class="form-field"><label>Correct Option Index</label><input type="number" data-question-correct min="0" max="5" value="${Number(question.correctIndex || 0)}"></div>
-                  <div class="form-field"><label>Explanation</label><input type="text" data-question-explanation value="${escapeHtml(question.explanation || "")}" placeholder="Optional admin explanation"></div>
-                </div>
-              </div>
-            `).join("")}
-          </div>
-          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-sm" type="button" onclick="addInterviewQuestion()">+ Add Question</button>
-            <button class="btn-sm primary" type="button" onclick="saveInterviewExam()" ${interviewState.saving ? "disabled" : ""}>${interviewState.saving ? "Saving…" : (current.id ? "Save Exam" : "Create Exam")}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="service-admin-layout" style="margin-top:14px">
-      <div class="service-admin-card">
-        <div class="service-admin-head">
-          <div>
-            <div class="service-admin-title">Candidate Access</div>
-            <div class="service-admin-sub">Assign an exam and reset interview access here. This is the simplest path when login stops working.</div>
-          </div>
-        </div>
-        <div class="service-admin-form">
-          <div class="service-admin-form-row">
-            <div class="form-field"><label>Interview Password (optional shared password)</label><input id="interview-shared-password" type="text" placeholder="Leave empty to auto-generate per candidate"></div>
-            <div class="form-field"><label>Selected Exam</label><input type="text" value="${escapeHtml(current.id ? (current.title || "Selected exam") : "Create or select an exam first")}" readonly></div>
-          </div>
-          <div style="display:grid;gap:10px;max-height:360px;overflow:auto">
-            ${candidateRows.map(({ candidate, latestAttempt, examTitle }) => `
-              <label style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.02)">
-                <input type="checkbox" data-interview-candidate value="${escapeHtml(candidate.id)}">
-                <div style="display:grid;gap:4px">
-                  <strong>${escapeHtml(candidate.name || "Candidate")}</strong>
-                  <span class="meta">${escapeHtml(candidate.email || "No email")} · ${escapeHtml(candidate.skill || "No skill")} · ${escapeHtml(candidate.status || "new")}</span>
-                  <span class="meta">${candidate.hasInterviewAccess ? `Access ready · ${escapeHtml(examTitle)}` : "Interview access not generated yet"}</span>
-                  ${latestAttempt ? `<span class="meta">${escapeHtml(formatInterviewStatus(latestAttempt.status))} · ${latestAttempt.warningsCount || 0} warnings</span>` : ``}
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-                    <button class="btn-sm" type="button" onclick="event.preventDefault();event.stopPropagation();resetInterviewAccess('${escapeHtml(candidate.id)}','${escapeHtml(candidate.name || "")}')">Reset Access</button>
-                  </div>
-                </div>
-              </label>
-            `).join("") || `<div class="empty"><div class="empty-title">No eligible candidates</div><div class="empty-sub">Candidates in new, reviewing, or accepted status will appear here.</div></div>`}
-          </div>
-          <div class="service-admin-actions">
-            <button class="btn-sm primary" type="button" onclick="assignInterviewToSelected()" ${!current.id || interviewState.saving ? "disabled" : ""}>Assign Interview</button>
-          </div>
-          ${interviewState.assignResult ? `<div class="service-admin-note" style="white-space:pre-wrap">${escapeHtml(interviewState.assignResult)}</div>` : ``}
-          ${interviewState.accessResult ? `<div class="service-admin-note" style="white-space:pre-wrap">${escapeHtml(interviewState.accessResult)}</div>` : ``}
-        </div>
-      </div>
-      <div class="service-admin-card">
-        <div class="service-admin-head">
-          <div>
-            <div class="service-admin-title">Attempts & Monitoring</div>
-            <div class="service-admin-sub">Simple list first. Open logs when you need detail. Thumbnail shows only when a live frame is actually available.</div>
-          </div>
-        </div>
-        <div style="display:grid;gap:12px">
-          ${liveAttempts.map(attempt => `
-            <div style="border:1px solid var(--border);border-radius:16px;padding:14px;background:rgba(255,255,255,.02)">
-              <div class="service-admin-item-top">
+        <div class="interview-member-list">
+          ${eligibleCandidates.map(candidate => {
+            const latestAttempt = getLatestInterviewAttempt(candidate.id);
+            const latestExamTitle = interviewExams.find(item => String(item.id) === String(latestAttempt?.examId || ""))?.title || "No interview assigned";
+            return `
+            <button class="interview-member-card ${String(selectedCandidate?.id)===String(candidate.id) ? "active" : ""}" type="button" onclick="selectInterviewCandidate('${escapeHtml(candidate.id)}')">
+              <div class="interview-member-top">
                 <div>
-                  <div class="service-admin-item-name">${escapeHtml(attempt.candidateName || "Candidate")}</div>
-                  <div class="meta">${escapeHtml(formatInterviewStatus(attempt.status))} · ${escapeHtml(attempt.candidateSkill || "General")} · ${attempt.result && attempt.result.total ? `${attempt.result.percent}% result` : "awaiting result"}</div>
+                  <div class="interview-member-name">${escapeHtml(candidate.name || "Candidate")}</div>
+                  <div class="interview-member-sub">${escapeHtml(candidate.email || "No email saved")} · ${escapeHtml(candidate.skill || "No skill set")} · ${escapeHtml(formatInterviewStatus(candidate.status || "new"))}</div>
                 </div>
-                <div class="service-admin-meta">
+                <div class="service-admin-pill">${candidate.hasInterviewAccess ? "Access ready" : "No access"}</div>
+              </div>
+              <div class="interview-member-meta">
+                <span class="service-admin-pill">${escapeHtml(latestExamTitle)}</span>
+                ${latestAttempt ? `<span class="service-admin-pill">${escapeHtml(formatInterviewStatus(latestAttempt.status || "assigned"))}</span>` : `<span class="service-admin-pill">Awaiting interview</span>`}
+              </div>
+            </button>`;
+          }).join("") || `<div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No eligible members</div><div class="empty-sub">Accepted, new, and reviewing members appear here until they move to hired or rejected.</div></div>`}
+        </div>
+      </div>
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">2. Create Interview Access</div>
+            <div class="service-admin-sub">${selectedCandidate ? `Assign a question bank and credentials for ${escapeHtml(selectedCandidate.name || "this member")}.` : "Select a member from the left to create interview access."}</div>
+          </div>
+        </div>
+        ${selectedCandidate ? `
+        <div class="interview-form-shell">
+          <div class="interview-credentials">
+            <div class="form-field"><label>Candidate Email</label><input id="interview-candidate-email" type="text" value="${escapeHtml(selectedCandidate.email || "")}" readonly></div>
+            <div class="form-field"><label>Current Status</label><input type="text" value="${escapeHtml(formatInterviewStatus(selectedCandidate.status || "new"))}" readonly></div>
+          </div>
+          <div class="service-admin-form-row">
+            <div class="form-field">
+              <label>Question Bank</label>
+              <select id="interview-selected-bank" onchange="selectInterviewExam(this.value)">
+                <option value="">Select question bank</option>
+                ${interviewExams.map(item => `<option value="${escapeHtml(item.id)}" ${String(item.id)===String(current?.id || "") ? "selected" : ""}>${escapeHtml(item.title || "Question bank")} · ${Number(item.questionCount || 0)} questions</option>`).join("")}
+                <option value="__new__" ${interviewState.selectedExamId === "__new__" ? "selected" : ""}>Create new question bank below</option>
+              </select>
+            </div>
+            <div class="form-field"><label>Interview Password</label><input id="interview-candidate-password" type="text" value="${escapeHtml(resolvedPassword)}" placeholder="Set login password"></div>
+          </div>
+          <div class="service-admin-note">Candidate login must use this email and password together. If the password is forgotten later, use <strong>Reset Credentials</strong> here and share the new one.</div>
+          ${!current.id ? `<div class="service-admin-note" style="color:var(--orange)">Choose an existing question bank or create and save a new one below before assigning this interview.</div>` : ``}
+          <div class="interview-action-row">
+            <button class="btn-sm primary" type="button" onclick="assignInterviewForSelectedCandidate()" ${interviewState.saving || !selectedCandidate.email || !current.id ? "disabled" : ""}>${interviewState.saving ? "Saving…" : "Create / Update Interview"}</button>
+            <button class="btn-sm" type="button" onclick="refreshInterviewPasswordDraft()">Generate Password</button>
+            <button class="btn-sm" type="button" onclick="resetInterviewAccess('${escapeHtml(selectedCandidate.id)}','${escapeHtml(selectedCandidate.name || "")}', document.getElementById('interview-candidate-password')?.value || '')" ${!selectedCandidate.email || interviewState.saving ? "disabled" : ""}>Reset Credentials</button>
+          </div>
+          ${interviewState.assignResult ? `<div class="interview-access-box">${escapeHtml(interviewState.assignResult)}</div>` : ``}
+          ${interviewState.accessResult ? `<div class="interview-access-box">${escapeHtml(interviewState.accessResult)}</div>` : ``}
+          ${!selectedCandidate.email ? `<div class="service-admin-note" style="color:var(--orange)">This member does not have an email saved, so interview login cannot be generated yet.</div>` : ``}
+        </div>` : `
+        <div class="empty" style="padding:42px 18px">
+          <div class="empty-icon">👤</div>
+          <div class="empty-title">Select a member first</div>
+          <div class="empty-sub">We’ll fill the interview form here with the member email, question bank, and credentials flow.</div>
+        </div>
+        `}
+      </div>
+      <div class="service-admin-card">
+        <div class="service-admin-head">
+          <div>
+            <div class="service-admin-title">3. Live View & Controls</div>
+            <div class="service-admin-sub">See recent activity, warnings, camera thumbnails, logs, and termination controls without refreshing away your form.</div>
+          </div>
+        </div>
+        <div class="interview-monitor-list">
+          ${liveAttempts.map(attempt => `
+            <div class="interview-monitor-card">
+              <div class="interview-monitor-top">
+                <div>
+                  <div class="interview-monitor-name">${escapeHtml(attempt.candidateName || "Candidate")}</div>
+                  <div class="interview-monitor-copy">${escapeHtml(formatInterviewStatus(attempt.status))} · ${escapeHtml(attempt.candidateSkill || "General")} · ${attempt.result && attempt.result.total ? `${attempt.result.percent}% result` : "awaiting result"}</div>
+                </div>
+                <div class="interview-monitor-meta">
                   <span class="service-admin-pill">${attempt.warningsCount || 0} warnings</span>
                   <span class="service-admin-pill">${attempt.suspiciousScore || 0} score</span>
                 </div>
               </div>
               ${attempt.latestThumbnail ? `<img src="${attempt.latestThumbnail}" alt="Candidate live frame" style="width:100%;max-width:220px;margin-top:12px;border-radius:14px;border:1px solid var(--border)">` : `<div class="service-admin-note" style="margin-top:12px">No camera frame received yet.</div>`}
-              <div class="service-admin-actions" style="margin-top:12px">
+              <div class="interview-action-row" style="margin-top:12px">
                 <button class="btn-sm" type="button" onclick="selectInterviewAttempt('${escapeHtml(attempt.id)}')">View Logs</button>
                 <button class="btn-sm" type="button" onclick="terminateInterviewAttempt('${escapeHtml(attempt.id)}')" ${["submitted","terminated","expired"].includes(attempt.status) ? "disabled" : ""}>Terminate</button>
               </div>
             </div>
-          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No interview attempts yet</div><div class="empty-sub">Assigned interviews and live webcam frames will show up here.</div></div>`}
+          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No interview attempts yet</div><div class="empty-sub">Once you create interview access for a member, their live activity and controls will show here.</div></div>`}
         </div>
         ${selectedAttempt ? `
           <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
             <div class="service-admin-title" style="margin-bottom:8px">Audit Log · ${escapeHtml(selectedAttempt.candidateName || "Candidate")}</div>
-            <div id="interview-log-panel" class="service-admin-note">Loading logs…</div>
+            <div id="interview-log-panel" class="interview-log-list service-admin-note">Loading logs…</div>
           </div>
         ` : ``}
+      </div>
+    </div>
+    <div class="service-admin-card" style="margin-top:16px">
+      <div class="service-admin-head">
+        <div>
+          <div class="service-admin-title">4. Question Banks</div>
+          <div class="service-admin-sub">Create reusable MCQ banks here. Then go back to the member flow above, choose a bank, and generate interview access with visible credentials.</div>
+        </div>
+        <div class="interview-action-row">
+          <button class="btn-sm primary" type="button" onclick="startNewInterviewExam()">+ New Qn Bank</button>
+          ${current.id ? `<button class="btn-sm" type="button" onclick="deleteInterviewExam('${escapeHtml(current.id)}','${escapeHtml(current.title || "this question bank")}')" ${interviewState.saving ? "disabled" : ""}>Delete Qn Bank</button>` : ``}
+        </div>
+      </div>
+      <div class="service-admin-layout">
+        <div class="service-admin-card">
+          <div class="service-admin-list">
+            ${interviewExams.map(item => `
+              <button class="service-admin-item ${String(item.id)===String(current.id) ? "active" : ""}" type="button" onclick="selectInterviewExam('${escapeHtml(item.id)}')">
+                <div class="service-admin-item-top">
+                  <div class="service-admin-item-name">${escapeHtml(item.title || "Question bank")}</div>
+                  <div class="service-admin-item-price">${item.questionCount || 0} MCQs</div>
+                </div>
+                <div class="service-admin-meta"><span class="service-admin-pill">${escapeHtml(item.slug || "slug")}</span><span class="service-admin-pill">${item.durationMinutes || 30} min</span></div>
+                <div class="service-admin-item-copy" style="margin-top:10px">${escapeHtml(item.description || "No description added yet.")}</div>
+              </button>
+            `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No question banks yet</div><div class="empty-sub">Start with a clean MCQ bank, then assign it from the member flow above.</div></div>`}
+          </div>
+        </div>
+        <div class="service-admin-card">
+          <div class="service-admin-form">
+            <div class="service-admin-form-row">
+              <div class="form-field"><label>Question Bank Title</label><input id="interview-title" type="text" value="${escapeHtml(current.title || "")}" placeholder="AI Automation Round 1"></div>
+              <div class="form-field"><label>Slug</label><input id="interview-slug" type="text" value="${escapeHtml(current.slug || "")}" placeholder="ai-automation-round-1"></div>
+            </div>
+            <div class="form-row full">
+              <div class="form-field"><label>Description</label><textarea id="interview-description" placeholder="What this bank tests and when to use it.">${escapeHtml(current.description || "")}</textarea></div>
+            </div>
+            <div class="service-admin-form-row">
+              <div class="form-field"><label>Duration (minutes)</label><input id="interview-duration" type="number" min="5" max="180" value="${Number(current.durationMinutes || 30)}"></div>
+              <div class="form-field"><label>Warning Limit</label><input id="interview-warning-limit" type="number" min="1" max="10" value="${Number(current.warningLimit || 3)}"></div>
+            </div>
+            <div class="service-admin-meta" style="margin-bottom:12px">
+              <label class="service-admin-pill" style="cursor:pointer"><input id="interview-active" type="checkbox" ${current.active !== false ? "checked" : ""} style="margin-right:6px">Active</label>
+              <label class="service-admin-pill" style="cursor:pointer"><input id="interview-one-question" type="checkbox" ${current.oneQuestionAtTime !== false ? "checked" : ""} style="margin-right:6px">One question at a time</label>
+              <label class="service-admin-pill" style="cursor:pointer"><input id="interview-backtracking" type="checkbox" ${current.allowBacktracking ? "checked" : ""} style="margin-right:6px">Allow backtracking</label>
+              <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-questions" type="checkbox" ${current.randomizeQuestions !== false ? "checked" : ""} style="margin-right:6px">Randomize questions</label>
+              <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-options" type="checkbox" ${current.randomizeOptions !== false ? "checked" : ""} style="margin-right:6px">Randomize options</label>
+            </div>
+            <div style="display:grid;gap:12px">
+              ${(Array.isArray(current.questions) ? current.questions : []).map((question, questionIndex) => `
+                <div data-interview-question style="border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--bg3)">
+                  <div class="service-admin-item-top" style="margin-bottom:10px">
+                    <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
+                    <button class="btn-sm" type="button" onclick="removeInterviewQuestion(${questionIndex})">Remove</button>
+                  </div>
+                  <div class="form-field"><label>Prompt</label><textarea data-question-prompt placeholder="Write the MCQ prompt">${escapeHtml(question.prompt || "")}</textarea></div>
+                  <div class="service-admin-form-row">
+                    ${(Array.isArray(question.options) ? question.options : ["","","",""]).map((option, optionIndex) => `
+                      <div class="form-field"><label>Option ${String.fromCharCode(65 + optionIndex)}</label><input type="text" data-question-option value="${escapeHtml(option)}" placeholder="Option ${String.fromCharCode(65 + optionIndex)}"></div>
+                    `).join("")}
+                  </div>
+                  <div class="service-admin-form-row">
+                    <div class="form-field"><label>Correct Option Index</label><input type="number" data-question-correct min="0" max="5" value="${Number(question.correctIndex || 0)}"></div>
+                    <div class="form-field"><label>Explanation</label><input type="text" data-question-explanation value="${escapeHtml(question.explanation || "")}" placeholder="Optional admin explanation"></div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+            <div class="interview-action-row" style="margin-top:12px">
+              <button class="btn-sm" type="button" onclick="addInterviewQuestion()">+ Add Question</button>
+              <button class="btn-sm primary" type="button" onclick="saveInterviewExam()" ${interviewState.saving ? "disabled" : ""}>${interviewState.saving ? "Saving…" : (current.id ? "Save Qn Bank" : "Create Qn Bank")}</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -3294,6 +3388,14 @@ function startNewInterviewExam(){
   interviewState.selectedExamId = "__new__";
   interviewState.assignResult = "";
   interviewState.accessResult = "";
+  renderInterviewsManager();
+}
+
+function selectInterviewCandidate(candidateId){
+  interviewState.selectedCandidateId = String(candidateId || "");
+  interviewState.assignResult = "";
+  interviewState.accessResult = "";
+  ensureInterviewPasswordDraft(true);
   renderInterviewsManager();
 }
 
@@ -3319,6 +3421,11 @@ function removeInterviewQuestion(index){
   const current = getSelectedInterviewExam();
   if(!current || !Array.isArray(current.questions) || current.questions.length <= 1) return;
   current.questions.splice(index, 1);
+  renderInterviewsManager();
+}
+
+function refreshInterviewPasswordDraft(){
+  ensureInterviewPasswordDraft(true);
   renderInterviewsManager();
 }
 
@@ -3378,15 +3485,24 @@ async function saveInterviewExam(){
   }
 }
 
-async function assignInterviewToSelected(){
+async function assignInterviewForSelectedCandidate(){
   const current = getSelectedInterviewExam();
-  if(!current || !current.id){
-    showToast("Create or select an interview exam first");
+  const candidate = getSelectedInterviewCandidate();
+  if(!candidate){
+    showToast("Select a member first");
     return;
   }
-  const applicationIds = [...document.querySelectorAll('[data-interview-candidate]:checked')].map(input => input.value).filter(Boolean);
-  if(!applicationIds.length){
-    showToast("Select at least one candidate");
+  if(!candidate.email){
+    showToast("This member needs an email before interview access can be created");
+    return;
+  }
+  if(!current || !current.id){
+    showToast("Create or select a question bank first");
+    return;
+  }
+  const password = document.getElementById("interview-candidate-password")?.value.trim() || ensureInterviewPasswordDraft();
+  if(password.length < 6){
+    showToast("Interview password must be at least 6 characters");
     return;
   }
   interviewState.saving = true;
@@ -3398,8 +3514,8 @@ async function assignInterviewToSelected(){
       method: "POST",
       headers: adminAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
-        applicationIds,
-        accessPassword: document.getElementById("interview-shared-password")?.value.trim() || ""
+        applicationIds: [candidate.id],
+        accessPassword: password
       })
     });
     const data = await response.json().catch(() => ({}));
@@ -3407,8 +3523,12 @@ async function assignInterviewToSelected(){
       showToast(data.error || "Could not assign interview");
       return;
     }
-    interviewState.assignResult = (Array.isArray(data.assigned) ? data.assigned : []).map(item => `${item.candidateName} — ${item.email}\nPassword: ${item.password}`).join("\n\n");
-    showToast("Interview assigned");
+    const created = Array.isArray(data.assigned) ? data.assigned[0] : null;
+    if (created) {
+      interviewState.assignResult = `${created.candidateName} — ${created.email}\nQuestion Bank: ${current.title || "Interview"}\nPassword: ${created.password}\nLogin: /interview/`;
+      interviewState.draftPassword = created.password;
+    }
+    showToast("Interview access created");
     await loadInterviewData({ render: true });
   }catch{
     showToast("Could not assign interview");
@@ -3419,14 +3539,13 @@ async function assignInterviewToSelected(){
   }
 }
 
-async function resetInterviewAccess(candidateId, candidateName){
+async function resetInterviewAccess(candidateId, candidateName, preferredPassword = ""){
   if(!currentAdminToken){
     showToast("Admin session expired. Please sign in again.");
     doLogout();
     return;
   }
-  const manualPassword = window.prompt(`Set a new interview password for ${candidateName || "this candidate"}.\nLeave empty to auto-generate one.`, "");
-  if (manualPassword === null) return;
+  const manualPassword = String(preferredPassword || "").trim() || ensureInterviewPasswordDraft();
   interviewState.saving = true;
   interviewState.accessResult = "";
   renderInterviewsManager();
@@ -3442,6 +3561,7 @@ async function resetInterviewAccess(candidateId, candidateName){
       return;
     }
     interviewState.accessResult = `${data.candidateName} — ${data.email}\nNew Password: ${data.password}\nLogin: ${data.loginUrl || "/interview/"}`;
+    interviewState.draftPassword = data.password;
     showToast("Interview access reset");
     await loadInterviewData({ render: true });
   }catch{
@@ -3449,6 +3569,35 @@ async function resetInterviewAccess(candidateId, candidateName){
   }finally{
     interviewState.saving = false;
     clearAdminEditing("access reset");
+    renderInterviewsManager();
+  }
+}
+
+async function deleteInterviewExam(examId, examTitle){
+  if(!examId) return;
+  const ok = window.confirm(`Delete ${examTitle || "this question bank"}?\n\nThis removes the bank and its linked attempts.`);
+  if(!ok) return;
+  interviewState.saving = true;
+  renderInterviewsManager();
+  try{
+    const response = await fetch(`${API}/api/interviews/exams/${examId}`, {
+      method: "DELETE",
+      headers: adminAuthHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok){
+      showToast(data.error || "Could not delete question bank");
+      return;
+    }
+    if (String(interviewState.selectedExamId) === String(examId)) {
+      interviewState.selectedExamId = "";
+    }
+    showToast("Question bank deleted");
+    await loadInterviewData({ render: true });
+  }catch{
+    showToast("Could not delete question bank");
+  }finally{
+    interviewState.saving = false;
     renderInterviewsManager();
   }
 }
@@ -3470,7 +3619,7 @@ async function loadInterviewAttemptLogs(attemptId){
       return;
     }
     mount.innerHTML = Array.isArray(data) && data.length ? data.map(item => `
-      <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div class="interview-log-item">
         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${escapeHtml(item.type || "event")}</strong><span class="meta">${escapeHtml(fmtDate(item.createdAt || Date.now()))}</span></div>
         <div style="margin-top:4px">${escapeHtml(item.message || "")}</div>
       </div>

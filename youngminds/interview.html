@@ -97,12 +97,12 @@ body.exam-active .topbar{padding-bottom:14px}
     </div>
     <div class="login-card card" id="loginCard">
       <div class="section-title">Candidate Sign In</div>
-      <div class="section-copy">Use the interview credentials shared by the YoungMinds team.</div>
-      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@example.com"></div>
-      <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Interview password"></div>
+      <div class="section-copy">Use the exact email and interview password shared by the YoungMinds team. The email must match your application record.</div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="Use your application email"></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Interview password from admin"></div>
       <div class="field"><label style="display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;color:var(--text)"><input id="rememberInterview" type="checkbox" style="width:16px;height:16px">Remember this device for the interview session</label></div>
       <button class="btn primary" id="loginBtn" type="button" onclick="loginInterview()">Sign in to interview</button>
-      <div class="status-note" id="loginStatus">Camera permission is requested only when you start the interview.</div>
+      <div class="status-note" id="loginStatus">Camera permission is requested only when you start the interview. If login fails, ask admin to reset your interview credentials.</div>
     </div>
   </section>
 
