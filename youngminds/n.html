@@ -3141,7 +3141,13 @@ function getSelectedInterviewExam(){
   if (interviewState.selectedExamId === "__new__") {
     return interviewDraft || createInterviewDraft();
   }
-  return interviewExams.find(item => String(item.id) === String(interviewState.selectedExamId)) || interviewExams[0] || null;
+  const selected = interviewExams.find(item => String(item.id) === String(interviewState.selectedExamId)) || interviewExams[0] || null;
+  if (selected) return selected;
+  if (!interviewDraft) {
+    interviewDraft = createInterviewDraft();
+    interviewState.selectedExamId = "__new__";
+  }
+  return interviewDraft;
 }
 
 function createInterviewDraft(){
@@ -3532,7 +3538,10 @@ function selectInterviewExam(examId){
   interviewState.selectedExamId = String(examId || "");
   interviewState.assignResult = "";
   interviewState.accessResult = "";
-  if (interviewState.selectedExamId !== "__new__") {
+  if (!interviewState.selectedExamId) {
+    interviewDraft = createInterviewDraft();
+    interviewState.selectedExamId = "__new__";
+  } else if (interviewState.selectedExamId !== "__new__") {
     interviewDraft = null;
   }
   renderInterviewsManager();
