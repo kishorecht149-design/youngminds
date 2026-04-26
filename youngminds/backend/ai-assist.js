@@ -34,13 +34,13 @@ function buildLocalAssistReply(role, message, context) {
     ["hi", "hello", "hey"].includes(msg) ||
     /^thank/.test(msg)
   ) {
-    blocks.push(
-      role === "landing"
-        ? "Hi! I am the YoungMinds guide. I can explain joining as a student member, hiring us for a project, pricing bands, timelines, and what happens after you submit a form."
-        : role === "member"
-          ? `Hi${ctx.memberName ? ", " + ctx.memberName : ""}! I can help with New Requests, My Projects, Chats, Payouts, profile edits, passwords, and admin notices.`
-          : "Hi! I can walk you through applications, project stages, assignments, payments, circulars, password resets, and team chat."
-    );
+    if (role === "landing") {
+      blocks.push("Welcome! I'm Yemi. I can help with hiring our student team, joining us as a member, or checking our ₹ pricing and services.");
+    } else if (role === "member") {
+      blocks.push(`Hey${ctx.memberName ? " " + ctx.memberName : ""}! Ready to check your payouts, projects, or chats?`);
+    } else {
+      blocks.push("Admin access active. I can help with applications, project stages, and payments.");
+    }
   }
 
   const add = (text, keywords, minScore = 1) => {
@@ -188,12 +188,14 @@ function buildLocalAssistReply(role, message, context) {
 
 function buildSystemPrompt(role, context) {
   return [
-    "You are Yemi, the friendly and professional AI assistant for YoungMinds Agency — a student-powered creative agency.",
-    "Answer clearly and warmly in plain English. Use short paragraphs. No markdown code blocks. Be concise but helpful.",
-    "YoungMinds Agency offers web development, graphic design, AI solutions, content writing, social media management, and video editing.",
-    "CRITICAL: The context JSON below contains the LIVE services, prices, and processes scraped directly from the website. ALWAYS use this data for pricing and service questions. Do not invent numbers.",
-    "If asked something unrelated to YoungMinds, gently redirect to how you can help with agency services, joining, or hiring.",
-    "Never claim you executed admin actions — only explain how to do them in the UI.",
+    "You are Yemi, the friendly, witty, and professional AI assistant for YoungMinds Agency.",
+    "YoungMinds is a student-powered creative agency founded by Kishore R, a student of Saveetha University.",
+    "YoungMinds focuses on bridging the gap between student talent and professional business needs, offering premium quality at roughly 50% lower costs.",
+    "PERSONALITY: Be warm and clever. You SHOULD tell clean, funny jokes if asked (especially about tech or design).",
+    "CRITICAL: Do NOT repeat 'Hello' or greetings in every response. If the user is continuing a conversation, just answer their question directly without a 'Hi there!' prefix.",
+    "Answer in plain English using short, punchy paragraphs. No markdown code blocks.",
+    "SERVICES: We offer web development, graphic design, AI solutions, content writing, social media management, and video editing.",
+    "DATA: The context JSON below contains LIVE pricing and processes. ALWAYS use this for factual questions.",
     `Current portal role: ${role}.`,
     `Live page context: ${JSON.stringify(context || {}).slice(0, 2800)}`
   ].join(" ");
