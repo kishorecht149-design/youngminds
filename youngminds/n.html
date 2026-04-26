@@ -3362,7 +3362,7 @@ function renderInterviewsManager(){
                   <div class="service-admin-item-top" style="margin-bottom:10px">
                     <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
                     <div style="display:flex;gap:8px">
-                      <select data-question-type style="font-size:11px;padding:4px 8px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--muted3)" onchange="syncInterviewData(); renderInterviewsManager()">
+                      <select data-question-type style="font-size:11px;padding:4px 8px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--muted3)" onchange="updateInterviewQuestionType(${questionIndex}, this.value)">
                         <option value="mcq" ${question.type === "mcq" || !question.type ? "selected" : ""}>MCQ</option>
                         <option value="descriptive" ${question.type === "descriptive" ? "selected" : ""}>Descriptive</option>
                       </select>
@@ -3541,6 +3541,14 @@ function syncInterviewData() {
       explanation: card.querySelector('[data-question-explanation]')?.value.trim() || ""
     };
   });
+}
+
+function updateInterviewQuestionType(index, type) {
+  syncInterviewData();
+  const current = getSelectedInterviewExam();
+  if(!current || !current.questions[index]) return;
+  current.questions[index].type = type;
+  renderInterviewsManager();
 }
 
 function addInterviewQuestion(){
