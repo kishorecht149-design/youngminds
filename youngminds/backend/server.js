@@ -1174,7 +1174,7 @@ const interviewAttemptSchema = new mongoose.Schema({
   candidateEmail:   { type: String, default: "" },
   candidateSkill:   { type: String, default: "" },
   sessionId:        { type: String, default: "" },
-  status:           { type: String, default: "assigned", enum: ["assigned", "in_progress", "submitted", "terminated", "expired"] },
+  status:           { type: String, default: "assigned", enum: ["assigned", "in_progress", "submitted", "terminated", "expired", "completed", "malpractice"] },
   durationMinutes:  { type: Number, default: 30 },
   warningLimit:     { type: Number, default: INTERVIEW_WARNING_LIMIT },
   warningsCount:    { type: Number, default: 0 },
@@ -2862,6 +2862,27 @@ app.post("/api/interviews/attempts/:id/complete", async (req, res) => {
       attempt.completedBy = session.admin.username;
       attempt.updatedAt = new Date();
       pushInterviewLog(attempt, "completed", `Marked completed by ${session.admin.username}`, 1, {});
+      await attempt.save();
+    }
+    emitRealtimeEvent("interview_attempt_updated", normalizeInterviewAttempt(attempt), { roles: ["admin"] });
+    res.json({ success: true, attempt: normalizeInterviewAttempt(attempt) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/interviews/attempts/:id/malpractice", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+
+    const attempt = await InterviewAttempt.findById(req.params.id);
+    if (!attempt) return res.status(404).json({ error: "Interview attempt not found" });
+    if (attempt.status !== "malpractice") {
+      attempt.status = "malpractice";
+      attempt.terminatedBy = session.admin.username;
+      attempt.updatedAt = new Date();
+      pushInterviewLog(attempt, "malpractice", `Marked as malpractice by ${session.admin.username}`, 3, {});
       await attempt.save();
     }
     emitRealtimeEvent("interview_attempt_updated", normalizeInterviewAttempt(attempt), { roles: ["admin"] });

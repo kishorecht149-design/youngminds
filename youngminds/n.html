@@ -3165,7 +3165,7 @@ function createInterviewPasswordDraft(){
 
 function getEligibleInterviewCandidates(){
   return interviewCandidates
-    .filter(candidate => !["hired", "rejected"].includes(String(candidate.status || "").toLowerCase()))
+    .filter(candidate => String(candidate.status || "").toLowerCase() === "reviewing")
     .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 }
 
@@ -3387,7 +3387,8 @@ function renderInterviewsManager(){
           </div>
         </div>
         <div class="interview-monitor-list">
-          ${liveAttempts.map(attempt => `
+          <div class="service-admin-sub" style="margin-bottom:12px;font-weight:600">Active & Submissions</div>
+          ${liveAttempts.filter(a => !["completed", "malpractice"].includes(a.status)).map(attempt => `
             <div class="interview-monitor-card ${String(selectedAttempt?.id) === String(attempt.id) ? 'active' : ''}">
               <div class="interview-monitor-top">
                 <div>
@@ -3402,11 +3403,51 @@ function renderInterviewsManager(){
               ${attempt.latestThumbnail ? `<img src="${attempt.latestThumbnail}" alt="Candidate live frame" style="width:100%;max-width:220px;margin-top:12px;border-radius:14px;border:1px solid var(--border)">` : `<div class="service-admin-note" style="margin-top:12px">No camera frame received yet.</div>`}
               <div class="interview-action-row" style="margin-top:12px">
                 <button class="btn-sm" type="button" onclick="selectInterviewAttempt('${escapeHtml(attempt.id)}')">View Logs</button>
-                <button class="btn-sm" type="button" onclick="terminateInterviewAttempt('${escapeHtml(attempt.id)}')" ${["submitted","terminated","expired"].includes(attempt.status) ? "disabled" : ""}>Terminate Session</button>
-                <button class="btn-sm" type="button" onclick="markInterviewCompleted('${escapeHtml(attempt.id)}')" ${attempt.status === "completed" ? "disabled" : ""}>Mark Completed</button>
+                <button class="btn-sm" type="button" onclick="terminateInterviewAttempt('${escapeHtml(attempt.id)}')" ${["submitted","terminated","expired","completed","malpractice"].includes(attempt.status) ? "disabled" : ""}>Terminate Session</button>
+                <button class="btn-sm" type="button" onclick="markInterviewCompleted('${escapeHtml(attempt.id)}')" ${["completed","malpractice"].includes(attempt.status) ? "disabled" : ""}>Mark Completed</button>
+                <button class="btn-sm" type="button" onclick="markInterviewMalpractice('${escapeHtml(attempt.id)}')" ${attempt.status === "malpractice" ? "disabled" : ""}>Mark Malpractice</button>
               </div>
             </div>
-          `).join("") || `<div class="empty"><div class="empty-icon">◌</div><div class="empty-title">No interview attempts yet</div></div>`}
+          `).join("") || `<div class="service-admin-note" style="margin-bottom:12px">No active sessions.</div>`}
+
+          <div class="service-admin-sub" style="margin-top:24px;margin-bottom:12px;font-weight:600;color:var(--green)">Completed</div>
+          ${liveAttempts.filter(a => a.status === "completed").map(attempt => `
+            <div class="interview-monitor-card ${String(selectedAttempt?.id) === String(attempt.id) ? 'active' : ''}">
+              <div class="interview-monitor-top">
+                <div>
+                  <div class="interview-monitor-name">${escapeHtml(attempt.candidateName || "Candidate")}</div>
+                  <div class="interview-monitor-copy">${escapeHtml(formatInterviewStatus(attempt.status))} · ${escapeHtml(attempt.candidateSkill || "General")}</div>
+                </div>
+                <div class="interview-monitor-meta">
+                  <span class="service-admin-pill">${attempt.warningsCount || 0} warnings</span>
+                  ${attempt.result && attempt.result.total ? `<span class="service-admin-pill" style="color:var(--accent)">Score: ${attempt.result.score}/${attempt.result.total} (${attempt.result.percent}%)</span>` : ``}
+                </div>
+              </div>
+              <div class="interview-action-row" style="margin-top:12px">
+                <button class="btn-sm" type="button" onclick="selectInterviewAttempt('${escapeHtml(attempt.id)}')">View Logs</button>
+                <button class="btn-sm" type="button" onclick="markInterviewMalpractice('${escapeHtml(attempt.id)}')">Mark Malpractice</button>
+              </div>
+            </div>
+          `).join("") || `<div class="service-admin-note" style="margin-bottom:12px">No completed sessions.</div>`}
+
+          <div class="service-admin-sub" style="margin-top:24px;margin-bottom:12px;font-weight:600;color:var(--red)">Malpractice</div>
+          ${liveAttempts.filter(a => a.status === "malpractice").map(attempt => `
+            <div class="interview-monitor-card ${String(selectedAttempt?.id) === String(attempt.id) ? 'active' : ''}" style="border-left:3px solid var(--red)">
+              <div class="interview-monitor-top">
+                <div>
+                  <div class="interview-monitor-name">${escapeHtml(attempt.candidateName || "Candidate")}</div>
+                  <div class="interview-monitor-copy">${escapeHtml(formatInterviewStatus(attempt.status))} · ${escapeHtml(attempt.candidateSkill || "General")}</div>
+                </div>
+                <div class="interview-monitor-meta">
+                  <span class="service-admin-pill" style="background:var(--red);color:#fff">${attempt.warningsCount || 0} warnings</span>
+                </div>
+              </div>
+              <div class="interview-action-row" style="margin-top:12px">
+                <button class="btn-sm" type="button" onclick="selectInterviewAttempt('${escapeHtml(attempt.id)}')">View Logs</button>
+                <button class="btn-sm" type="button" onclick="markInterviewCompleted('${escapeHtml(attempt.id)}')">Undo Malpractice & Mark Completed</button>
+              </div>
+            </div>
+          `).join("") || `<div class="service-admin-note" style="margin-bottom:12px">No malpractices flagged.</div>`}
         </div>
       </div>
       <div class="service-admin-card">
@@ -3710,8 +3751,65 @@ async function markInterviewCompleted(attemptId){
     }
     showToast("Interview marked as completed");
     await loadInterviewData({ render: true });
+    
+    const attempt = data.attempt || interviewAttempts.find(a => String(a.id) === String(attemptId));
+    if (attempt) {
+      if (confirm(`Interview marked as completed.\n\nWould you like to HIRE this candidate right now?\nClick OK to update status to 'hired', or Cancel to decide later.`)) {
+         await updateApplicationStatusFast(attempt.applicationId, 'hired');
+      } else if (confirm(`Would you like to REJECT this candidate instead?\nClick OK to update status to 'rejected', or Cancel to leave it in 'reviewing'.`)) {
+         await updateApplicationStatusFast(attempt.applicationId, 'rejected');
+      }
+    }
   }catch{
     showToast("Could not mark interview as completed");
+  }
+}
+
+async function markInterviewMalpractice(attemptId){
+  if(!attemptId) return;
+  if(!confirm("Are you sure you want to mark this interview as Malpractice?")) return;
+  try{
+    const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/malpractice`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" })
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok){
+      showToast(data.error || "Could not mark interview as malpractice");
+      return;
+    }
+    showToast("Interview marked as malpractice");
+    await loadInterviewData({ render: true });
+    
+    const attempt = data.attempt || interviewAttempts.find(a => String(a.id) === String(attemptId));
+    if (attempt && confirm(`Interview marked as malpractice.\n\nWould you like to immediately REJECT this candidate?\nClick OK to update status to 'rejected', or Cancel to decide later.`)) {
+       await updateApplicationStatusFast(attempt.applicationId, 'rejected');
+    }
+  }catch{
+    showToast("Could not mark interview as malpractice");
+  }
+}
+
+async function updateApplicationStatusFast(id, status){
+  try {
+    const response = await fetch(`${API}/api/applications/${id}`, {
+      method: "PUT",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ status, force: true })
+    });
+    if (!response.ok) throw new Error("update failed");
+    showToast(`Application status updated to ${status}`);
+    
+    const appIndex = apps.findIndex(a => String(a._id || a.id) === String(id));
+    if(appIndex !== -1) apps[appIndex].status = status;
+    
+    const candidateIndex = interviewCandidates.findIndex(a => String(a.id) === String(id));
+    if(candidateIndex !== -1) interviewCandidates[candidateIndex].status = status;
+    
+    if (activeAdminView === "interviews") renderInterviewsManager();
+    else renderAllViews();
+  } catch (err) {
+    showToast("Could not update application status");
   }
 }
 
