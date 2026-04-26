@@ -3296,8 +3296,13 @@ app.post("/api/interviews/attempts/:id/finish", async (req, res) => {
         const sourceQ = questions[hq.originalIndex];
         if (sourceQ?.type !== "descriptive") return;
         const answerText = answersMap.get(displayIndex);
-        if (typeof answerText !== "string") return;
+        if (typeof answerText !== "string") {
+          console.log(`[AI-Grade] Skipping Q${displayIndex} - no text answer found.`);
+          return;
+        }
+        console.log(`[AI-Grade] Calling Gemini for Q${displayIndex}: "${answerText.slice(0, 30)}..."`);
         const grade = await gradeDescriptiveAnswer(sourceQ.prompt, answerText);
+        console.log(`[AI-Grade] Gemini result for Q${displayIndex}: score=${grade.score}, feedback="${grade.feedback.slice(0, 30)}..."`);
         aiGrades.push({
           displayIndex,
           originalIndex: hq.originalIndex,
