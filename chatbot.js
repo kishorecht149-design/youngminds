@@ -7,7 +7,7 @@
   "use strict";
 
   // ── Config ────────────────────────────────────────────────────────────────
-  const API_URL = "http://localhost:5000/api/chat"; // Change this when deploying
+  const API_URL = "https://youngminds-3rk5.onrender.com/api/ai/assist";
 
   const QUICK_REPLIES = [
     "💰 Pricing",
@@ -149,7 +149,7 @@
       const res = await fetch(API_URL, {
         method  : "POST",
         headers : { "Content-Type": "application/json" },
-        body    : JSON.stringify({ message: text, history }),
+        body    : JSON.stringify({ role: "landing", message: text, context: { page: "hire", history } }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -192,7 +192,7 @@
   function appendBotMessage(text) {
     const wrapper = createMsgWrapper("ym-bot");
     wrapper.innerHTML = `
-      <div class="ym-msg-avatar">⚡</div>
+      <div class="ym-msg-avatar"><img src="/assets/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
       <div>
         <div class="ym-bubble">${formatBotText(text)}</div>
         <div class="ym-time">Yemi · ${getTime()}</div>
