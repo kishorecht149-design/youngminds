@@ -241,7 +241,7 @@ async function tryGemini(role, message, context) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
 
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.0-flash-lite"; // Most available free model
   const prompt = buildSystemPrompt(role, context) + "\n\nUser: " + String(message).slice(0, 3500);
 
   const controller = new AbortController();
