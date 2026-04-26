@@ -3759,17 +3759,38 @@ async function loadInterviewAttemptLogs(attemptId){
   mount.textContent = "Loading logs…";
   try{
     const response = await fetch(`${API}/api/interviews/attempts/${attemptId}/logs`, { headers: adminAuthHeaders() });
-    const data = await response.json().catch(() => []);
-    if(!response.ok){
-      mount.textContent = data.error || "Could not load logs";
+    const resData = await response.json().catch(() => null);
+    if(!response.ok || !resData){
+      mount.textContent = (resData && resData.error) || "Could not load logs";
       return;
     }
-    mount.innerHTML = Array.isArray(data) && data.length ? data.map(item => `
-      <div class="interview-log-item">
-        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${escapeHtml(item.type || "event")}</strong><span class="meta">${escapeHtml(fmtDate(item.createdAt || Date.now()))}</span></div>
-        <div style="margin-top:4px">${escapeHtml(item.message || "")}</div>
+    const logs = Array.isArray(resData.logs) ? resData.logs : [];
+    const answers = Array.isArray(resData.answers) ? resData.answers : [];
+    
+    let html = '';
+    if (answers.length > 0) {
+      html += `<div style="margin-bottom:16px;border-bottom:1px solid var(--border2);padding-bottom:12px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--accent)">Candidate Answers</div>`;
+      answers.forEach(ans => {
+        const val = ans.selectedIndex !== null && ans.selectedIndex !== undefined ? `Option ${ans.selectedIndex}` : (ans.answerText || "No answer");
+        html += `<div style="font-size:11px;margin-bottom:6px;background:rgba(255,255,255,0.03);padding:8px;border-radius:6px">
+          <strong>Q${Number(ans.questionIndex) + 1}:</strong> ${escapeHtml(val)}
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += logs.length ? logs.map(item => `
+      <div class="interview-log-item" style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.03)">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px">
+          <strong style="color:var(--muted)">${escapeHtml(item.type || "event")}</strong>
+          <span class="meta" style="font-size:10px;opacity:0.6">${new Date(item.createdAt || Date.now()).toLocaleTimeString()}</span>
+        </div>
+        <div style="margin-top:4px;font-size:11.5px">${escapeHtml(item.message || "")}</div>
       </div>
     `).join("") : "No audit logs yet.";
+    
+    mount.innerHTML = html;
   }catch{
     mount.textContent = "Could not load logs";
   }
