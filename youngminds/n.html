@@ -3362,7 +3362,7 @@ function renderInterviewsManager(){
                   <div class="service-admin-item-top" style="margin-bottom:10px">
                     <div class="service-admin-item-name">Question ${String(questionIndex + 1).padStart(2, "0")}</div>
                     <div style="display:flex;gap:8px">
-                      <select data-question-type style="font-size:11px;padding:4px 8px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--muted3)" onchange="renderInterviewsManager()">
+                      <select data-question-type style="font-size:11px;padding:4px 8px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--muted3)" onchange="syncInterviewData(); renderInterviewsManager()">
                         <option value="mcq" ${question.type === "mcq" || !question.type ? "selected" : ""}>MCQ</option>
                         <option value="descriptive" ${question.type === "descriptive" ? "selected" : ""}>Descriptive</option>
                       </select>
@@ -3518,7 +3518,33 @@ function selectInterviewExam(examId){
   renderInterviewsManager();
 }
 
+function syncInterviewData() {
+  const current = getSelectedInterviewExam();
+  if(!current) return;
+  current.title = document.getElementById("interview-title")?.value.trim();
+  current.slug = document.getElementById("interview-slug")?.value.trim();
+  current.description = document.getElementById("interview-description")?.value.trim();
+  current.durationMinutes = Number(document.getElementById("interview-duration")?.value || 30);
+  current.warningLimit = Number(document.getElementById("interview-warning-limit")?.value || 3);
+  current.active = !!document.getElementById("interview-active")?.checked;
+  current.allowBacktracking = !!document.getElementById("interview-backtracking")?.checked;
+  current.oneQuestionAtTime = !!document.getElementById("interview-one-question")?.checked;
+  current.randomizeQuestions = !!document.getElementById("interview-randomize-questions")?.checked;
+  current.randomizeOptions = !!document.getElementById("interview-randomize-options")?.checked;
+  current.questions = [...document.querySelectorAll('[data-interview-question]')].map(card => {
+    const opts = [...card.querySelectorAll('[data-question-option]')].map(input => input.value.trim());
+    return {
+      type: card.querySelector('[data-question-type]')?.value || "mcq",
+      prompt: card.querySelector('[data-question-prompt]')?.value.trim() || "",
+      options: opts.length > 0 ? opts : ["","","",""],
+      correctIndex: Number(card.querySelector('[data-question-correct]')?.value || 0),
+      explanation: card.querySelector('[data-question-explanation]')?.value.trim() || ""
+    };
+  });
+}
+
 function addInterviewQuestion(){
+  syncInterviewData();
   const current = getSelectedInterviewExam();
   if(!current) return;
   current.questions = Array.isArray(current.questions) ? current.questions : [];
@@ -3527,6 +3553,7 @@ function addInterviewQuestion(){
 }
 
 function removeInterviewQuestion(index){
+  syncInterviewData();
   const current = getSelectedInterviewExam();
   if(!current || !Array.isArray(current.questions) || current.questions.length <= 1) return;
   current.questions.splice(index, 1);
@@ -3534,6 +3561,7 @@ function removeInterviewQuestion(index){
 }
 
 function refreshInterviewPasswordDraft(){
+  syncInterviewData();
   ensureInterviewPasswordDraft(true);
   renderInterviewsManager();
 }
@@ -3544,25 +3572,20 @@ async function saveInterviewExam(){
     doLogout();
     return;
   }
+  syncInterviewData();
   const current = getSelectedInterviewExam() || createInterviewDraft();
   const payload = {
-    title: document.getElementById("interview-title")?.value.trim(),
-    slug: document.getElementById("interview-slug")?.value.trim(),
-    description: document.getElementById("interview-description")?.value.trim(),
-    durationMinutes: Number(document.getElementById("interview-duration")?.value || 30),
-    warningLimit: Number(document.getElementById("interview-warning-limit")?.value || 3),
-    active: !!document.getElementById("interview-active")?.checked,
-    allowBacktracking: !!document.getElementById("interview-backtracking")?.checked,
-    oneQuestionAtTime: !!document.getElementById("interview-one-question")?.checked,
-    randomizeQuestions: !!document.getElementById("interview-randomize-questions")?.checked,
-    randomizeOptions: !!document.getElementById("interview-randomize-options")?.checked,
-    questions: [...document.querySelectorAll('[data-interview-question]')].map(card => ({
-      type: card.querySelector('[data-question-type]')?.value || "mcq",
-      prompt: card.querySelector('[data-question-prompt]')?.value.trim() || "",
-      options: [...card.querySelectorAll('[data-question-option]')].map(input => input.value.trim()).filter(Boolean),
-      correctIndex: Number(card.querySelector('[data-question-correct]')?.value || 0),
-      explanation: card.querySelector('[data-question-explanation]')?.value.trim() || ""
-    }))
+    title: current.title,
+    slug: current.slug,
+    description: current.description,
+    durationMinutes: current.durationMinutes,
+    warningLimit: current.warningLimit,
+    active: current.active,
+    allowBacktracking: current.allowBacktracking,
+    oneQuestionAtTime: current.oneQuestionAtTime,
+    randomizeQuestions: current.randomizeQuestions,
+    randomizeOptions: current.randomizeOptions,
+    questions: current.questions
   };
   interviewState.saving = true;
   interviewState.error = "";
