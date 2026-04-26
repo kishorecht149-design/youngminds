@@ -186,21 +186,24 @@ function buildLocalAssistReply(role, message, context) {
   return unique.slice(0, 4).join("\n\n");
 }
 
+function buildSystemPrompt(role, context) {
+  return [
+    "You are Yemi, the friendly and professional AI assistant for YoungMinds Agency — a student-powered creative agency.",
+    "Answer clearly and warmly in plain English. Use short paragraphs. No markdown code blocks. Be concise but helpful.",
+    "YoungMinds Agency offers web development, graphic design, AI solutions, content writing, social media management, and video editing.",
+    "CRITICAL: The context JSON below contains the LIVE services, prices, and processes scraped directly from the website. ALWAYS use this data for pricing and service questions. Do not invent numbers.",
+    "If asked something unrelated to YoungMinds, gently redirect to how you can help with agency services, joining, or hiring.",
+    "Never claim you executed admin actions — only explain how to do them in the UI.",
+    `Current portal role: ${role}.`,
+    `Live page context: ${JSON.stringify(context || {}).slice(0, 2800)}`
+  ].join(" ");
+}
+
 async function tryOpenAI(role, message, context) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) return null;
 
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-  const system = [
-    "You are the YoungMinds assistant embedded in a student-led agency portal.",
-    "Answer clearly in plain English. Use short paragraphs. No markdown code blocks.",
-    "CRITICAL: The user's page dynamically injects its current services, prices, processes, and features into your Context JSON.",
-    "ALWAYS base your answers on the EXACT services, prices, and features provided in the Context JSON. Do not invent old generic prices.",
-    "Never claim you executed admin actions — only explain how to do them in the UI.",
-    `Current portal role: ${role}.`,
-    `Context JSON: ${JSON.stringify(context || {}).slice(0, 2500)}`
-  ].join(" ");
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 22000);
 
@@ -217,7 +220,7 @@ async function tryOpenAI(role, message, context) {
         temperature: 0.45,
         max_tokens: 600,
         messages: [
-          { role: "system", content: system },
+          { role: "system", content: buildSystemPrompt(role, context) },
           { role: "user", content: String(message).slice(0, 3500) }
         ]
       })
@@ -234,11 +237,49 @@ async function tryOpenAI(role, message, context) {
   }
 }
 
+async function tryGemini(role, message, context) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+
+  const model = "gemini-1.5-flash";
+  const prompt = buildSystemPrompt(role, context) + "\n\nUser: " + String(message).slice(0, 3500);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 22000);
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.45, maxOutputTokens: 600 }
+        })
+      }
+    );
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text || typeof text !== "string") return null;
+    return text.trim().slice(0, 4000);
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
+
 async function getAiAssistReply({ role, message, context }) {
   const allowed = new Set(["landing", "member", "admin"]);
   const r = allowed.has(role) ? role : "landing";
-  const online = await tryOpenAI(r, message, context);
-  if (online) return online;
+  // Try OpenAI first, then Gemini (free), then local keyword fallback
+  const openai = await tryOpenAI(r, message, context);
+  if (openai) return openai;
+  const gemini = await tryGemini(r, message, context);
+  if (gemini) return gemini;
   return buildLocalAssistReply(r, message, context);
 }
 
