@@ -1148,6 +1148,7 @@ const interviewExamSchema = new mongoose.Schema({
   description:      { type: String, default: "" },
   durationMinutes:  { type: Number, default: 30 },
   warningLimit:     { type: Number, default: INTERVIEW_WARNING_LIMIT },
+  cameraMonitoringEnabled: { type: Boolean, default: true },
   active:           { type: Boolean, default: true },
   allowBacktracking:{ type: Boolean, default: false },
   oneQuestionAtTime:{ type: Boolean, default: true },
@@ -1282,6 +1283,7 @@ function sanitizeInterviewExam(exam) {
     description: exam?.description || "",
     durationMinutes: Number(exam?.durationMinutes || 30),
     warningLimit: Number(exam?.warningLimit || INTERVIEW_WARNING_LIMIT),
+    cameraMonitoringEnabled: exam?.cameraMonitoringEnabled !== false,
     active: Boolean(exam?.active),
     allowBacktracking: Boolean(exam?.allowBacktracking),
     oneQuestionAtTime: exam?.oneQuestionAtTime !== false,
@@ -2718,7 +2720,8 @@ app.post("/api/interviews/exams", async (req, res) => {
       slug,
       description: String(body.description || "").trim(),
       durationMinutes: Math.max(5, Math.min(180, Number(body.durationMinutes || 30))),
-      warningLimit: Math.max(1, Math.min(10, Number(body.warningLimit || INTERVIEW_WARNING_LIMIT))),
+      warningLimit: Math.max(1, Math.min(100, Number(body.warningLimit || INTERVIEW_WARNING_LIMIT))),
+      cameraMonitoringEnabled: body.cameraMonitoringEnabled !== false,
       active: body.active !== false,
       allowBacktracking: Boolean(body.allowBacktracking),
       oneQuestionAtTime: body.oneQuestionAtTime !== false,
@@ -2754,7 +2757,8 @@ app.put("/api/interviews/exams/:id", async (req, res) => {
     exam.slug = slugify(body.slug || exam.slug || exam.title);
     exam.description = String(body.description || "").trim();
     exam.durationMinutes = Math.max(5, Math.min(180, Number(body.durationMinutes || exam.durationMinutes || 30)));
-    exam.warningLimit = Math.max(1, Math.min(10, Number(body.warningLimit || exam.warningLimit || INTERVIEW_WARNING_LIMIT)));
+    exam.warningLimit = Math.max(1, Math.min(100, Number(body.warningLimit || exam.warningLimit || INTERVIEW_WARNING_LIMIT)));
+    exam.cameraMonitoringEnabled = body.cameraMonitoringEnabled !== false;
     exam.active = body.active !== false;
     exam.allowBacktracking = Boolean(body.allowBacktracking);
     exam.oneQuestionAtTime = body.oneQuestionAtTime !== false;
@@ -3178,6 +3182,7 @@ app.get("/api/interviews/attempts/:id/exam", async (req, res) => {
         description: exam.description || "",
         durationMinutes: attempt.durationMinutes || exam.durationMinutes || 30,
         warningLimit: attempt.warningLimit || exam.warningLimit || INTERVIEW_WARNING_LIMIT,
+        cameraMonitoringEnabled: exam.cameraMonitoringEnabled !== false,
         allowBacktracking: Boolean(exam.allowBacktracking),
         oneQuestionAtTime: exam.oneQuestionAtTime !== false,
         questions: hydratedQuestions.map((question, displayIndex) => ({

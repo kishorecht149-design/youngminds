@@ -3158,6 +3158,7 @@ function createInterviewDraft(){
     description: "",
     durationMinutes: 30,
     warningLimit: 3,
+    cameraMonitoringEnabled: true,
     active: true,
     allowBacktracking: false,
     oneQuestionAtTime: true,
@@ -3359,10 +3360,11 @@ function renderInterviewsManager(){
             </div>
             <div class="service-admin-form-row">
               <div class="form-field"><label>Duration (minutes)</label><input id="interview-duration" type="number" min="5" max="180" value="${Number(current.durationMinutes || 30)}"></div>
-              <div class="form-field"><label>Warning Limit</label><input id="interview-warning-limit" type="number" min="1" max="10" value="${Number(current.warningLimit || 3)}"></div>
+              <div class="form-field"><label>Warning Limit</label><input id="interview-warning-limit" type="number" min="1" max="100" value="${Number(current.warningLimit || 3)}"></div>
             </div>
             <div class="service-admin-meta" style="margin-bottom:12px">
               <label class="service-admin-pill" style="cursor:pointer"><input id="interview-active" type="checkbox" ${current.active !== false ? "checked" : ""} style="margin-right:6px">Active</label>
+              <label class="service-admin-pill" style="cursor:pointer"><input id="interview-camera-monitoring" type="checkbox" ${current.cameraMonitoringEnabled !== false ? "checked" : ""} style="margin-right:6px">Camera monitoring enabled</label>
               <label class="service-admin-pill" style="cursor:pointer"><input id="interview-one-question" type="checkbox" ${current.oneQuestionAtTime !== false ? "checked" : ""} style="margin-right:6px">One question at a time</label>
               <label class="service-admin-pill" style="cursor:pointer"><input id="interview-backtracking" type="checkbox" ${current.allowBacktracking ? "checked" : ""} style="margin-right:6px">Allow backtracking</label>
               <label class="service-admin-pill" style="cursor:pointer"><input id="interview-randomize-questions" type="checkbox" ${current.randomizeQuestions !== false ? "checked" : ""} style="margin-right:6px">Randomize questions</label>
@@ -3554,6 +3556,7 @@ function syncInterviewData() {
   if(v('interview-duration')) current.durationMinutes = Number(v('interview-duration').value) || current.durationMinutes;
   if(v('interview-warning-limit')) current.warningLimit = Number(v('interview-warning-limit').value) || current.warningLimit;
   if(v('interview-active')) current.active = v('interview-active').checked;
+  if(v('interview-camera-monitoring')) current.cameraMonitoringEnabled = v('interview-camera-monitoring').checked;
   if(v('interview-backtracking')) current.allowBacktracking = v('interview-backtracking').checked;
   if(v('interview-one-question')) current.oneQuestionAtTime = v('interview-one-question').checked;
   if(v('interview-randomize-questions')) current.randomizeQuestions = v('interview-randomize-questions').checked;
@@ -3658,6 +3661,7 @@ async function saveInterviewExam(){
     description: current.description,
     durationMinutes: current.durationMinutes,
     warningLimit: current.warningLimit,
+    cameraMonitoringEnabled: current.cameraMonitoringEnabled !== false,
     active: current.active,
     allowBacktracking: current.allowBacktracking,
     oneQuestionAtTime: current.oneQuestionAtTime,

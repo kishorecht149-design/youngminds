@@ -296,7 +296,7 @@ h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8
     </div>
 
     <!-- Right Proctor Area -->
-    <div class="proctor-panel">
+    <div class="proctor-panel" id="proctorPanel">
       <div class="glass-card" style="padding: 24px;">
         <h3 style="margin:0 0 16px;font-size:1.1rem;">Live Proctoring</h3>
         <div class="proctor-video-wrap">
@@ -348,7 +348,7 @@ h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8
     <div style="display:flex; flex-direction:column; gap:12px;">
       <div class="checklist-item" id="checkCamera">
         <div class="check-circle"></div>
-        <div class="checklist-text">Allow Camera Access</div>
+        <div class="checklist-text" id="cameraChecklistText">Allow Camera Access</div>
         <button class="btn-sm btn" style="padding:6px 12px;font-size:0.8rem;" onclick="testCamera()">Enable</button>
       </div>
       <div class="checklist-item" id="checkFullscreen">
@@ -546,6 +546,25 @@ function renderAttempts() {
 let pendingStartAttemptId = null;
 let preflightState = { cam: false, full: false, rules: false };
 
+function isCameraMonitoringEnabled() {
+  return activeExam?.cameraMonitoringEnabled !== false;
+}
+
+function updateCameraMonitoringUi() {
+  const proctorPanel = document.getElementById("proctorPanel");
+  const cameraChecklist = document.getElementById("checkCamera");
+  const cameraChecklistText = document.getElementById("cameraChecklistText");
+  if (!proctorPanel || !cameraChecklist || !cameraChecklistText) return;
+  if (isCameraMonitoringEnabled()) {
+    proctorPanel.classList.remove("hidden");
+    cameraChecklist.classList.remove("hidden");
+    cameraChecklistText.textContent = "Allow Camera Access";
+    return;
+  }
+  proctorPanel.classList.add("hidden");
+  cameraChecklist.classList.add("hidden");
+}
+
 async function openAttempt(id) {
   const a = interviewAttempts.find(x => x.id === id);
   if (!a) return;
@@ -555,6 +574,7 @@ async function openAttempt(id) {
     showResultScreen(a);
   } else {
     pendingStartAttemptId = id;
+    preflightState = { cam: false, full: false, rules: false };
     document.getElementById("preFlightModal").classList.remove("hidden");
     checkPreflightStatus();
   }
@@ -566,6 +586,12 @@ function closePreFlight() {
 }
 
 async function testCamera() {
+  if (!isCameraMonitoringEnabled()) {
+    preflightState.cam = true;
+    document.getElementById("checkCamera").classList.add("active");
+    checkPreflightStatus();
+    return;
+  }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     stream.getTracks().forEach(t => t.stop()); // close temp stream
@@ -595,6 +621,10 @@ function checkRulesToggle() {
 }
 
 function checkPreflightStatus() {
+  if (!isCameraMonitoringEnabled()) {
+    preflightState.cam = true;
+    document.getElementById("checkCamera").classList.add("active");
+  }
   const ready = preflightState.cam && preflightState.full && preflightState.rules;
   document.getElementById("startExamBtn").disabled = !ready;
 }
@@ -623,6 +653,7 @@ async function loadExam(id) {
   activeExam = data.exam;
   activeAttempt = { ...activeAttempt, ...data.attempt };
   activeQuestionIndex = Math.min(Number(activeAttempt.currentIndex || 0), Math.max((activeExam.questions?.length || 1) - 1, 0));
+  updateCameraMonitoringUi();
   renderExamNav();
   renderQuestion();
   startTimer();
@@ -811,13 +842,20 @@ function startTimer() {
 
 // Security & Proctoring
 async function ensureExamEnvironment() {
-  await startCamera();
+  if (isCameraMonitoringEnabled()) {
+    await startCamera();
+  } else {
+    updateAiStatus("Camera monitoring disabled for this interview", "ok");
+  }
   bindExamProtection();
   startInactivityWatch();
-  startFaceChecks();
+  if (isCameraMonitoringEnabled()) {
+    startFaceChecks();
+  }
 }
 
 async function startCamera() {
+  if (!isCameraMonitoringEnabled()) return;
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     document.getElementById("candidateVideo").srcObject = localStream;
@@ -890,6 +928,7 @@ function handleShortcuts(e) {
 
 async function sendViolation(type, msg, sev=1) {
   if(!activeAttempt || ["submitted","terminated","expired"].includes(activeAttempt.status)) return;
+  if (!isCameraMonitoringEnabled() && ["camera_off", "no_face", "multiple_faces", "looking_away"].includes(type)) return;
   showToast(msg, "error");
   try {
     const res = await fetch(`${API}/api/interviews/attempts/${activeAttempt.id}/event`, {
@@ -915,6 +954,7 @@ async function loadFaceApi() {
 }
 
 async function startFaceChecks() {
+  if (!isCameraMonitoringEnabled()) return;
   if(faceInterval) return;
   faceApiReady = await loadFaceApi();
   if(faceApiReady && window.faceapi?.nets?.tinyFaceDetector) {
