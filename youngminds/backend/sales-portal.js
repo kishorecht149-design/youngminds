@@ -17,8 +17,7 @@ function registerSalesPortal(app, deps) {
     Application
   } = deps;
 
-  const SALES_STATUS_ACTIVE = "active";
-  const SALES_ALLOWED_MEMBER_STATUSES = ["accepted", "hired", "inwork"];
+  const SALES_ALLOWED_MEMBER_STATUSES = ["hired", "inwork"];
   const SALES_DAILY_EMAIL_LIMIT = Math.max(1, Number(process.env.SALES_DAILY_EMAIL_LIMIT || 200));
   const SALES_DAILY_WHATSAPP_LIMIT = Math.max(1, Number(process.env.SALES_DAILY_WHATSAPP_LIMIT || 120));
   const SALES_DELAY_MIN_SECONDS = 5;
@@ -114,7 +113,7 @@ function registerSalesPortal(app, deps) {
   }
 
   function isSalesExecutiveActive(doc) {
-    return isSalesApplication(doc) && String(doc?.salesStatus || SALES_STATUS_ACTIVE) !== "inactive";
+    return isSalesApplication(doc);
   }
 
   function sanitizeSalesExecutive(doc) {
@@ -128,7 +127,7 @@ function registerSalesPortal(app, deps) {
       city: doc?.city || "",
       notes: doc?.salesNotes || "",
       role: "sales",
-      status: String(doc?.salesStatus || SALES_STATUS_ACTIVE) === "inactive" ? "inactive" : "active",
+      status: doc?.status || "new",
       skill: doc?.skill || "",
       applicationStatus: doc?.status || "new",
       lastLoginAt: doc?.salesLastLoginAt || null
@@ -258,7 +257,7 @@ function registerSalesPortal(app, deps) {
       SalesCampaign.find({ ownerId }).sort({ updatedAt: -1 }).limit(100),
       SalesMessageLog.find({ ownerId }).sort({ createdAt: -1 }).limit(300),
       SalesNotification.find({ ownerId }).sort({ createdAt: -1 }).limit(30),
-      Application.find({ ...salesMemberQuery(), salesStatus: { $ne: "inactive" } }).sort({ name: 1 }).limit(100)
+      Application.find(salesMemberQuery()).sort({ name: 1 }).limit(100)
     ]);
     const totalSent = logs.filter(item => item.status === "sent").length;
     const totalFailed = logs.filter(item => item.status === "failed").length;
@@ -473,7 +472,6 @@ function registerSalesPortal(app, deps) {
       member.city = String(req.body?.city || member.city || "").trim();
       member.salesDesignation = String(req.body?.designation || member.salesDesignation || "Sales Executive").trim() || "Sales Executive";
       member.salesNotes = String(req.body?.notes || member.salesNotes || "").trim();
-      member.salesStatus = String(req.body?.status || SALES_STATUS_ACTIVE).trim() === "inactive" ? "inactive" : "active";
       await member.save();
       res.json(sanitizeSalesExecutive(member));
     } catch (err) {
@@ -589,7 +587,7 @@ function registerSalesPortal(app, deps) {
     try {
       const session = await requireSalesExecutiveSession(req, res);
       if (!session) return;
-      const team = await Application.find({ ...salesMemberQuery(), salesStatus: { $ne: "inactive" } }).sort({ name: 1 });
+      const team = await Application.find(salesMemberQuery()).sort({ name: 1 });
       res.json(team.map(sanitizeSalesExecutive));
     } catch (err) {
       res.status(500).json({ error: err.message });

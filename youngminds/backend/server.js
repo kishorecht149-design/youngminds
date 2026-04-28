@@ -632,6 +632,14 @@ const applicationSchema = new mongoose.Schema({
   // Password reset
   resetToken:   String,
   resetExpiry:  Date,
+  // Sales portal fields
+  salesPassword:      String,
+  salesSessionNonce:  String,
+  salesDesignation:   String,
+  salesNotes:         String,
+  salesStatus:        String,
+  salesLastResetBy:   String,
+  salesLastLoginAt:   Date,
   // Interview fields
   interviewPassword:      String,
   interviewSessionNonce:  String,
