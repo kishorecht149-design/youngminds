@@ -119,6 +119,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .board-back-title{font-size:24px;font-weight:900;letter-spacing:-.04em;line-height:1.05;color:var(--text)}
 .board-back-copy{margin-top:12px;font-size:13px;line-height:1.7;color:var(--muted)}
 .board-back-cta{margin-top:18px;display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;background:var(--accent);color:#050507;font-size:12px;font-weight:900}
+.board-mobile-cta{display:none;margin-top:14px;align-items:center;justify-content:center;width:100%;padding:10px 12px;border-radius:999px;background:var(--accent);color:#050507;font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
 .board-photo{aspect-ratio:4/5;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,255,255,0.03));position:relative;overflow:hidden}
 .board-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .board-photo-fallback{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;font-weight:900;letter-spacing:-1px;color:rgba(255,215,0,0.9);background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,255,255,0.02))}
@@ -370,6 +371,12 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .board-window{overflow:visible}
   .board-track{gap:14px;padding-bottom:12px}
   .board-card,.board-card-inner,.board-face{border-radius:22px}
+  .board-card{perspective:none}
+  .board-card-inner{transform:none!important;transform-style:flat}
+  .board-card:hover .board-card-inner,.board-card:focus-visible .board-card-inner{transform:none!important}
+  .board-front{position:relative}
+  .board-back{display:none}
+  .board-mobile-cta{display:inline-flex}
   .board-photo{aspect-ratio:4/4.8}
   .board-body{padding:16px}
   .board-name{font-size:17px}
@@ -1064,6 +1071,7 @@ function renderBoardMembers(entries){
               <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
               <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
               ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
+              <span class="board-mobile-cta">Portfolio</span>
             </div>
           </div>
           <div class="board-face board-back">
@@ -1092,6 +1100,7 @@ function renderBoardMembers(entries){
             <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
             <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
             ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
+            <span class="board-mobile-cta">Portfolio</span>
           </div>
         </div>
         <div class="board-face board-back">
