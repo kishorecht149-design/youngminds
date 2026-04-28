@@ -4118,7 +4118,7 @@ function renderSalesManager(){
           ${salesAdminState.result ? `<div class="service-admin-note" style="margin-bottom:10px">${escapeHtml(salesAdminState.result)}</div>` : ``}
           ${current ? `
           <div class="form-row">
-            <div class="form-field"><label>Application Email</label><input id="sales-admin-email" type="email" value="${escapeHtml(current?.email || "")}" placeholder="member@gmail.com" disabled></div>
+            <div class="form-field"><label>Login Identifier</label><input id="sales-admin-email" type="text" value="${escapeHtml(current?.email || "")}" placeholder="member@gmail.com or phone" disabled></div>
             <div class="form-field"><label>Name</label><input id="sales-admin-name" type="text" value="${escapeHtml(current?.name || "")}" placeholder="Aisha Khan"></div>
           </div>
           <div class="form-row">

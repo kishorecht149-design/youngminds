@@ -229,14 +229,14 @@ a{text-decoration:none;color:inherit}
       <div>
         <div class="l-badge">Sales Portal</div>
         <div class="l-hero-title">YoungMinds <em>Sales</em>.</div>
-        <div class="l-hero-copy">Sign in with your existing YoungMinds email and password. Only hired members whose skill label contains sales can open this workspace. If you forgot the password, ask admin to reset it.</div>
+        <div class="l-hero-copy">Sign in with your existing YoungMinds email or phone and password. Only hired members whose skill label contains sales can open this workspace. If you forgot the password, ask admin to reset it.</div>
       </div>
     </div>
     <div class="login-box">
       <div class="l-logo"><div class="l-dot">Y</div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Sales</div></div></div>
       <div class="l-title">Welcome back</div>
-      <div class="l-sub">Sign in with the same application email and password you already use with YoungMinds.</div>
-      <div class="l-field"><label>Email</label><input type="email" id="sales-email" placeholder="sales@example.com" autocomplete="username"></div>
+      <div class="l-sub">Sign in with the same application email or phone and password you already use with YoungMinds.</div>
+      <div class="l-field"><label>Email or phone</label><input type="text" id="sales-email" placeholder="member@gmail.com or phone" autocomplete="username"></div>
       <div class="l-field"><label>Password</label><input type="password" id="sales-password" placeholder="••••••••" autocomplete="current-password"></div>
       <div class="l-options">
         <label class="check-row"><input type="checkbox" id="sales-remember" checked> <span>Remember this device</span></label>
@@ -393,6 +393,15 @@ function showToast(message) {
   el.classList.add("show");
   clearTimeout(showToast._timer);
   showToast._timer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+async function readSalesJson(response) {
+  const data = await response.json().catch(() => ({}));
+  if (response.ok) return data;
+  const error = new Error(data.error || `Request failed with status ${response.status}`);
+  error.status = response.status;
+  error.payload = data;
+  throw error;
 }
 
 function salesAuthHeaders(extra = {}) {
@@ -770,16 +779,43 @@ function renderProfile() {
 }
 
 function renderSalesViews() {
-  updateSalesShell();
-  renderNotifications();
-  renderDashboard();
-  renderLeads();
-  renderCampaigns();
-  renderActivity();
-  renderAnalytics();
-  renderTeam();
-  renderProfile();
-  salesNav(salesView, { push: false });
+  try {
+    updateSalesShell();
+    renderNotifications();
+    renderDashboard();
+    renderLeads();
+    renderCampaigns();
+    renderActivity();
+    renderAnalytics();
+    renderTeam();
+    renderProfile();
+    salesNav(salesView, { push: false });
+  } catch (err) {
+    console.error("sales_render_failed", err);
+    setSalesStatus(false);
+    const dashboard = document.getElementById("view-dashboard");
+    if (dashboard) {
+      dashboard.innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Sales workspace needs a refresh</div>
+              <div class="card-sub">The app hit a rendering issue and paused before showing the latest data.</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="note">Please refresh the sales workspace once. If this keeps happening, sign out and sign in again so the session can reload cleanly.</div>
+            <div class="item-actions" style="margin-top:14px">
+              <button class="btn btn-ghost" type="button" onclick="refreshSalesData({ force: true })">Refresh workspace</button>
+              <button class="btn btn-primary" type="button" onclick="doSalesLogout()">Sign out</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    salesNav("dashboard", { push: false });
+    showToast("Sales workspace hit a render issue. Refresh once.");
+  }
 }
 
 function parseCsv(text) {
@@ -1053,8 +1089,7 @@ async function markSalesNotificationRead(id) {
 
 async function loadSalesBootstrap() {
   const response = await fetch(`${API}/api/sales/bootstrap`, { headers: salesAuthHeaders() });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Could not load sales workspace");
+  const data = await readSalesJson(response);
   currentExecutive = data.executive || currentExecutive;
   salesBootstrap = {
     leads: Array.isArray(data.leads) ? data.leads : [],
@@ -1076,6 +1111,11 @@ async function refreshSalesData(options = {}) {
     renderSalesViews();
   } catch (err) {
     setSalesStatus(false);
+    if (err?.status === 401) {
+      doSalesLogout();
+      showToast("Sales session expired. Please sign in again.");
+      return;
+    }
     if (!options.silent) showToast(err.message || "Could not refresh portal");
   }
 }
@@ -1100,9 +1140,11 @@ async function completeSalesLogin(token, executive, remember) {
   currentSalesToken = token;
   currentExecutive = executive;
   persistSalesSession(token, executive?.email, remember);
-  showSalesApp();
   salesView = getInitialSalesView();
-  await refreshSalesData({ force: true, silent: true });
+  await loadSalesBootstrap();
+  setSalesStatus(true);
+  showSalesApp();
+  renderSalesViews();
   history.replaceState({ panel: "sales", view: salesView }, "", `${window.location.pathname}#sales-${salesView}`);
   if (salesPollInterval) clearInterval(salesPollInterval);
   salesPollInterval = setInterval(() => refreshSalesData({ silent: true }), 45000);
@@ -1116,7 +1158,7 @@ async function doSalesLogin() {
   const btn = document.getElementById("sales-login-btn");
   errEl.style.display = "none";
   if (!email || !password) {
-    showToast("Enter sales email and password");
+    showToast("Enter your sales email or phone and password");
     return;
   }
   btn.disabled = true;
@@ -1127,11 +1169,11 @@ async function doSalesLogin() {
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ email, password, remember })
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Invalid sales credentials");
+    const data = await readSalesJson(response);
     await completeSalesLogin(data.token, data.executive, remember);
     showToast(`Signed in as ${data.executive?.name || "sales"}`);
   } catch (err) {
+    doSalesLogout();
     errEl.textContent = err.message || "Invalid sales credentials";
     errEl.style.display = "block";
   } finally {
@@ -1161,8 +1203,7 @@ async function restoreSalesSession() {
   currentSalesToken = token;
   try {
     const response = await fetch(`${API}/api/sales/auth/session`, { headers: salesAuthHeaders() });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Session expired");
+    const data = await readSalesJson(response);
     await completeSalesLogin(token, data.executive, localStorage.getItem(SALES_REMEMBER_KEY) !== "0");
   } catch {
     doSalesLogout();
