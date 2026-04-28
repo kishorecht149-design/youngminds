@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YoungMinds — Sales Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070808;--bg2:#0d0e0f;--bg3:#131415;--bg4:#181a1b;--bg5:#1f2122;
+  --border:rgba(255,255,255,.05);--border2:rgba(255,255,255,.10);--border3:rgba(255,255,255,.18);
+  --text:#efefef;--muted:#5a5c62;--muted2:#2d3035;--muted3:#888;
+  --accent:#e8c547;--accent2:rgba(232,197,71,.1);--green:#3ecf8e;--red:#f87171;--blue:#60a5fa;--orange:#fb923c;--purple:#a78bfa;--teal:#2dd4bf;
+  --font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace;--r:10px;--sb:226px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body.portal-open{overflow:hidden}
+button,input,select,textarea{font-family:var(--font)}
+a{text-decoration:none;color:inherit}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px}
+.hidden{display:none!important}
+
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+.login-shell{width:min(1100px,100%);display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:stretch}
+.login-hero,.login-box{background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:24px}
+.login-hero{padding:38px 36px;display:flex;flex-direction:column;justify-content:space-between;min-height:560px;position:relative;overflow:hidden}
+.login-hero::after{content:"";position:absolute;inset:auto -120px -120px auto;width:380px;height:380px;background:radial-gradient(circle,rgba(232,197,71,.18) 0%,transparent 68%);pointer-events:none}
+.l-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid rgba(232,197,71,.22);border-radius:999px;background:var(--accent2);font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--accent);width:fit-content}
+.l-hero-title{font-size:clamp(46px,6vw,86px);line-height:.92;font-weight:900;letter-spacing:-.06em;max-width:600px}
+.l-hero-title em{font-style:normal;color:var(--accent)}
+.l-hero-copy{max-width:640px;font-size:17px;line-height:1.8;color:var(--muted3);margin-top:18px}
+.l-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:28px}
+.l-feature{background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:18px;padding:18px}
+.l-feature-title{font-size:13px;font-weight:700;margin-bottom:6px}
+.l-feature-sub{font-size:13px;color:var(--muted3);line-height:1.65}
+.login-box{padding:30px}
+.l-logo{display:flex;align-items:center;gap:10px;margin-bottom:34px}
+.l-dot{width:32px;height:32px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:#000;font-size:14px;font-weight:900}
+.l-name{font-size:18px;font-weight:800;letter-spacing:-.03em}
+.l-badge-mini{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted3);background:var(--bg4);border:1px solid var(--border2);padding:4px 9px;border-radius:999px;margin-left:4px}
+.l-title{font-size:42px;font-weight:900;letter-spacing:-.04em;margin-bottom:8px}
+.l-sub{font-size:15px;color:var(--muted3);line-height:1.7;margin-bottom:28px}
+.l-field{margin-bottom:14px}
+.l-field label{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted3);margin-bottom:7px}
+.l-field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;color:var(--text);font-size:17px;padding:16px 18px;outline:none;transition:border-color .18s,background .18s}
+.l-field input:focus{border-color:var(--border3);background:var(--bg4)}
+.l-options{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 10px}
+.check-row{display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--text);font-weight:600}
+.check-row input{accent-color:var(--accent)}
+.l-err{font-size:13px;color:var(--red);margin-top:10px;display:none;line-height:1.55}
+.l-btn{width:100%;background:var(--accent);color:#000;font-size:17px;font-weight:800;padding:17px;border-radius:16px;border:none;margin-top:12px;cursor:pointer;transition:opacity .15s,transform .15s}
+.l-btn:hover{opacity:.9;transform:translateY(-1px)}
+.l-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.l-footnote{font-size:13px;color:var(--muted);margin-top:14px;line-height:1.65}
+
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(2px);z-index:89}
+.sb-overlay.open{display:block}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--sb);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:transform .25s ease;z-index:90}
+.sb-header{padding:18px 14px;border-bottom:1px solid var(--border)}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sb-dot{width:24px;height:24px;background:var(--accent);border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:900;color:#000;flex-shrink:0}
+.sb-brand{font-size:14px;font-weight:800}
+.sb-member-name{font-size:13px;font-weight:700;color:var(--text)}
+.sb-member-role{font-size:11px;color:var(--muted3);margin-top:3px}
+.sb-nav{padding:9px 7px;flex:1;overflow-y:auto}
+.sb-sec{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);padding:4px 8px;margin:10px 0 3px}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:8px 9px;border-radius:8px;font-size:12.7px;color:var(--muted3);transition:background .12s,color .12s;cursor:pointer;margin-bottom:2px;user-select:none}
+.sb-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.sb-item.active{background:rgba(255,255,255,.07);color:var(--text);font-weight:700}
+.sb-il{display:flex;align-items:center;gap:8px}
+.sb-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--bg4);border:1px solid var(--border2);font-size:10px;font-weight:700;color:var(--muted3)}
+.sb-footer{padding:10px 7px;border-top:1px solid var(--border)}
+.sb-out{width:100%;background:transparent;border:1px solid var(--border2);color:var(--muted3);font-size:12px;font-weight:600;padding:9px;border-radius:8px;cursor:pointer;transition:color .15s}
+.sb-out:hover{color:var(--text)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);flex-shrink:0;gap:12px}
+.tb-left{display:flex;align-items:center;gap:10px}
+.tb-ham{background:transparent;border:none;color:var(--muted3);font-size:20px;cursor:pointer;display:none;padding:2px 4px;line-height:1}
+.tb-title{font-size:15px;font-weight:800}
+.tb-r{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0}
+.api-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:background .4s}
+.api-dot.ok{background:var(--green)}.api-dot.err{background:var(--red)}
+.tb-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--muted3);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:color .15s;white-space:nowrap}
+.tb-btn:hover{color:var(--text)}
+.tb-user{display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted3)}
+.notif-bell{position:relative;background:var(--bg3);border:1px solid var(--border2);color:var(--muted3);font-size:15px;padding:6px 9px;border-radius:8px;cursor:pointer;transition:color .15s;line-height:1}
+.notif-bell:hover{color:var(--text)}
+.notif-badge-dot{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;border:1.5px solid var(--bg)}
+.tb-notif-wrap{position:relative}
+.notif-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;z-index:200;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.5)}
+.notif-dd-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-dd-title{font-size:13px;font-weight:800}
+.notif-dd-list{max-height:320px;overflow-y:auto}
+.notif-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.notif-item:hover{background:var(--bg3)}
+.notif-item.unread{background:rgba(232,197,71,.04)}
+.notif-item:last-child{border-bottom:none}
+.notif-item-title{font-size:12.5px;font-weight:700;margin-bottom:2px}
+.notif-item-sub{font-size:11.5px;color:var(--muted3);line-height:1.45}
+.notif-item-time{font-size:10px;color:var(--muted);margin-top:4px}
+.notif-empty{padding:24px;text-align:center;font-size:12px;color:var(--muted)}
+.content{flex:1;overflow-y:auto;padding:20px}
+.view{display:none}.view.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.card + .card{margin-top:14px}
+.card-header{padding:15px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-title{font-size:14px;font-weight:800}
+.card-sub{font-size:12px;color:var(--muted3)}
+.card-body{padding:16px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.scard{background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:16px;padding:18px}
+.scard-lbl{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.scard-n{font-size:30px;font-weight:900;letter-spacing:-.05em;line-height:1}
+.scard-sub{font-size:12px;color:var(--muted3);margin-top:5px}
+.mini-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+.list{display:flex;flex-direction:column;gap:10px}
+.item-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px}
+.item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.item-name{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.item-meta{font-size:12px;color:var(--muted3);line-height:1.6;margin-top:3px}
+.item-copy{font-size:12.5px;color:var(--muted3);line-height:1.65;margin-top:8px;white-space:pre-wrap}
+.item-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%}
+.badge.new{background:rgba(232,197,71,.1);color:var(--accent)}.badge.new::before{background:var(--accent)}
+.badge.contacted{background:rgba(96,165,250,.1);color:var(--blue)}.badge.contacted::before{background:var(--blue)}
+.badge.replied{background:rgba(45,212,191,.1);color:var(--teal)}.badge.replied::before{background:var(--teal)}
+.badge.converted{background:rgba(62,207,142,.12);color:var(--green)}.badge.converted::before{background:var(--green)}
+.badge.lost{background:rgba(248,113,113,.12);color:var(--red)}.badge.lost::before{background:var(--red)}
+.badge.draft{background:rgba(255,255,255,.06);color:var(--muted3)}.badge.draft::before{background:var(--muted3)}
+.badge.sending{background:rgba(251,146,60,.12);color:var(--orange)}.badge.sending::before{background:var(--orange)}
+.badge.completed{background:rgba(62,207,142,.12);color:var(--green)}.badge.completed::before{background:var(--green)}
+.badge.failed{background:rgba(248,113,113,.12);color:var(--red)}.badge.failed::before{background:var(--red)}
+.badge.scheduled{background:rgba(167,139,250,.12);color:var(--purple)}.badge.scheduled::before{background:var(--purple)}
+.btn{font-size:13px;font-weight:700;padding:10px 15px;border-radius:10px;border:none;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.9}
+.btn-primary{background:var(--accent);color:#000}
+.btn-ghost{background:var(--bg4);border:1px solid var(--border2);color:var(--muted3)}
+.btn-danger{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.18);color:var(--red)}
+.btn-success{background:rgba(62,207,142,.12);border:1px solid rgba(62,207,142,.18);color:var(--green)}
+.btn-sm{font-size:11.5px;padding:7px 11px;border-radius:8px}
+.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:auto}
+.tbl-head,.trow{display:grid;grid-template-columns:minmax(170px,1.3fr) minmax(160px,1fr) 140px 110px 150px;gap:12px;align-items:center;padding:14px 16px}
+.tbl-head{border-bottom:1px solid var(--border);background:var(--bg3)}
+.th{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.trow{border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+.td{font-size:13px}
+.td.name{font-weight:700}
+.td.muted{color:var(--muted3)}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;border:1px solid var(--border2);background:var(--bg4);font-size:11px;color:var(--muted3);font-weight:700}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-field{margin-bottom:12px}
+.form-field label{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted3);margin-bottom:6px}
+.form-field input,.form-field textarea,.form-field select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;padding:11px 12px;outline:none;transition:border-color .15s}
+.form-field input:focus,.form-field textarea:focus,.form-field select:focus{border-color:var(--border3)}
+.form-field textarea{min-height:100px;resize:vertical}
+.form-field select option{background:var(--bg3)}
+.note{padding:12px 14px;border-radius:12px;background:var(--accent2);border:1px solid rgba(232,197,71,.18);font-size:12px;line-height:1.65;color:var(--text)}
+.dropzone{border:1px dashed var(--border3);border-radius:14px;padding:22px;text-align:center;background:linear-gradient(180deg,var(--bg3),var(--bg4));cursor:pointer;transition:border-color .15s,background .15s}
+.dropzone.dragover{border-color:var(--accent);background:var(--accent2)}
+.dropzone-title{font-size:14px;font-weight:800}
+.dropzone-sub{font-size:12px;color:var(--muted3);margin-top:7px;line-height:1.6}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:54px 20px;text-align:center}
+.empty-icon{font-size:34px;margin-bottom:10px;opacity:.34}
+.empty-title{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--muted3)}
+.empty-sub{font-size:12px;color:var(--muted);max-width:420px;line-height:1.7}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--bg4);border:1px solid var(--border2);color:var(--text);font-size:13px;font-weight:600;padding:10px 20px;border-radius:100px;z-index:1300;transition:transform .25s ease,opacity .25s ease;opacity:0;max-width:min(92vw,440px);white-space:normal;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(3px);z-index:1100;display:none;align-items:center;justify-content:center;padding:18px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:18px;width:min(760px,100%);max-height:90vh;display:flex;flex-direction:column}
+.modal-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.modal-title{font-size:15px;font-weight:800}
+.modal-close{background:transparent;border:none;color:var(--muted3);font-size:22px;cursor:pointer;line-height:1}
+.modal-body{padding:18px;overflow-y:auto}
+.modal-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.sticky-actions{display:none}
+.mono{font-family:var(--mono)}
+
+@media (max-width: 1080px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .mini-grid,.panel-grid{grid-template-columns:1fr}
+}
+@media (max-width: 920px){
+  .login-shell{grid-template-columns:1fr}
+  .login-hero{min-height:auto}
+}
+@media (max-width: 820px){
+  .sidebar{position:fixed;top:0;left:0;width:240px;height:100%;transform:translateX(-100%);box-shadow:24px 0 64px rgba(0,0,0,.54)}
+  .sidebar.open{transform:translateX(0)}
+  .tb-ham{display:block}
+  .topbar{padding:0 16px}
+  .content{padding:16px}
+}
+@media (max-width: 640px){
+  body{background:var(--bg)}
+  .login-screen{align-items:flex-start;padding:0}
+  .login-shell{gap:0;width:100%}
+  .login-hero{border-radius:0;padding:24px 18px 18px;border-left:none;border-right:none}
+  .login-box{border-radius:22px 22px 0 0;margin-top:-8px;padding:22px 18px 30px;border-left:none;border-right:none;border-bottom:none}
+  .l-title{font-size:34px}
+  .l-hero-title{font-size:56px}
+  .l-hero-copy{font-size:15px}
+  .l-feature-grid{grid-template-columns:1fr}
+  .topbar{height:auto;min-height:56px;align-items:flex-start;padding:12px 14px;flex-wrap:wrap}
+  .tb-r{width:100%;justify-content:space-between;flex-wrap:wrap}
+  .tb-btn,.tb-user{font-size:11px}
+  .content{padding:14px}
+  .stat-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .tbl-head,.trow{grid-template-columns:minmax(140px,1.2fr) minmax(120px,.9fr) 110px;overflow-x:auto}
+  .tbl-head .th:nth-child(4),.tbl-head .th:nth-child(5),.trow .td:nth-child(4),.trow .td:nth-child(5){display:none}
+  .notif-dropdown{width:min(92vw,320px)}
+  .sticky-actions{display:flex;position:sticky;bottom:0;left:0;right:0;gap:10px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(7,8,8,0),rgba(7,8,8,.96) 34%,rgba(7,8,8,1));z-index:15;margin:14px -14px -14px}
+  .sticky-actions .btn{flex:1}
+  .modal{border-radius:18px 18px 0 0;align-self:flex-end;width:100%;max-height:94vh}
+}
+</style>
+</head>
+<body>
+<div class="login-screen" id="loginScreen">
+  <div class="login-shell">
+    <div class="login-hero">
+      <div>
+        <div class="l-badge">Sales executive ready</div>
+        <div class="l-hero-title">Pipeline control with <em>clean follow-ups</em>.</div>
+        <div class="l-hero-copy">YoungMinds sales executives can import leads, launch personalized email and WhatsApp campaigns, track results, and stay in sync with the wider team from one focused portal.</div>
+      </div>
+      <div class="l-feature-grid">
+        <div class="l-feature"><div class="l-feature-title">Bulk outreach</div><div class="l-feature-sub">Run lead campaigns with safe delays, message variables, and duplicate prevention built in.</div></div>
+        <div class="l-feature"><div class="l-feature-title">Member portal logic</div><div class="l-feature-sub">Same remember-me flow, app shell, team profile area, and notification rhythm as the member workspace.</div></div>
+        <div class="l-feature"><div class="l-feature-title">Real analytics</div><div class="l-feature-sub">See sent, delivered, failed, and converted totals without leaving the portal.</div></div>
+        <div class="l-feature"><div class="l-feature-title">Admin-controlled</div><div class="l-feature-sub">Sales executives are created from the admin panel so access stays structured and easy to manage.</div></div>
+      </div>
+    </div>
+    <div class="login-box">
+      <div class="l-logo"><div class="l-dot">Y</div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Sales</div></div></div>
+      <div class="l-title">Welcome back</div>
+      <div class="l-sub">Use the same application Gmail and password already registered with YoungMinds to open the campaign workspace.</div>
+      <div class="l-field"><label>Email</label><input type="email" id="sales-email" placeholder="sales@example.com" autocomplete="username"></div>
+      <div class="l-field"><label>Password</label><input type="password" id="sales-password" placeholder="••••••••" autocomplete="current-password"></div>
+      <div class="l-options">
+        <label class="check-row"><input type="checkbox" id="sales-remember" checked> <span>Remember this device</span></label>
+      </div>
+      <div class="l-err" id="sales-login-error">Incorrect sales credentials.</div>
+      <button class="l-btn" id="sales-login-btn" type="button" onclick="doSalesLogin()">Sign in →</button>
+      <div class="l-footnote">If your sales access hasn’t been granted yet, ask the YoungMinds admin team to enable Sales Portal access for your existing application account.</div>
+    </div>
+  </div>
+</div>
+
+<div class="app hidden" id="salesApp">
+  <div class="sb-overlay" id="sbOverlay" onclick="closeSalesSidebar()"></div>
+  <div class="sidebar" id="salesSidebar">
+    <div class="sb-header">
+      <div class="sb-logo"><div class="sb-dot">Y</div><div class="sb-brand">YoungMinds Sales</div></div>
+      <div class="sb-member-name" id="sbExecName">Sales Executive</div>
+      <div class="sb-member-role" id="sbExecRole">Sales Executive</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Workspace</div>
+      <div class="sb-item active" id="nav-dashboard" onclick="salesNav('dashboard')"><div class="sb-il"><span>◧</span><span>Dashboard</span></div></div>
+      <div class="sb-item" id="nav-leads" onclick="salesNav('leads')"><div class="sb-il"><span>◎</span><span>Leads</span></div><span class="sb-count" id="cnt-leads">0</span></div>
+      <div class="sb-item" id="nav-campaigns" onclick="salesNav('campaigns')"><div class="sb-il"><span>✉️</span><span>Campaigns</span></div><span class="sb-count" id="cnt-campaigns">0</span></div>
+      <div class="sb-item" id="nav-activity" onclick="salesNav('activity')"><div class="sb-il"><span>↗</span><span>Activity</span></div></div>
+      <div class="sb-item" id="nav-analytics" onclick="salesNav('analytics')"><div class="sb-il"><span>◔</span><span>Analytics</span></div></div>
+      <div class="sb-sec">People</div>
+      <div class="sb-item" id="nav-team" onclick="salesNav('team')"><div class="sb-il"><span>👥</span><span>Team</span></div></div>
+      <div class="sb-item" id="nav-profile" onclick="salesNav('profile')"><div class="sb-il"><span>⚙</span><span>My Profile</span></div></div>
+    </div>
+    <div class="sb-footer">
+      <button class="sb-out" type="button" onclick="doSalesLogout()">↩ Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-left">
+        <button class="tb-ham" type="button" onclick="toggleSalesSidebar()">☰</button>
+        <div class="tb-title" id="salesTbTitle">Dashboard</div>
+      </div>
+      <div class="tb-r">
+        <div class="api-dot" id="sales-api-dot"></div>
+        <span id="sales-api-ts" style="font-size:11px;color:var(--muted3)"></span>
+        <a class="tb-btn" href="https://youngmindsagency.vercel.app/" target="_blank" rel="noopener">Public Website</a>
+        <a class="tb-btn" href="/member" target="_blank" rel="noopener">Member Portal</a>
+        <div class="tb-notif-wrap">
+          <button class="notif-bell" type="button" onclick="toggleSalesNotifications()">🔔<span class="notif-badge-dot" id="salesNotifDot">0</span></button>
+          <div class="notif-dropdown hidden" id="salesNotifDropdown">
+            <div class="notif-dd-header"><div class="notif-dd-title">Notifications</div></div>
+            <div class="notif-dd-list" id="salesNotifList"></div>
+          </div>
+        </div>
+        <div class="tb-user" id="salesUserChip">👤 sales</div>
+        <button class="tb-btn" type="button" onclick="refreshSalesData()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="view active" id="view-dashboard"></div>
+      <div class="view" id="view-leads"></div>
+      <div class="view" id="view-campaigns"></div>
+      <div class="view" id="view-activity"></div>
+      <div class="view" id="view-analytics"></div>
+      <div class="view" id="view-team"></div>
+      <div class="view" id="view-profile"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="leadModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="leadModalTitle">Add lead</div><button class="modal-close" type="button" onclick="closeModal('leadModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-field"><label>Name</label><input id="lead-name" type="text" placeholder="Priya Kumar"></div>
+        <div class="form-field"><label>Company</label><input id="lead-company" type="text" placeholder="Acme Studio"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label>Email</label><input id="lead-email" type="email" placeholder="priya@company.com"></div>
+        <div class="form-field"><label>Phone</label><input id="lead-phone" type="text" placeholder="+91 98765 43210"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label>Status</label><select id="lead-status"><option value="new">New</option><option value="contacted">Contacted</option><option value="replied">Replied</option><option value="converted">Converted</option><option value="lost">Lost</option></select></div>
+        <div class="form-field"><label>Source</label><input id="lead-source" type="text" placeholder="upload"></div>
+      </div>
+      <div class="form-field"><label>Tags</label><input id="lead-tags" type="text" placeholder="warm, ecommerce, referral"></div>
+      <div class="form-field"><label>Notes</label><textarea id="lead-notes" placeholder="Add campaign context or lead notes"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('leadModal')">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="saveLead()">Save lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="campaignModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="campaignModalTitle">Create campaign</div><button class="modal-close" type="button" onclick="closeModal('campaignModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-field"><label>Campaign Name</label><input id="campaign-name" type="text" placeholder="April follow-up"></div>
+        <div class="form-field"><label>Channel</label><select id="campaign-channel"><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="both">Both</option></select></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label>Email Subject</label><input id="campaign-subject" type="text" placeholder="Hi {{name}}, quick idea for {{company}}"></div>
+        <div class="form-field"><label>Delay Between Messages</label><select id="campaign-delay"><option value="5">5 seconds</option><option value="6">6 seconds</option><option value="7">7 seconds</option><option value="8">8 seconds</option><option value="9">9 seconds</option><option value="10">10 seconds</option></select></div>
+      </div>
+      <div class="form-field"><label>Message Template</label><textarea id="campaign-message" placeholder="Hi {{name}}, this is {{executive_name}} from YoungMinds..."></textarea></div>
+      <div class="note">Personalization tokens supported: <span class="mono">{{name}}</span>, <span class="mono">{{company}}</span>, <span class="mono">{{email}}</span>, <span class="mono">{{phone}}</span>, <span class="mono">{{executive_name}}</span>.</div>
+      <div class="form-field" style="margin-top:14px"><label>Select Leads</label><div id="campaignLeadChecklist" class="list"></div></div>
+      <div class="sticky-actions">
+        <button class="btn btn-ghost" type="button" onclick="closeModal('campaignModal')">Cancel</button>
+        <button class="btn btn-primary" type="button" onclick="saveCampaign()">Save campaign</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('campaignModal')">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="saveCampaign()">Save campaign</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.location.origin;
+const SALES_SESSION_KEY = "ym_sales_session";
+const SALES_REMEMBER_KEY = "ym_sales_remember";
+const SALES_EMAIL_KEY = "ym_sales_email";
+const SALES_VIEW_SET = new Set(["dashboard","leads","campaigns","activity","analytics","team","profile"]);
+const SALES_TITLES = { dashboard:"Dashboard", leads:"Leads", campaigns:"Campaigns", activity:"Activity", analytics:"Analytics", team:"Team", profile:"My Profile" };
+let currentSalesToken = "";
+let currentExecutive = null;
+let salesBootstrap = { leads: [], campaigns: [], logs: [], notifications: [], team: [], analytics: {} };
+let salesView = "dashboard";
+let salesPollInterval = null;
+let salesEditing = { active: false, lastInputAt: 0 };
+let currentLeadId = "";
+let currentCampaignId = "";
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+
+function showToast(message) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = message || "";
+  el.classList.add("show");
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+function salesAuthHeaders(extra = {}) {
+  const headers = { ...extra };
+  if (currentSalesToken) headers.Authorization = `Bearer ${currentSalesToken}`;
+  return headers;
+}
+
+function setSalesStatus(ok) {
+  const dot = document.getElementById("sales-api-dot");
+  const ts = document.getElementById("sales-api-ts");
+  if (dot) dot.className = "api-dot " + (ok ? "ok" : "err");
+  if (ts) ts.textContent = new Date().toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit" });
+}
+
+function rememberSalesChoice() {
+  return document.getElementById("sales-remember")?.checked ?? localStorage.getItem(SALES_REMEMBER_KEY) === "1";
+}
+
+function getStoredSalesToken() {
+  return localStorage.getItem(SALES_SESSION_KEY) || sessionStorage.getItem(SALES_SESSION_KEY) || "";
+}
+
+function persistSalesSession(token, email, remember) {
+  localStorage.setItem(SALES_REMEMBER_KEY, remember ? "1" : "0");
+  if (email) localStorage.setItem(SALES_EMAIL_KEY, email);
+  if (remember) {
+    localStorage.setItem(SALES_SESSION_KEY, token);
+    sessionStorage.removeItem(SALES_SESSION_KEY);
+  } else {
+    sessionStorage.setItem(SALES_SESSION_KEY, token);
+    localStorage.removeItem(SALES_SESSION_KEY);
+  }
+}
+
+function clearSalesSession() {
+  localStorage.removeItem(SALES_SESSION_KEY);
+  sessionStorage.removeItem(SALES_SESSION_KEY);
+}
+
+function getUnreadNotificationCount() {
+  return (salesBootstrap.notifications || []).filter(item => !item.readAt).length;
+}
+
+function updateSalesShell() {
+  document.getElementById("sbExecName").textContent = currentExecutive?.name || "Sales Executive";
+  document.getElementById("sbExecRole").textContent = currentExecutive?.designation || "Sales Executive";
+  document.getElementById("salesUserChip").textContent = `👤 ${currentExecutive?.name || "sales"}`;
+  document.getElementById("salesTbTitle").textContent = SALES_TITLES[salesView] || "Dashboard";
+  document.getElementById("cnt-leads").textContent = String((salesBootstrap.leads || []).length);
+  document.getElementById("cnt-campaigns").textContent = String((salesBootstrap.campaigns || []).length);
+  const unread = getUnreadNotificationCount();
+  const dot = document.getElementById("salesNotifDot");
+  dot.textContent = String(unread);
+  dot.style.display = unread ? "flex" : "none";
+}
+
+function renderNotifications() {
+  const list = document.getElementById("salesNotifList");
+  if (!list) return;
+  const rows = salesBootstrap.notifications || [];
+  if (!rows.length) {
+    list.innerHTML = `<div class="notif-empty">No notifications yet.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(item => `
+    <div class="notif-item ${item.readAt ? "" : "unread"}" onclick="markSalesNotificationRead('${escapeHtml(item.id)}')">
+      <div class="notif-item-title">${escapeHtml(item.title || "Update")}</div>
+      <div class="notif-item-sub">${escapeHtml(item.message || "")}</div>
+      <div class="notif-item-time">${formatDateTime(item.createdAt)}</div>
+    </div>
+  `).join("");
+}
+
+function toggleSalesNotifications() {
+  const dropdown = document.getElementById("salesNotifDropdown");
+  dropdown.classList.toggle("hidden");
+}
+
+document.addEventListener("click", event => {
+  const wrap = document.querySelector(".tb-notif-wrap");
+  const dropdown = document.getElementById("salesNotifDropdown");
+  if (wrap && dropdown && !wrap.contains(event.target)) dropdown.classList.add("hidden");
+});
+
+function openModal(id) {
+  document.getElementById(id)?.classList.add("open");
+  document.body.classList.add("portal-open");
+}
+
+function closeModal(id) {
+  document.getElementById(id)?.classList.remove("open");
+  document.body.classList.remove("portal-open");
+}
+
+function fmtNumber(value) {
+  return Number(value || 0).toLocaleString("en-IN");
+}
+
+function formatDateTime(value) {
+  if (!value) return "—";
+  try { return new Date(value).toLocaleString("en-IN", { dateStyle:"medium", timeStyle:"short" }); }
+  catch { return "—"; }
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+  try { return new Date(value).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }); }
+  catch { return "—"; }
+}
+
+function salesNav(view, options = {}) {
+  const clean = SALES_VIEW_SET.has(view) ? view : "dashboard";
+  salesView = clean;
+  document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".sb-item").forEach(el => el.classList.remove("active"));
+  document.getElementById(`view-${clean}`)?.classList.add("active");
+  document.getElementById(`nav-${clean}`)?.classList.add("active");
+  document.getElementById("salesTbTitle").textContent = SALES_TITLES[clean] || "Dashboard";
+  closeSalesSidebar();
+  if (options.push !== false) {
+    history.pushState({ panel: "sales", view: clean }, "", `${window.location.pathname}#sales-${clean}`);
+  }
+}
+
+function getInitialSalesView() {
+  const hash = String(window.location.hash || "").replace(/^#/, "");
+  return SALES_VIEW_SET.has(hash.replace(/^sales-/, "")) ? hash.replace(/^sales-/, "") : "dashboard";
+}
+
+window.addEventListener("popstate", event => {
+  const view = event.state?.view || getInitialSalesView();
+  if (SALES_VIEW_SET.has(view)) salesNav(view, { push: false });
+});
+
+function toggleSalesSidebar() {
+  document.getElementById("salesSidebar").classList.toggle("open");
+  document.getElementById("sbOverlay").classList.toggle("open");
+}
+
+function closeSalesSidebar() {
+  document.getElementById("salesSidebar").classList.remove("open");
+  document.getElementById("sbOverlay").classList.remove("open");
+}
+
+function setSalesEditing(on) {
+  salesEditing.active = Boolean(on);
+  salesEditing.lastInputAt = Date.now();
+}
+
+document.addEventListener("input", event => {
+  if (event.target.closest(".modal") || event.target.closest("#view-profile") || event.target.closest("#view-campaigns") || event.target.closest("#view-leads")) {
+    setSalesEditing(true);
+  }
+});
+
+function renderDashboard() {
+  const analytics = salesBootstrap.analytics || {};
+  const leads = salesBootstrap.leads || [];
+  const campaigns = salesBootstrap.campaigns || [];
+  const logs = salesBootstrap.logs || [];
+  document.getElementById("view-dashboard").innerHTML = `
+    <div class="stat-grid">
+      <div class="scard"><div class="scard-lbl">Total Leads</div><div class="scard-n">${fmtNumber(analytics.totalLeads || leads.length)}</div><div class="scard-sub">All leads in your assigned pipeline.</div></div>
+      <div class="scard"><div class="scard-lbl">Active Campaigns</div><div class="scard-n">${fmtNumber(analytics.activeCampaigns || 0)}</div><div class="scard-sub">Campaigns currently sending live.</div></div>
+      <div class="scard"><div class="scard-lbl">Delivered</div><div class="scard-n">${fmtNumber(analytics.totalDelivered || 0)}</div><div class="scard-sub">Messages marked sent or delivered.</div></div>
+      <div class="scard"><div class="scard-lbl">Failed</div><div class="scard-n">${fmtNumber(analytics.totalFailed || 0)}</div><div class="scard-sub">Messages that need a retry or cleanup.</div></div>
+    </div>
+    <div class="mini-grid">
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Recent leads</div><div class="card-sub">Quick look at the latest names in your pipeline.</div></div><button class="btn btn-ghost btn-sm" type="button" onclick="salesNav('leads')">Open leads</button></div>
+        <div class="card-body">
+          <div class="list">
+            ${leads.slice(0,5).map(lead => `
+              <div class="item-card">
+                <div class="item-top"><div><div class="item-name">${escapeHtml(lead.name || "Lead")}</div><div class="item-meta">${escapeHtml(lead.company || "No company")} · ${escapeHtml(lead.email || lead.phone || "No contact yet")}</div></div><span class="badge ${escapeHtml(lead.status || "new")}">${escapeHtml(lead.status || "new")}</span></div>
+              </div>
+            `).join("") || `<div class="empty"><div class="empty-title">No leads yet</div><div class="empty-sub">Import a CSV or add a single lead to start outreach.</div></div>`}
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Recent sends</div><div class="card-sub">Latest message results across email and WhatsApp.</div></div><button class="btn btn-ghost btn-sm" type="button" onclick="salesNav('activity')">View activity</button></div>
+        <div class="card-body">
+          <div class="list">
+            ${logs.slice(0,5).map(log => `
+              <div class="item-card">
+                <div class="item-top"><div><div class="item-name">${escapeHtml((campaigns.find(item => item.id === log.campaignId)?.name) || "Campaign message")}</div><div class="item-meta">${escapeHtml(log.channel || "")} · ${escapeHtml(log.toEmail || log.toPhone || "No target")}</div></div><span class="badge ${log.status === "sent" ? "completed" : log.status === "failed" ? "failed" : "draft"}">${escapeHtml(log.status || "queued")}</span></div>
+                ${log.error ? `<div class="item-copy">${escapeHtml(log.error)}</div>` : ``}
+              </div>
+            `).join("") || `<div class="empty"><div class="empty-title">No message history yet</div><div class="empty-sub">Sent campaign logs will appear here once the first outreach run starts.</div></div>`}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLeads() {
+  const leads = salesBootstrap.leads || [];
+  document.getElementById("view-leads").innerHTML = `
+    <div class="panel-grid">
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Lead import</div><div class="card-sub">Upload a CSV of leads or add a single lead manually.</div></div><div class="item-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="openLeadModal()">+ Add lead</button></div></div>
+        <div class="card-body">
+          <div class="dropzone" id="salesDropzone" onclick="document.getElementById('salesCsvInput').click()">
+            <div class="dropzone-title">Drop CSV here or click to browse</div>
+            <div class="dropzone-sub">Columns supported: name, email, phone, company, source, tags.</div>
+            <input id="salesCsvInput" type="file" accept=".csv,text/csv" class="hidden" onchange="handleSalesCsvUpload(event)">
+          </div>
+          <div class="note" style="margin-top:14px">Right now this sales portal supports CSV import directly in-browser. Email and WhatsApp sending still work from the stored lead records after import.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Lead statuses</div><div class="card-sub">Pipeline buckets update automatically when campaigns contact new leads.</div></div></div>
+        <div class="card-body">
+          <div class="chip-row">
+            <span class="chip">New · ${fmtNumber(leads.filter(item => item.status === "new").length)}</span>
+            <span class="chip">Contacted · ${fmtNumber(leads.filter(item => item.status === "contacted").length)}</span>
+            <span class="chip">Replied · ${fmtNumber(leads.filter(item => item.status === "replied").length)}</span>
+            <span class="chip">Converted · ${fmtNumber(leads.filter(item => item.status === "converted").length)}</span>
+            <span class="chip">Lost · ${fmtNumber(leads.filter(item => item.status === "lost").length)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:14px">
+      <div class="tbl-head">
+        <div class="th">Lead</div><div class="th">Company / Contact</div><div class="th">Status</div><div class="th">Last Contact</div><div class="th">Actions</div>
+      </div>
+      ${leads.map(lead => `
+        <div class="trow">
+          <div class="td name">${escapeHtml(lead.name || "Lead")}</div>
+          <div class="td muted">${escapeHtml(lead.company || "—")}<br>${escapeHtml(lead.email || lead.phone || "—")}</div>
+          <div class="td"><span class="badge ${escapeHtml(lead.status || "new")}">${escapeHtml(lead.status || "new")}</span></div>
+          <div class="td muted">${formatDateTime(lead.lastContactedAt || lead.updatedAt || lead.createdAt)}</div>
+          <div class="td"><div class="item-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="openLeadModal('${escapeHtml(lead.id)}')">Edit</button><button class="btn btn-danger btn-sm" type="button" onclick="deleteLead('${escapeHtml(lead.id)}')">Delete</button></div></div>
+        </div>
+      `).join("") || `<div class="empty"><div class="empty-icon">◎</div><div class="empty-title">No leads loaded</div><div class="empty-sub">Add leads manually or import a CSV to start your sales workspace.</div></div>`}
+    </div>
+  `;
+}
+
+function renderCampaigns() {
+  const campaigns = salesBootstrap.campaigns || [];
+  document.getElementById("view-campaigns").innerHTML = `
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Campaign control</div><div class="card-sub">Create draft campaigns, choose leads, then launch email, WhatsApp, or both.</div></div><div class="item-actions"><button class="btn btn-primary btn-sm" type="button" onclick="openCampaignModal()">+ New campaign</button></div></div>
+      <div class="card-body">
+        <div class="list">
+          ${campaigns.map(campaign => `
+            <div class="item-card">
+              <div class="item-top">
+                <div>
+                  <div class="item-name">${escapeHtml(campaign.name || "Campaign")}</div>
+                  <div class="item-meta">${escapeHtml(campaign.channel || "email")} · ${fmtNumber((campaign.selectedLeadIds || []).length)} selected leads · ${campaign.delaySeconds || 5}s delay</div>
+                </div>
+                <span class="badge ${campaign.status === "completed" ? "completed" : campaign.status === "sending" ? "sending" : campaign.status === "failed" ? "failed" : campaign.status === "scheduled" ? "scheduled" : "draft"}">${escapeHtml(campaign.status || "draft")}</span>
+              </div>
+              ${campaign.subject ? `<div class="item-copy"><strong>Subject:</strong> ${escapeHtml(campaign.subject)}</div>` : ``}
+              <div class="item-copy">${escapeHtml((campaign.messageTemplate || "").slice(0, 260))}${(campaign.messageTemplate || "").length > 260 ? "…" : ""}</div>
+              <div class="chip-row" style="margin-top:10px">
+                <span class="chip">Sent ${fmtNumber(campaign.analytics?.sent || 0)}</span>
+                <span class="chip">Delivered ${fmtNumber(campaign.analytics?.delivered || 0)}</span>
+                <span class="chip">Failed ${fmtNumber(campaign.analytics?.failed || 0)}</span>
+              </div>
+              <div class="item-actions">
+                <button class="btn btn-ghost btn-sm" type="button" onclick="openCampaignModal('${escapeHtml(campaign.id)}')">Edit</button>
+                <button class="btn btn-success btn-sm" type="button" onclick="sendCampaign('${escapeHtml(campaign.id)}')" ${campaign.status === "sending" ? "disabled" : ""}>Send now</button>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="viewCampaignLogs('${escapeHtml(campaign.id)}')">Logs</button>
+                <button class="btn btn-danger btn-sm" type="button" onclick="deleteCampaign('${escapeHtml(campaign.id)}')">Delete</button>
+              </div>
+            </div>
+          `).join("") || `<div class="empty"><div class="empty-icon">✉️</div><div class="empty-title">No campaigns yet</div><div class="empty-sub">Start with a draft campaign once your leads are imported.</div></div>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderActivity() {
+  const logs = salesBootstrap.logs || [];
+  document.getElementById("view-activity").innerHTML = `
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Campaign activity</div><div class="card-sub">Every email and WhatsApp attempt stored with success or failure state.</div></div></div>
+      <div class="card-body">
+        <div class="list">
+          ${logs.map(log => `
+            <div class="item-card">
+              <div class="item-top"><div><div class="item-name">${escapeHtml(log.channel || "message")} · ${escapeHtml(log.toEmail || log.toPhone || "No target")}</div><div class="item-meta">${formatDateTime(log.sentAt || log.createdAt)}</div></div><span class="badge ${log.status === "sent" ? "completed" : log.status === "failed" ? "failed" : "draft"}">${escapeHtml(log.status || "queued")}</span></div>
+              ${log.subject ? `<div class="item-copy"><strong>Subject:</strong> ${escapeHtml(log.subject)}</div>` : ``}
+              <div class="item-copy">${escapeHtml(log.message || "")}</div>
+              ${log.error ? `<div class="item-copy" style="color:var(--red)">Error: ${escapeHtml(log.error)}</div>` : ``}
+            </div>
+          `).join("") || `<div class="empty"><div class="empty-icon">↗</div><div class="empty-title">No activity yet</div><div class="empty-sub">Once a campaign sends, every attempt will appear here.</div></div>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAnalytics() {
+  const analytics = salesBootstrap.analytics || {};
+  document.getElementById("view-analytics").innerHTML = `
+    <div class="stat-grid">
+      <div class="scard"><div class="scard-lbl">Total Campaigns</div><div class="scard-n">${fmtNumber(analytics.totalCampaigns || 0)}</div><div class="scard-sub">Draft, scheduled, and completed.</div></div>
+      <div class="scard"><div class="scard-lbl">Sent</div><div class="scard-n">${fmtNumber(analytics.totalSent || 0)}</div><div class="scard-sub">Total successful sends.</div></div>
+      <div class="scard"><div class="scard-lbl">Replied</div><div class="scard-n">${fmtNumber(analytics.replied || 0)}</div><div class="scard-sub">Leads marked replied.</div></div>
+      <div class="scard"><div class="scard-lbl">Converted</div><div class="scard-n">${fmtNumber(analytics.converted || 0)}</div><div class="scard-sub">Leads moved to converted status.</div></div>
+    </div>
+    <div class="panel-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Performance summary</div></div>
+        <div class="card-body">
+          <div class="chip-row">
+            <span class="chip">Leads · ${fmtNumber(analytics.totalLeads || 0)}</span>
+            <span class="chip">Delivered · ${fmtNumber(analytics.totalDelivered || 0)}</span>
+            <span class="chip">Failed · ${fmtNumber(analytics.totalFailed || 0)}</span>
+          </div>
+          <div class="note" style="margin-top:14px">Daily send caps are enforced by the backend so bulk outreach stays controlled instead of blasting too fast.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Portal logic</div></div>
+        <div class="card-body">
+          <div class="note">Email and WhatsApp campaigns use placeholder replacement, delay controls, duplicate protection, and stored message logs. This keeps the sales workspace aligned with the wider YoungMinds portal logic instead of becoming a disconnected tool.</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTeam() {
+  const team = salesBootstrap.team || [];
+  document.getElementById("view-team").innerHTML = `
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Sales team</div><div class="card-sub">Active executives available in the sales workspace.</div></div></div>
+      <div class="card-body">
+        <div class="list">
+          ${team.map(item => `
+            <div class="item-card">
+              <div class="item-top"><div><div class="item-name">${escapeHtml(item.name || "Executive")}</div><div class="item-meta">${escapeHtml(item.designation || "Sales Executive")} · ${escapeHtml(item.email || "")}</div></div><span class="badge completed">${escapeHtml(item.status || "active")}</span></div>
+              <div class="item-copy">${escapeHtml(item.city || "City not added yet.")}${item.phone ? ` · ${escapeHtml(item.phone)}` : ""}</div>
+            </div>
+          `).join("") || `<div class="empty"><div class="empty-title">No team members found</div><div class="empty-sub">Sales executives will appear here once added by admin.</div></div>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderProfile() {
+  const exec = currentExecutive || {};
+  document.getElementById("view-profile").innerHTML = `
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">My profile</div><div class="card-sub">Keep your sales profile current for templates and admin visibility.</div></div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-field"><label>Name</label><input id="profile-name" type="text" value="${escapeHtml(exec.name || "")}"></div>
+          <div class="form-field"><label>Email</label><input type="text" value="${escapeHtml(exec.email || "")}" disabled></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-field"><label>Phone</label><input id="profile-phone" type="text" value="${escapeHtml(exec.phone || "")}"></div>
+          <div class="form-field"><label>Designation</label><input id="profile-designation" type="text" value="${escapeHtml(exec.designation || "")}"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-field"><label>City</label><input id="profile-city" type="text" value="${escapeHtml(exec.city || "")}"></div>
+          <div class="form-field"><label>Status</label><input type="text" value="${escapeHtml(exec.status || "active")}" disabled></div>
+        </div>
+        <div class="form-field"><label>Notes</label><textarea id="profile-notes">${escapeHtml(exec.notes || "")}</textarea></div>
+        <div class="item-actions"><button class="btn btn-primary" type="button" onclick="saveProfile()">Save profile</button></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSalesViews() {
+  updateSalesShell();
+  renderNotifications();
+  renderDashboard();
+  renderLeads();
+  renderCampaigns();
+  renderActivity();
+  renderAnalytics();
+  renderTeam();
+  renderProfile();
+  salesNav(salesView, { push: false });
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let current = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      field += '"';
+      i += 1;
+      continue;
+    }
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      current.push(field);
+      field = "";
+      continue;
+    }
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") i += 1;
+      current.push(field);
+      rows.push(current);
+      current = [];
+      field = "";
+      continue;
+    }
+    field += char;
+  }
+  if (field.length || current.length) {
+    current.push(field);
+    rows.push(current);
+  }
+  if (!rows.length) return [];
+  const headers = rows[0].map(item => String(item || "").trim().toLowerCase());
+  return rows.slice(1).filter(row => row.some(cell => String(cell || "").trim())).map(row => {
+    const entry = {};
+    headers.forEach((header, index) => { entry[header] = String(row[index] || "").trim(); });
+    return {
+      name: entry.name || entry.full_name || "",
+      email: entry.email || "",
+      phone: entry.phone || entry.mobile || "",
+      company: entry.company || entry.business || "",
+      source: entry.source || "upload",
+      tags: (entry.tags || "").split(",").map(item => item.trim()).filter(Boolean)
+    };
+  });
+}
+
+async function handleSalesCsvUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const leads = parseCsv(text);
+    if (!leads.length) {
+      showToast("No usable leads found in this CSV");
+      return;
+    }
+    const response = await fetch(`${API}/api/sales/leads/import`, {
+      method: "POST",
+      headers: salesAuthHeaders({ "Content-Type":"application/json" }),
+      body: JSON.stringify({ leads })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not import leads");
+    showToast(`Imported ${data.count || 0} leads`);
+    await refreshSalesData({ silent: true });
+  } catch (err) {
+    showToast(err.message || "Could not import leads");
+  } finally {
+    event.target.value = "";
+  }
+}
+
+function openLeadModal(id = "") {
+  currentLeadId = id || "";
+  const lead = (salesBootstrap.leads || []).find(item => item.id === id) || {};
+  document.getElementById("leadModalTitle").textContent = id ? "Edit lead" : "Add lead";
+  document.getElementById("lead-name").value = lead.name || "";
+  document.getElementById("lead-company").value = lead.company || "";
+  document.getElementById("lead-email").value = lead.email || "";
+  document.getElementById("lead-phone").value = lead.phone || "";
+  document.getElementById("lead-status").value = lead.status || "new";
+  document.getElementById("lead-source").value = lead.source || "manual";
+  document.getElementById("lead-tags").value = Array.isArray(lead.tags) ? lead.tags.join(", ") : "";
+  document.getElementById("lead-notes").value = lead.customFields?.notes || "";
+  openModal("leadModal");
+}
+
+async function saveLead() {
+  const payload = {
+    name: document.getElementById("lead-name").value.trim(),
+    company: document.getElementById("lead-company").value.trim(),
+    email: document.getElementById("lead-email").value.trim(),
+    phone: document.getElementById("lead-phone").value.trim(),
+    status: document.getElementById("lead-status").value,
+    source: document.getElementById("lead-source").value.trim() || "manual",
+    tags: document.getElementById("lead-tags").value.split(",").map(item => item.trim()).filter(Boolean),
+    customFields: { notes: document.getElementById("lead-notes").value.trim() }
+  };
+  try {
+    const response = await fetch(`${API}/api/sales/leads${currentLeadId ? `/${encodeURIComponent(currentLeadId)}` : ""}`, {
+      method: currentLeadId ? "PUT" : "POST",
+      headers: salesAuthHeaders({ "Content-Type":"application/json" }),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not save lead");
+    closeModal("leadModal");
+    showToast(currentLeadId ? "Lead updated" : "Lead added");
+    await refreshSalesData({ silent: true });
+  } catch (err) {
+    showToast(err.message || "Could not save lead");
+  }
+}
+
+async function deleteLead(id) {
+  if (!confirm("Delete this lead?")) return;
+  try {
+    const response = await fetch(`${API}/api/sales/leads/${encodeURIComponent(id)}`, { method: "DELETE", headers: salesAuthHeaders() });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not delete lead");
+    showToast("Lead deleted");
+    await refreshSalesData({ silent: true });
+  } catch (err) {
+    showToast(err.message || "Could not delete lead");
+  }
+}
+
+function renderCampaignLeadChecklist(selectedIds = []) {
+  const el = document.getElementById("campaignLeadChecklist");
+  const selectedSet = new Set(selectedIds);
+  const leads = salesBootstrap.leads || [];
+  if (!leads.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-title">No leads available</div><div class="empty-sub">Add leads first, then choose who should receive the campaign.</div></div>`;
+    return;
+  }
+  el.innerHTML = leads.map(lead => `
+    <label class="item-card" style="cursor:pointer">
+      <div class="item-top">
+        <div>
+          <div class="item-name">${escapeHtml(lead.name || "Lead")}</div>
+          <div class="item-meta">${escapeHtml(lead.company || "—")} · ${escapeHtml(lead.email || lead.phone || "—")}</div>
+        </div>
+        <input type="checkbox" data-campaign-lead value="${escapeHtml(lead.id)}" ${selectedSet.has(lead.id) ? "checked" : ""}>
+      </div>
+    </label>
+  `).join("");
+}
+
+function openCampaignModal(id = "") {
+  currentCampaignId = id || "";
+  const campaign = (salesBootstrap.campaigns || []).find(item => item.id === id) || {};
+  document.getElementById("campaignModalTitle").textContent = id ? "Edit campaign" : "Create campaign";
+  document.getElementById("campaign-name").value = campaign.name || "";
+  document.getElementById("campaign-channel").value = campaign.channel || "email";
+  document.getElementById("campaign-subject").value = campaign.subject || "";
+  document.getElementById("campaign-delay").value = String(campaign.delaySeconds || 5);
+  document.getElementById("campaign-message").value = campaign.messageTemplate || "";
+  renderCampaignLeadChecklist(campaign.selectedLeadIds || []);
+  openModal("campaignModal");
+}
+
+async function saveCampaign() {
+  const selectedLeadIds = Array.from(document.querySelectorAll("[data-campaign-lead]:checked")).map(input => input.value);
+  const payload = {
+    name: document.getElementById("campaign-name").value.trim(),
+    channel: document.getElementById("campaign-channel").value,
+    subject: document.getElementById("campaign-subject").value.trim(),
+    delaySeconds: Number(document.getElementById("campaign-delay").value || 5),
+    messageTemplate: document.getElementById("campaign-message").value.trim(),
+    selectedLeadIds
+  };
+  try {
+    const response = await fetch(`${API}/api/sales/campaigns${currentCampaignId ? `/${encodeURIComponent(currentCampaignId)}` : ""}`, {
+      method: currentCampaignId ? "PUT" : "POST",
+      headers: salesAuthHeaders({ "Content-Type":"application/json" }),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not save campaign");
+    closeModal("campaignModal");
+    showToast(currentCampaignId ? "Campaign updated" : "Campaign created");
+    await refreshSalesData({ silent: true });
+  } catch (err) {
+    showToast(err.message || "Could not save campaign");
+  }
+}
+
+async function sendCampaign(id) {
+  try {
+    const response = await fetch(`${API}/api/sales/campaigns/${encodeURIComponent(id)}/send`, { method: "POST", headers: salesAuthHeaders() });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not start campaign");
+    showToast("Campaign started");
+    await refreshSalesData({ silent: true });
+  } catch (err) {
+    showToast(err.message || "Could not start campaign");
+  }
+}
+
+async function deleteCampaign(id) {
+  if (!confirm("Delete this campaign and its logs?")) return;
+  try {
+    const response = await fetch(`${API}/api/sales/campaigns/${encodeURIComponent(id)}`, { method: "DELETE", headers: salesAuthHeaders() });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not delete campaign");
+    showToast("Campaign deleted");
+    await refreshSalesData({ silent: true });
+  } catch (err) {
+    showToast(err.message || "Could not delete campaign");
+  }
+}
+
+async function viewCampaignLogs(id) {
+  try {
+    const response = await fetch(`${API}/api/sales/campaigns/${encodeURIComponent(id)}/logs`, { headers: salesAuthHeaders() });
+    const data = await response.json().catch(() => []);
+    if (!response.ok) throw new Error(data.error || "Could not load logs");
+    salesBootstrap.logs = Array.isArray(data) ? data : [];
+    renderActivity();
+    salesNav("activity");
+    showToast("Loaded campaign logs");
+  } catch (err) {
+    showToast(err.message || "Could not load logs");
+  }
+}
+
+async function saveProfile() {
+  const payload = {
+    name: document.getElementById("profile-name").value.trim(),
+    phone: document.getElementById("profile-phone").value.trim(),
+    designation: document.getElementById("profile-designation").value.trim(),
+    city: document.getElementById("profile-city").value.trim(),
+    notes: document.getElementById("profile-notes").value.trim()
+  };
+  try {
+    const response = await fetch(`${API}/api/sales/profile`, {
+      method: "PUT",
+      headers: salesAuthHeaders({ "Content-Type":"application/json" }),
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not save profile");
+    currentExecutive = data.executive || currentExecutive;
+    renderProfile();
+    updateSalesShell();
+    showToast("Profile updated");
+  } catch (err) {
+    showToast(err.message || "Could not save profile");
+  }
+}
+
+async function markSalesNotificationRead(id) {
+  try {
+    const response = await fetch(`${API}/api/sales/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH", headers: salesAuthHeaders() });
+    const data = await response.json().catch(() => ({}));
+    if (response.ok) {
+      salesBootstrap.notifications = (salesBootstrap.notifications || []).map(item => item.id === id ? data : item);
+      renderNotifications();
+      updateSalesShell();
+    }
+  } catch {}
+}
+
+async function loadSalesBootstrap() {
+  const response = await fetch(`${API}/api/sales/bootstrap`, { headers: salesAuthHeaders() });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Could not load sales workspace");
+  currentExecutive = data.executive || currentExecutive;
+  salesBootstrap = {
+    leads: Array.isArray(data.leads) ? data.leads : [],
+    campaigns: Array.isArray(data.campaigns) ? data.campaigns : [],
+    logs: Array.isArray(data.logs) ? data.logs : [],
+    notifications: Array.isArray(data.notifications) ? data.notifications : [],
+    team: Array.isArray(data.team) ? data.team : [],
+    analytics: data.analytics || {}
+  };
+}
+
+async function refreshSalesData(options = {}) {
+  if (!currentSalesToken) return;
+  const shouldPause = salesEditing.active && Date.now() - salesEditing.lastInputAt < 18000;
+  if (shouldPause && !options.force) return;
+  try {
+    await loadSalesBootstrap();
+    setSalesStatus(true);
+    renderSalesViews();
+  } catch (err) {
+    setSalesStatus(false);
+    if (!options.silent) showToast(err.message || "Could not refresh portal");
+  }
+}
+
+function showSalesApp() {
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("salesApp").classList.remove("hidden");
+}
+
+function showSalesLogin() {
+  document.getElementById("salesApp").classList.add("hidden");
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("sales-password").value = "";
+  document.getElementById("sales-email").value = localStorage.getItem(SALES_EMAIL_KEY) || "";
+  document.getElementById("sales-remember").checked = localStorage.getItem(SALES_REMEMBER_KEY) !== "0";
+  document.getElementById("sales-login-btn").disabled = false;
+  document.getElementById("sales-login-btn").textContent = "Sign in →";
+  document.getElementById("sales-login-error").style.display = "none";
+}
+
+async function completeSalesLogin(token, executive, remember) {
+  currentSalesToken = token;
+  currentExecutive = executive;
+  persistSalesSession(token, executive?.email, remember);
+  showSalesApp();
+  salesView = getInitialSalesView();
+  await refreshSalesData({ force: true, silent: true });
+  history.replaceState({ panel: "sales", view: salesView }, "", `${window.location.pathname}#sales-${salesView}`);
+  if (salesPollInterval) clearInterval(salesPollInterval);
+  salesPollInterval = setInterval(() => refreshSalesData({ silent: true }), 45000);
+}
+
+async function doSalesLogin() {
+  const email = document.getElementById("sales-email").value.trim();
+  const password = document.getElementById("sales-password").value;
+  const remember = rememberSalesChoice();
+  const errEl = document.getElementById("sales-login-error");
+  const btn = document.getElementById("sales-login-btn");
+  errEl.style.display = "none";
+  if (!email || !password) {
+    showToast("Enter sales email and password");
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Signing in…";
+  try {
+    const response = await fetch(`${API}/api/sales/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ email, password, remember })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Invalid sales credentials");
+    await completeSalesLogin(data.token, data.executive, remember);
+    showToast(`Signed in as ${data.executive?.name || "sales"}`);
+  } catch (err) {
+    errEl.textContent = err.message || "Invalid sales credentials";
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Sign in →";
+  }
+}
+
+function doSalesLogout() {
+  if (salesPollInterval) clearInterval(salesPollInterval);
+  salesPollInterval = null;
+  currentSalesToken = "";
+  currentExecutive = null;
+  salesBootstrap = { leads: [], campaigns: [], logs: [], notifications: [], team: [], analytics: {} };
+  clearSalesSession();
+  showSalesLogin();
+  closeSalesSidebar();
+  history.replaceState({ panel: "sales-login" }, "", window.location.pathname);
+}
+
+async function restoreSalesSession() {
+  const token = getStoredSalesToken();
+  if (!token) {
+    showSalesLogin();
+    return;
+  }
+  currentSalesToken = token;
+  try {
+    const response = await fetch(`${API}/api/sales/auth/session`, { headers: salesAuthHeaders() });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Session expired");
+    await completeSalesLogin(token, data.executive, localStorage.getItem(SALES_REMEMBER_KEY) !== "0");
+  } catch {
+    doSalesLogout();
+  }
+}
+
+document.addEventListener("keydown", event => {
+  if (document.getElementById("loginScreen").classList.contains("hidden")) return;
+  if (event.key === "Enter") doSalesLogin();
+});
+
+["salesDropzone"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  ["dragenter","dragover"].forEach(type => el.addEventListener(type, event => {
+    event.preventDefault();
+    el.classList.add("dragover");
+  }));
+  ["dragleave","drop"].forEach(type => el.addEventListener(type, event => {
+    event.preventDefault();
+    if (type === "drop") {
+      const file = event.dataTransfer?.files?.[0];
+      if (file) handleSalesCsvUpload({ target: { files: [file], value: "" } });
+    }
+    el.classList.remove("dragover");
+  }));
+});
+
+restoreSalesSession();
+</script>
+</body>
+</html>

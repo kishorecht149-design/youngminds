@@ -9,6 +9,7 @@ const cors     = require("cors");
 const crypto   = require("crypto");
 const { createAuthToken, verifyAuthToken, DEFAULT_TTL_SECONDS } = require("./auth");
 const { getAiAssistReply, getPasswordCoachReply, gradeDescriptiveAnswer } = require("./ai-assist");
+const { registerSalesPortal } = require("./sales-portal");
 
 const app = express();
 const REMEMBER_ME_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -401,6 +402,7 @@ app.get("/admin",  (req, res) => sendShellFile(res, "youngminds/n.html"));
 app.get("/admin/services",  (req, res) => sendShellFile(res, "youngminds/n.html"));
 app.get("/admin/packages-pricing",  (req, res) => sendShellFile(res, "youngminds/n.html"));
 app.get("/admin/interviews",  (req, res) => sendShellFile(res, "youngminds/n.html"));
+app.get("/admin/sales",  (req, res) => sendShellFile(res, "youngminds/n.html"));
 app.get("/member", (req, res) => sendShellFile(res, "youngminds/s.html"));
 app.get("/portal/projects", (req, res) => sendShellFile(res, "youngminds/s.html"));
 app.get("/interview", (req, res) => sendShellFile(res, "youngminds/interview.html"));
@@ -2041,7 +2043,7 @@ async function getMemberSessionFromToken(req) {
   }
 
   const member = await Application.findById(payload.sub);
-  if (!member || !["hired", "inwork", "accepted"].includes(member.status)) {
+  if (!member || !["hired", "inwork", "accepted"].includes(member.status) || member.salesAccess === true) {
     return null;
   }
 
@@ -2638,7 +2640,8 @@ app.post("/api/auth/login", async (req, res) => {
     const member = await Application.findOne({
       $or: [{ gmail: email }, { email: email }],
       password: hashed,
-      status: { $in: ["hired", "inwork", "accepted"] }
+      status: { $in: ["hired", "inwork", "accepted"] },
+      salesAccess: { $ne: true }
     });
 
     if (!member) return res.status(401).json({ error: "Invalid credentials or account not active" });
@@ -4369,6 +4372,24 @@ function attachInterviewSockets(server) {
 
   return io;
 }
+
+registerSalesPortal(app, {
+  crypto,
+  fs,
+  path,
+  createAuthToken,
+  verifyAuthToken,
+  DEFAULT_TTL_SECONDS,
+  REMEMBER_ME_TTL_SECONDS,
+  normalizeEmail,
+  normalizePhone,
+  hashPassword,
+  readBearerToken,
+  requireAdminSession,
+  sendShellFile,
+  emitRealtimeEvent,
+  Application
+});
 
 /* ══════════════════════════════════════════
    404 CATCH-ALL
