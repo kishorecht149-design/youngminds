@@ -519,10 +519,12 @@ function registerSalesPortal(app, deps) {
       const remember = Boolean(req.body?.remember);
       if (!identifierRaw || !password) return res.status(400).json({ error: "email/phone and password required" });
       const executive = await Application.findOne({
+        ...salesMemberQuery(),
         $or: [
-          { gmail: email },
-          { email },
-          ...(phone ? [{ phone }, { phone: identifierRaw }] : [])
+          ...(email ? [{ gmail: email }, { email }] : []),
+          ...(phone ? [{ phone }, { phone: identifierRaw }] : []),
+          { gmail: identifierRaw },
+          { email: identifierRaw }
         ]
       });
       if (!executive || !isSalesExecutiveActive(executive)) {
