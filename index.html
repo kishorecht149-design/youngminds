@@ -109,7 +109,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .board-track{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:10px;margin-bottom:-10px}
 .board-track::-webkit-scrollbar{display:none}
 .board-slide{flex:0 0 clamp(228px,22vw,280px);scroll-snap-align:start}
-.board-card{width:100%;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.18)}
+.board-card{display:block;width:100%;height:100%;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.18);transition:transform .25s ease,border-color .25s ease}
+.board-card:hover{transform:translateY(-4px);border-color:rgba(255,215,0,.42)}
 .board-photo{aspect-ratio:4/5;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,255,255,0.03));position:relative;overflow:hidden}
 .board-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .board-photo-fallback{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;font-weight:900;letter-spacing:-1px;color:rgba(255,215,0,0.9);background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,255,255,0.02))}
@@ -958,6 +959,11 @@ function serviceDetailUrl(item){
     : appUrl(`/packages-pricing/?service=${encodeURIComponent(slug)}`);
 }
 
+function memberPortfolioUrl(member){
+  const slug = member?.slug || String(member?.name || 'member').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return appUrl(`/members/${encodeURIComponent(slug)}/`);
+}
+
 function goToPortal(path){
   closeMobileNav();
   window.location.href = `${BACKEND_ORIGIN}${path}`;
@@ -1039,7 +1045,7 @@ function renderBoardMembers(entries){
   if(entries.length<=3){
     host.innerHTML=`<div class="board-grid">${entries.map(member=>{
       const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
-      return `<article class="board-card">
+      return `<a class="board-card" href="${escapeHtml(memberPortfolioUrl(member))}" aria-label="Open ${escapeHtml(member.name||'member')} portfolio">
         <div class="board-photo">
           ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
           <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
@@ -1049,7 +1055,7 @@ function renderBoardMembers(entries){
           <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
           ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
         </div>
-      </article>`;
+      </a>`;
     }).join('')}</div>`;
     return;
   }
@@ -1057,7 +1063,7 @@ function renderBoardMembers(entries){
     <div class="board-window">
       <div class="board-track" id="boardTrack" onscroll="onBoardScroll()">${entries.map(member=>{
     const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
-    return `<div class="board-slide"><article class="board-card">
+    return `<div class="board-slide"><a class="board-card" href="${escapeHtml(memberPortfolioUrl(member))}" aria-label="Open ${escapeHtml(member.name||'member')} portfolio">
       <div class="board-photo">
         ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
         <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
@@ -1067,7 +1073,7 @@ function renderBoardMembers(entries){
         <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
         ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
       </div>
-    </article></div>`;
+    </a></div>`;
   }).join('')}</div>
     </div>
     <div class="board-rail"><div class="board-progress"><div class="board-progress-fill" id="boardProgressFill"></div></div><div class="board-controls"><button class="board-nav-btn" id="boardPrev" type="button" onclick="prevBoardSlide()" aria-label="Previous board member">←</button><button class="board-nav-btn" id="boardNext" type="button" onclick="nextBoardSlide()" aria-label="Next board member">→</button><div class="board-count" id="boardCount">01 / ${String(entries.length).padStart(2,'0')}</div></div></div>

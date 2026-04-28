@@ -408,6 +408,7 @@ app.get("/portal/projects", (req, res) => sendShellFile(res, "youngminds/s.html"
 app.get("/interview", (req, res) => sendShellFile(res, "youngminds/interview.html"));
 app.get("/hire",   (req, res) => sendShellFile(res, "index.html"));
 app.get("/pricing-calculator", (req, res) => res.redirect("/packages-pricing"));
+app.get(/^\/members(?:\/.*)?$/, (req, res) => sendShellFile(res, "members/index.html"));
 app.use("/static", express.static(rootDir));
 app.use("/assets", express.static(path.join(rootDir, "assets")));
 app.use("/uploads", express.static(uploadsDir));
@@ -655,11 +656,18 @@ const Application = mongoose.model("Application", applicationSchema);
 ══════════════════════════════════════════ */
 const boardMemberSchema = new mongoose.Schema({
   applicationId: { type: String, default: "" },
+  slug:        { type: String, default: "", index: true },
   name:        { type: String, required: true },
   designation: { type: String, default: "" },
   skills:      { type: [String], default: [] },
   bio:         { type: String, default: "" },
   photo:       { type: String, default: "" },
+  ctaLabel:    { type: String, default: "Contact Me" },
+  ctaUrl:      { type: String, default: "" },
+  contactEmail:{ type: String, default: "" },
+  socialLinks: { type: mongoose.Schema.Types.Mixed, default: {} },
+  projects:    { type: [mongoose.Schema.Types.Mixed], default: [] },
+  experienceItems: { type: [mongoose.Schema.Types.Mixed], default: [] },
   order:       { type: Number, default: 0 },
   active:      { type: Boolean, default: true }
 }, { timestamps: true });
@@ -2139,9 +2147,68 @@ function normalizeBoardSkills(raw) {
     .slice(0, 12);
 }
 
+function normalizeBoardSocialLinks(raw) {
+  const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const allowed = ["website", "linkedin", "github", "instagram", "x", "email"];
+  return allowed.reduce((acc, key) => {
+    const value = String(source[key] || "").trim();
+    if (value) acc[key] = value;
+    return acc;
+  }, {});
+}
+
+function normalizeBoardProjects(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((item) => ({
+    title: String(item?.title || "").trim(),
+    description: String(item?.description || "").trim(),
+    link: String(item?.link || "").trim(),
+    tags: normalizeBoardSkills(item?.tags || [])
+  })).filter(item => item.title || item.description || item.link).slice(0, 8);
+}
+
+function normalizeBoardExperience(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((item) => ({
+    role: String(item?.role || "").trim(),
+    company: String(item?.company || "").trim(),
+    period: String(item?.period || "").trim(),
+    description: String(item?.description || "").trim()
+  })).filter(item => item.role || item.company || item.period || item.description).slice(0, 8);
+}
+
+function normalizeBoardPayload(body = {}, fallbackName = "") {
+  const name = String(body.name || fallbackName || "YoungMinds Member").trim();
+  return {
+    applicationId: String(body.applicationId || "").trim(),
+    slug: slugify(body.slug || name),
+    name,
+    designation: String(body.designation || "").trim(),
+    skills: normalizeBoardSkills(body.skills),
+    bio: String(body.bio || "").trim(),
+    photo: String(body.photo || "").trim(),
+    ctaLabel: String(body.ctaLabel || "Contact Me").trim(),
+    ctaUrl: String(body.ctaUrl || "").trim(),
+    contactEmail: normalizeEmail(body.contactEmail || body.email || ""),
+    socialLinks: normalizeBoardSocialLinks(body.socialLinks),
+    projects: normalizeBoardProjects(body.projects),
+    experienceItems: normalizeBoardExperience(body.experienceItems),
+    order: Number.isFinite(Number(body.order)) ? Number(body.order) : 0,
+    active: body.active !== undefined ? !!body.active : true
+  };
+}
+
 function sanitizeBoardMember(doc) {
   const obj = doc.toObject ? doc.toObject() : { ...doc };
+  obj.id = String(obj._id || obj.id || "");
+  obj.slug = slugify(obj.slug || obj.name || obj.id);
   obj.skills = normalizeBoardSkills(obj.skills);
+  obj.socialLinks = normalizeBoardSocialLinks(obj.socialLinks);
+  obj.projects = normalizeBoardProjects(obj.projects);
+  obj.experienceItems = normalizeBoardExperience(obj.experienceItems);
+  obj.ctaLabel = String(obj.ctaLabel || "Contact Me").trim();
+  obj.ctaUrl = String(obj.ctaUrl || "").trim();
+  obj.contactEmail = String(obj.contactEmail || "").trim();
   return obj;
 }
 
@@ -2160,7 +2227,13 @@ function hydrateBoardEntry(entry, member) {
     designation: String(safeEntry.designation || member?.skill || "YoungMinds Member").trim(),
     skills: normalizeBoardSkills(safeEntry.skills || []),
     bio: compactBoardBio(safeEntry.bio || ""),
-    photo: String(safeEntry.photo || "").trim()
+    photo: String(safeEntry.photo || "").trim(),
+    ctaLabel: safeEntry.ctaLabel,
+    ctaUrl: safeEntry.ctaUrl,
+    contactEmail: safeEntry.contactEmail || normalizeEmail(member?.email || member?.gmail || ""),
+    socialLinks: safeEntry.socialLinks,
+    projects: safeEntry.projects,
+    experienceItems: safeEntry.experienceItems
   };
 }
 
@@ -2338,19 +2411,26 @@ app.get("/api/board-members/admin", async (req, res) => {
   }
 });
 
+app.get("/api/board-members/:slug", async (req, res) => {
+  try {
+    const key = String(req.params.slug || "").trim();
+    const lookup = [{ slug: key }];
+    if (mongoose.isValidObjectId(key)) lookup.push({ _id: key });
+    const doc = await BoardMember.findOne({
+      active: true,
+      $or: lookup
+    });
+    if (!doc) return res.status(404).json({ error: "Member portfolio not found" });
+    res.json(sanitizeBoardMember(doc));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/board-members", async (req, res) => {
   try {
     if (!req.body.name) return res.status(400).json({ error: "name is required" });
-    const doc = await BoardMember.create({
-      applicationId: String(req.body.applicationId || "").trim(),
-      name: String(req.body.name || "").trim(),
-      designation: String(req.body.designation || "").trim(),
-      skills: normalizeBoardSkills(req.body.skills),
-      bio: String(req.body.bio || "").trim(),
-      photo: String(req.body.photo || "").trim(),
-      order: Number.isFinite(Number(req.body.order)) ? Number(req.body.order) : 0,
-      active: req.body.active !== undefined ? !!req.body.active : true
-    });
+    const doc = await BoardMember.create(normalizeBoardPayload(req.body));
     res.status(201).json(sanitizeBoardMember(doc));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2359,15 +2439,16 @@ app.post("/api/board-members", async (req, res) => {
 
 app.put("/api/board-members/:id", async (req, res) => {
   try {
+    const current = await BoardMember.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: "Board member not found" });
+    const normalized = normalizeBoardPayload({ ...sanitizeBoardMember(current), ...req.body }, current.name);
+    const allowedKeys = [
+      "applicationId", "slug", "name", "designation", "skills", "bio", "photo",
+      "ctaLabel", "ctaUrl", "contactEmail", "socialLinks", "projects",
+      "experienceItems", "order", "active"
+    ];
     const updates = {};
-    if (req.body.applicationId !== undefined) updates.applicationId = String(req.body.applicationId || "").trim();
-    if (req.body.name !== undefined) updates.name = String(req.body.name || "").trim();
-    if (req.body.designation !== undefined) updates.designation = String(req.body.designation || "").trim();
-    if (req.body.skills !== undefined) updates.skills = normalizeBoardSkills(req.body.skills);
-    if (req.body.bio !== undefined) updates.bio = String(req.body.bio || "").trim();
-    if (req.body.photo !== undefined) updates.photo = String(req.body.photo || "").trim();
-    if (req.body.order !== undefined) updates.order = Number.isFinite(Number(req.body.order)) ? Number(req.body.order) : 0;
-    if (req.body.active !== undefined) updates.active = !!req.body.active;
+    allowedKeys.forEach(key => { if (req.body[key] !== undefined || key === "slug") updates[key] = normalized[key]; });
 
     const doc = await BoardMember.findByIdAndUpdate(
       req.params.id,

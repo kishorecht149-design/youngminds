@@ -1,3 +1,9 @@
 {
-  "trailingSlash": true
+  "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/members/:slug*",
+      "destination": "/members/index.html"
+    }
+  ]
 }

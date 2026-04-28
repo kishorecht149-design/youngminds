@@ -2510,14 +2510,72 @@ function boardEntryByApplicationId(applicationId){
 function boardDraftFromApplication(member){
   return {
     applicationId: String(member?.id || member?._id || ""),
+    slug: slugifyText(member?.name || "youngminds-member"),
     name: member?.name || "",
     designation: member?.skill || "YoungMinds Member",
     skills: [],
     photo: "",
     bio: "",
+    ctaLabel: "Contact Me",
+    ctaUrl: "",
+    contactEmail: member?.email || member?.gmail || "",
+    socialLinks: {},
+    projects: [],
+    experienceItems: [],
     order: boardEntries.length,
     active: true
   };
+}
+
+function slugifyText(value){
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || `member-${Date.now()}`;
+}
+
+function boardPortfolioUrl(entry){
+  const slug = entry?.slug || slugifyText(entry?.name || entry?.id || entry?._id || "");
+  return `https://youngmindsagency.vercel.app/members/${encodeURIComponent(slug)}/`;
+}
+
+function boardSkillsText(entry){
+  return Array.isArray(entry?.skills) ? entry.skills.join(", ") : "";
+}
+
+function boardProjectsText(entry){
+  const projects = Array.isArray(entry?.projects) ? entry.projects : [];
+  return projects.map(item => [
+    item?.title || "",
+    item?.description || "",
+    item?.link || "",
+    Array.isArray(item?.tags) ? item.tags.join(", ") : ""
+  ].join(" | ")).join("\n");
+}
+
+function boardExperienceText(entry){
+  const items = Array.isArray(entry?.experienceItems) ? entry.experienceItems : [];
+  return items.map(item => [
+    item?.role || "",
+    item?.company || "",
+    item?.period || "",
+    item?.description || ""
+  ].join(" | ")).join("\n");
+}
+
+function parseBoardProjects(value){
+  return String(value || "").split(/\n+/).map(line => {
+    const [title = "", description = "", link = "", tags = ""] = line.split("|").map(part => part.trim());
+    return { title, description, link, tags: tags ? tags.split(",").map(item => item.trim()).filter(Boolean) : [] };
+  }).filter(item => item.title || item.description || item.link);
+}
+
+function parseBoardExperience(value){
+  return String(value || "").split(/\n+/).map(line => {
+    const [role = "", company = "", period = "", description = ""] = line.split("|").map(part => part.trim());
+    return { role, company, period, description };
+  }).filter(item => item.role || item.company || item.period || item.description);
 }
 
 function boardPhotoMarkup(entry){
@@ -2533,7 +2591,7 @@ function renderBoardManager(){
   if (!el) return;
   const current = boardEditEntry();
   if (currentBoardEditId && !current) currentBoardEditId = null;
-  const formEntry = current || { applicationId:"", name:"", designation:"", skills:[], photo:"", bio:"", order:boardEntries.length, active:true };
+  const formEntry = current || { applicationId:"", slug:"", name:"", designation:"", skills:[], photo:"", bio:"", ctaLabel:"Contact Me", ctaUrl:"", contactEmail:"", socialLinks:{}, projects:[], experienceItems:[], order:boardEntries.length, active:true };
   const liveCount = boardEntries.filter(item => item.active !== false).length;
   const hiredMembers = apps.filter(item => ["hired","inwork","accepted"].includes(item.status));
 
@@ -2586,10 +2644,10 @@ function renderBoardManager(){
       <div class="board-admin-card">
         <div class="board-admin-head">
           <div>
-            <div class="board-admin-title">${current ? "Edit board card" : "Select a board card"}</div>
-            <div class="board-admin-sub">Board cards are curated public profiles. Use this panel to refine name, role, photo, skills, intro, and visibility.</div>
+            <div class="board-admin-title">${current ? "Edit member portfolio" : "Select a board card"}</div>
+            <div class="board-admin-sub">Edit the official public portfolio sections for this member. The same data powers /members/name.</div>
           </div>
-          ${current ? `<button class="btn-sm" type="button" onclick="cancelBoardEdit()">Close</button>` : ``}
+          ${current ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn-sm" href="${escapeHtml(boardPortfolioUrl(current))}" target="_blank" rel="noopener">Open Portfolio</a><button class="btn-sm" type="button" onclick="cancelBoardEdit()">Close</button></div>` : ``}
         </div>
         ${!current ? `
           <div class="empty" style="padding:32px 18px">
@@ -2604,6 +2662,10 @@ function renderBoardManager(){
             <div class="form-field"><label>Designation</label><input id="board-designation" type="text" placeholder="Founder, Designer, Web Developer..." value="${escapeHtml(formEntry.designation || "")}"></div>
           </div>
           <div class="form-row">
+            <div class="form-field"><label>Portfolio Slug</label><input id="board-slug" type="text" placeholder="kishore-r" value="${escapeHtml(formEntry.slug || slugifyText(formEntry.name || ""))}"></div>
+            <div class="form-field"><label>Contact Email</label><input id="board-contact-email" type="email" placeholder="member@gmail.com" value="${escapeHtml(formEntry.contactEmail || "")}"></div>
+          </div>
+          <div class="form-row">
             <div class="form-field"><label>Profile Pic URL</label><input id="board-photo" type="text" placeholder="https://..." value="${escapeHtml(formEntry.photo || "")}"></div>
             <div class="form-field"><label>Display Order</label><input id="board-order" type="number" min="0" step="1" value="${Number.isFinite(Number(formEntry.order)) ? Number(formEntry.order) : 0}"></div>
           </div>
@@ -2611,7 +2673,28 @@ function renderBoardManager(){
             <div class="form-field"><label>About / Bio</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
           </div>
           <div class="form-row full">
-            <div class="service-admin-note">Public board cards use the hired member only for name and designation. Photo and about text are curated here manually.</div>
+            <div class="form-field"><label>Skills</label><textarea id="board-skills" placeholder="Web Development, UI Design, Copywriting">${escapeHtml(boardSkillsText(formEntry))}</textarea></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>CTA Label</label><input id="board-cta-label" type="text" placeholder="Contact Me" value="${escapeHtml(formEntry.ctaLabel || "Contact Me")}"></div>
+            <div class="form-field"><label>CTA URL</label><input id="board-cta-url" type="text" placeholder="mailto:member@gmail.com or https://..." value="${escapeHtml(formEntry.ctaUrl || "")}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Website</label><input id="board-social-website" type="text" value="${escapeHtml(formEntry.socialLinks?.website || "")}" placeholder="https://..."></div>
+            <div class="form-field"><label>LinkedIn</label><input id="board-social-linkedin" type="text" value="${escapeHtml(formEntry.socialLinks?.linkedin || "")}" placeholder="https://linkedin.com/in/..."></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>GitHub</label><input id="board-social-github" type="text" value="${escapeHtml(formEntry.socialLinks?.github || "")}" placeholder="https://github.com/..."></div>
+            <div class="form-field"><label>Instagram</label><input id="board-social-instagram" type="text" value="${escapeHtml(formEntry.socialLinks?.instagram || "")}" placeholder="https://instagram.com/..."></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Projects</label><textarea id="board-projects" placeholder="Project title | Description | Link | tag one, tag two">${escapeHtml(boardProjectsText(formEntry))}</textarea></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>Experience</label><textarea id="board-experience" placeholder="Role | Company | Period | Description">${escapeHtml(boardExperienceText(formEntry))}</textarea></div>
+          </div>
+          <div class="form-row full">
+            <div class="service-admin-note">Projects format: Title | Description | Link | tags. Experience format: Role | Company | Period | Description. Keep each item on a new line.</div>
           </div>
           <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
@@ -4210,13 +4293,27 @@ async function resetSalesExecutiveCredentials(id){
 }
 
 async function saveBoardMember(){
+  const socialLinks = {
+    website: document.getElementById("board-social-website")?.value.trim(),
+    linkedin: document.getElementById("board-social-linkedin")?.value.trim(),
+    github: document.getElementById("board-social-github")?.value.trim(),
+    instagram: document.getElementById("board-social-instagram")?.value.trim(),
+    email: document.getElementById("board-contact-email")?.value.trim()
+  };
   const payload = {
     applicationId: document.getElementById("board-application-id")?.value.trim(),
+    slug: document.getElementById("board-slug")?.value.trim() || slugifyText(document.getElementById("board-name")?.value.trim()),
     name: document.getElementById("board-name")?.value.trim(),
     designation: document.getElementById("board-designation")?.value.trim(),
     photo: document.getElementById("board-photo")?.value.trim(),
-    skills: [],
+    skills: document.getElementById("board-skills")?.value.trim(),
     bio: document.getElementById("board-bio")?.value.trim(),
+    ctaLabel: document.getElementById("board-cta-label")?.value.trim(),
+    ctaUrl: document.getElementById("board-cta-url")?.value.trim(),
+    contactEmail: document.getElementById("board-contact-email")?.value.trim(),
+    socialLinks,
+    projects: parseBoardProjects(document.getElementById("board-projects")?.value),
+    experienceItems: parseBoardExperience(document.getElementById("board-experience")?.value),
     order: Number(document.getElementById("board-order")?.value || 0),
     active: !!document.getElementById("board-active")?.checked
   };
