@@ -2514,6 +2514,7 @@ function boardDraftFromApplication(member){
     name: member?.name || "",
     designation: member?.skill || "YoungMinds Member",
     skills: [],
+    heroIntro: "",
     photo: "",
     bio: "",
     ctaLabel: "Contact Me",
@@ -2550,6 +2551,7 @@ function boardProjectsText(entry){
     item?.title || "",
     item?.description || "",
     item?.link || "",
+    item?.thumbnail || item?.image || "",
     Array.isArray(item?.tags) ? item.tags.join(", ") : ""
   ].join(" | ")).join("\n");
 }
@@ -2566,9 +2568,12 @@ function boardExperienceText(entry){
 
 function parseBoardProjects(value){
   return String(value || "").split(/\n+/).map(line => {
-    const [title = "", description = "", link = "", tags = ""] = line.split("|").map(part => part.trim());
-    return { title, description, link, tags: tags ? tags.split(",").map(item => item.trim()).filter(Boolean) : [] };
-  }).filter(item => item.title || item.description || item.link);
+    const parts = line.split("|").map(part => part.trim());
+    const [title = "", description = "", link = ""] = parts;
+    const thumbnail = parts.length >= 5 ? (parts[3] || "") : "";
+    const tags = parts.length >= 5 ? (parts[4] || "") : (parts[3] || "");
+    return { title, description, link, thumbnail, tags: tags ? tags.split(",").map(item => item.trim()).filter(Boolean) : [] };
+  }).filter(item => item.title || item.description || item.link || item.thumbnail);
 }
 
 function parseBoardExperience(value){
@@ -2591,7 +2596,7 @@ function renderBoardManager(){
   if (!el) return;
   const current = boardEditEntry();
   if (currentBoardEditId && !current) currentBoardEditId = null;
-  const formEntry = current || { applicationId:"", slug:"", name:"", designation:"", skills:[], photo:"", bio:"", ctaLabel:"Contact Me", ctaUrl:"", contactEmail:"", socialLinks:{}, projects:[], experienceItems:[], order:boardEntries.length, active:true };
+  const formEntry = current || { applicationId:"", slug:"", name:"", designation:"", skills:[], heroIntro:"", photo:"", bio:"", ctaLabel:"Contact Me", ctaUrl:"", contactEmail:"", socialLinks:{}, projects:[], experienceItems:[], order:boardEntries.length, active:true };
   const liveCount = boardEntries.filter(item => item.active !== false).length;
   const hiredMembers = apps.filter(item => ["hired","inwork","accepted"].includes(item.status));
 
@@ -2670,7 +2675,10 @@ function renderBoardManager(){
             <div class="form-field"><label>Display Order</label><input id="board-order" type="number" min="0" step="1" value="${Number.isFinite(Number(formEntry.order)) ? Number(formEntry.order) : 0}"></div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>About / Bio</label><textarea id="board-bio" placeholder="A short line about what this member does and contributes.">${escapeHtml(formEntry.bio || "")}</textarea></div>
+            <div class="form-field"><label>Hero Intro</label><textarea id="board-hero-intro" placeholder="Optional short intro for the top card. Leave empty to show only name, role, and buttons.">${escapeHtml(formEntry.heroIntro || "")}</textarea></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-field"><label>About / Bio</label><textarea id="board-bio" placeholder="Detailed About section content. This does not show on the public board card.">${escapeHtml(formEntry.bio || "")}</textarea></div>
           </div>
           <div class="form-row full">
             <div class="form-field"><label>Skills</label><textarea id="board-skills" placeholder="Web Development, UI Design, Copywriting">${escapeHtml(boardSkillsText(formEntry))}</textarea></div>
@@ -2688,13 +2696,13 @@ function renderBoardManager(){
             <div class="form-field"><label>Instagram</label><input id="board-social-instagram" type="text" value="${escapeHtml(formEntry.socialLinks?.instagram || "")}" placeholder="https://instagram.com/..."></div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>Projects</label><textarea id="board-projects" placeholder="Project title | Description | Link | tag one, tag two">${escapeHtml(boardProjectsText(formEntry))}</textarea></div>
+            <div class="form-field"><label>Projects</label><textarea id="board-projects" placeholder="Project title | Description | Link | Thumbnail URL (optional) | tag one, tag two">${escapeHtml(boardProjectsText(formEntry))}</textarea></div>
           </div>
           <div class="form-row full">
             <div class="form-field"><label>Experience</label><textarea id="board-experience" placeholder="Role | Company | Period | Description">${escapeHtml(boardExperienceText(formEntry))}</textarea></div>
           </div>
           <div class="form-row full">
-            <div class="service-admin-note">Projects format: Title | Description | Link | tags. Experience format: Role | Company | Period | Description. Keep each item on a new line.</div>
+            <div class="service-admin-note">Board cards show only photo, name, designation, and Portfolio. Projects format: Title | Description | Link | Thumbnail URL optional | tags. If Link is empty, the project card will not redirect. Experience format: Role | Company | Period | Description. Keep each item on a new line.</div>
           </div>
           <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
@@ -4307,6 +4315,7 @@ async function saveBoardMember(){
     designation: document.getElementById("board-designation")?.value.trim(),
     photo: document.getElementById("board-photo")?.value.trim(),
     skills: document.getElementById("board-skills")?.value.trim(),
+    heroIntro: document.getElementById("board-hero-intro")?.value.trim(),
     bio: document.getElementById("board-bio")?.value.trim(),
     ctaLabel: document.getElementById("board-cta-label")?.value.trim(),
     ctaUrl: document.getElementById("board-cta-url")?.value.trim(),

@@ -1067,12 +1067,11 @@ function renderBoardMembers(entries){
               ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
               <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
             </div>
-            <div class="board-body">
-              <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
-              <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
-              ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
-              <span class="board-mobile-cta">Portfolio</span>
-            </div>
+              <div class="board-body">
+                <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
+                <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
+                <span class="board-mobile-cta">Portfolio</span>
+              </div>
           </div>
           <div class="board-face board-back">
             <div class="board-back-kicker">Member Portfolio</div>
@@ -1099,7 +1098,6 @@ function renderBoardMembers(entries){
           <div class="board-body">
             <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
             <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
-            ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
             <span class="board-mobile-cta">Portfolio</span>
           </div>
         </div>

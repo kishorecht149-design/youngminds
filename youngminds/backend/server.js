@@ -660,6 +660,7 @@ const boardMemberSchema = new mongoose.Schema({
   name:        { type: String, required: true },
   designation: { type: String, default: "" },
   skills:      { type: [String], default: [] },
+  heroIntro:   { type: String, default: "" },
   bio:         { type: String, default: "" },
   photo:       { type: String, default: "" },
   ctaLabel:    { type: String, default: "Contact Me" },
@@ -2163,8 +2164,9 @@ function normalizeBoardProjects(raw) {
     title: String(item?.title || "").trim(),
     description: String(item?.description || "").trim(),
     link: String(item?.link || "").trim(),
+    thumbnail: String(item?.thumbnail || item?.image || "").trim(),
     tags: normalizeBoardSkills(item?.tags || [])
-  })).filter(item => item.title || item.description || item.link).slice(0, 8);
+  })).filter(item => item.title || item.description || item.link || item.thumbnail).slice(0, 8);
 }
 
 function normalizeBoardExperience(raw) {
@@ -2185,6 +2187,7 @@ function normalizeBoardPayload(body = {}, fallbackName = "") {
     name,
     designation: String(body.designation || "").trim(),
     skills: normalizeBoardSkills(body.skills),
+    heroIntro: String(body.heroIntro || "").trim(),
     bio: String(body.bio || "").trim(),
     photo: String(body.photo || "").trim(),
     ctaLabel: String(body.ctaLabel || "Contact Me").trim(),
@@ -2203,6 +2206,7 @@ function sanitizeBoardMember(doc) {
   obj.id = String(obj._id || obj.id || "");
   obj.slug = slugify(obj.slug || obj.name || obj.id);
   obj.skills = normalizeBoardSkills(obj.skills);
+  obj.heroIntro = String(obj.heroIntro || "").trim();
   obj.socialLinks = normalizeBoardSocialLinks(obj.socialLinks);
   obj.projects = normalizeBoardProjects(obj.projects);
   obj.experienceItems = normalizeBoardExperience(obj.experienceItems);
@@ -2218,7 +2222,7 @@ function compactBoardBio(value) {
   return clean.length > 220 ? `${clean.slice(0, 217).trim()}...` : clean;
 }
 
-function hydrateBoardEntry(entry, member) {
+function hydrateBoardEntry(entry, member, compactBio = true) {
   const safeEntry = sanitizeBoardMember(entry);
   return {
     ...safeEntry,
@@ -2226,7 +2230,7 @@ function hydrateBoardEntry(entry, member) {
     name: String(safeEntry.name || member?.name || "YoungMinds Member").trim(),
     designation: String(safeEntry.designation || member?.skill || "YoungMinds Member").trim(),
     skills: normalizeBoardSkills(safeEntry.skills || []),
-    bio: compactBoardBio(safeEntry.bio || ""),
+    bio: compactBio ? compactBoardBio(safeEntry.bio || "") : String(safeEntry.bio || "").trim(),
     photo: String(safeEntry.photo || "").trim(),
     ctaLabel: safeEntry.ctaLabel,
     ctaUrl: safeEntry.ctaUrl,
@@ -2247,7 +2251,7 @@ async function buildBoardEntries(includeDrafts = false) {
   const memberMap = new Map(linkedMembers.map(member => [String(member._id), member]));
   return entries.map((entry, index) => {
     const member = memberMap.get(String(entry.applicationId || "").trim()) || null;
-    const hydrated = hydrateBoardEntry(entry, member);
+    const hydrated = hydrateBoardEntry(entry, member, !includeDrafts);
     if (!Number.isFinite(Number(hydrated.order))) hydrated.order = index;
     return hydrated;
   });
@@ -2443,7 +2447,7 @@ app.put("/api/board-members/:id", async (req, res) => {
     if (!current) return res.status(404).json({ error: "Board member not found" });
     const normalized = normalizeBoardPayload({ ...sanitizeBoardMember(current), ...req.body }, current.name);
     const allowedKeys = [
-      "applicationId", "slug", "name", "designation", "skills", "bio", "photo",
+      "applicationId", "slug", "name", "designation", "skills", "heroIntro", "bio", "photo",
       "ctaLabel", "ctaUrl", "contactEmail", "socialLinks", "projects",
       "experienceItems", "order", "active"
     ];
