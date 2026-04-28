@@ -239,6 +239,12 @@ a{text-decoration:none;color:inherit}
 .board-status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .board-status-pill.live{background:var(--green2);border:1px solid rgba(62,207,142,.2);color:var(--green)}
 .board-status-pill.draft{background:var(--bg4);border:1px solid var(--border2);color:var(--muted3)}
+.board-repeat{display:grid;gap:12px}
+.board-repeat-item{padding:12px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01))}
+.board-repeat-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.board-repeat-title{font-size:12px;font-weight:800;color:var(--text);letter-spacing:.04em;text-transform:uppercase}
+.board-repeat-item .form-row{margin-bottom:10px}
+.board-repeat-add{margin-top:10px}
 
 /* ── SERVICES MANAGER ── */
 .service-admin-layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
@@ -2545,42 +2551,99 @@ function boardSkillsText(entry){
   return Array.isArray(entry?.skills) ? entry.skills.join(", ") : "";
 }
 
-function boardProjectsText(entry){
-  const projects = Array.isArray(entry?.projects) ? entry.projects : [];
-  return projects.map(item => [
-    item?.title || "",
-    item?.description || "",
-    item?.link || "",
-    item?.thumbnail || item?.image || "",
-    Array.isArray(item?.tags) ? item.tags.join(", ") : ""
-  ].join(" | ")).join("\n");
+function boardProjectRowMarkup(item = {}, index = 0){
+  return `
+    <div class="board-repeat-item">
+      <div class="board-repeat-top">
+        <div class="board-repeat-title">Project ${index + 1}</div>
+        <button class="btn-sm" type="button" onclick="this.closest('.board-repeat-item').remove()">Remove</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Title</label><input type="text" data-board-project="title" placeholder="Project title" value="${escapeHtml(item?.title || "")}"></div>
+        <div class="form-field"><label>Link</label><input type="text" data-board-project="link" placeholder="https://... optional" value="${escapeHtml(item?.link || "")}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Thumbnail URL</label><input type="text" data-board-project="thumbnail" placeholder="https://... optional" value="${escapeHtml(item?.thumbnail || item?.image || "")}"></div>
+        <div class="form-field"><label>Tags</label><input type="text" data-board-project="tags" placeholder="Design, Website, Branding" value="${escapeHtml(Array.isArray(item?.tags) ? item.tags.join(", ") : "")}"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Description</label><textarea data-board-project="description" placeholder="Short project description">${escapeHtml(item?.description || "")}</textarea></div>
+      </div>
+    </div>
+  `;
 }
 
-function boardExperienceText(entry){
-  const items = Array.isArray(entry?.experienceItems) ? entry.experienceItems : [];
-  return items.map(item => [
-    item?.role || "",
-    item?.company || "",
-    item?.period || "",
-    item?.description || ""
-  ].join(" | ")).join("\n");
+function boardProjectRowsMarkup(entry){
+  const projects = Array.isArray(entry?.projects) && entry.projects.length ? entry.projects : [{}];
+  return `
+    <div class="board-repeat" id="board-project-list">
+      ${projects.map((item, index) => boardProjectRowMarkup(item, index)).join("")}
+    </div>
+    <button class="btn-sm board-repeat-add" type="button" onclick="addBoardProjectRow()">+ Add Project</button>
+  `;
 }
 
-function parseBoardProjects(value){
-  return String(value || "").split(/\n+/).map(line => {
-    const parts = line.split("|").map(part => part.trim());
-    const [title = "", description = "", link = ""] = parts;
-    const thumbnail = parts.length >= 5 ? (parts[3] || "") : "";
-    const tags = parts.length >= 5 ? (parts[4] || "") : (parts[3] || "");
-    return { title, description, link, thumbnail, tags: tags ? tags.split(",").map(item => item.trim()).filter(Boolean) : [] };
+function boardExperienceRowMarkup(item = {}, index = 0){
+  return `
+    <div class="board-repeat-item">
+      <div class="board-repeat-top">
+        <div class="board-repeat-title">Experience ${index + 1}</div>
+        <button class="btn-sm" type="button" onclick="this.closest('.board-repeat-item').remove()">Remove</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Role</label><input type="text" data-board-experience="role" placeholder="Role" value="${escapeHtml(item?.role || "")}"></div>
+        <div class="form-field"><label>Company</label><input type="text" data-board-experience="company" placeholder="Company / Organization" value="${escapeHtml(item?.company || "")}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Period</label><input type="text" data-board-experience="period" placeholder="2025 - Present" value="${escapeHtml(item?.period || "")}"></div>
+        <div class="form-field"><label>Description</label><textarea data-board-experience="description" placeholder="What they did / achieved">${escapeHtml(item?.description || "")}</textarea></div>
+      </div>
+    </div>
+  `;
+}
+
+function boardExperienceRowsMarkup(entry){
+  const items = Array.isArray(entry?.experienceItems) && entry.experienceItems.length ? entry.experienceItems : [{}];
+  return `
+    <div class="board-repeat" id="board-experience-list">
+      ${items.map((item, index) => boardExperienceRowMarkup(item, index)).join("")}
+    </div>
+    <button class="btn-sm board-repeat-add" type="button" onclick="addBoardExperienceRow()">+ Add Experience</button>
+  `;
+}
+
+function addBoardProjectRow(){
+  const list = document.getElementById("board-project-list");
+  if(!list) return;
+  list.insertAdjacentHTML("beforeend", boardProjectRowMarkup({}, list.children.length));
+}
+
+function addBoardExperienceRow(){
+  const list = document.getElementById("board-experience-list");
+  if(!list) return;
+  list.insertAdjacentHTML("beforeend", boardExperienceRowMarkup({}, list.children.length));
+}
+
+function collectBoardProjects(){
+  return Array.from(document.querySelectorAll("#board-project-list .board-repeat-item")).map(row => {
+    const tags = row.querySelector('[data-board-project="tags"]')?.value.trim() || "";
+    return {
+      title: row.querySelector('[data-board-project="title"]')?.value.trim() || "",
+      description: row.querySelector('[data-board-project="description"]')?.value.trim() || "",
+      link: row.querySelector('[data-board-project="link"]')?.value.trim() || "",
+      thumbnail: row.querySelector('[data-board-project="thumbnail"]')?.value.trim() || "",
+      tags: tags ? tags.split(",").map(item => item.trim()).filter(Boolean) : []
+    };
   }).filter(item => item.title || item.description || item.link || item.thumbnail);
 }
 
-function parseBoardExperience(value){
-  return String(value || "").split(/\n+/).map(line => {
-    const [role = "", company = "", period = "", description = ""] = line.split("|").map(part => part.trim());
-    return { role, company, period, description };
-  }).filter(item => item.role || item.company || item.period || item.description);
+function collectBoardExperience(){
+  return Array.from(document.querySelectorAll("#board-experience-list .board-repeat-item")).map(row => ({
+    role: row.querySelector('[data-board-experience="role"]')?.value.trim() || "",
+    company: row.querySelector('[data-board-experience="company"]')?.value.trim() || "",
+    period: row.querySelector('[data-board-experience="period"]')?.value.trim() || "",
+    description: row.querySelector('[data-board-experience="description"]')?.value.trim() || ""
+  })).filter(item => item.role || item.company || item.period || item.description);
 }
 
 function boardPhotoMarkup(entry){
@@ -2696,13 +2759,13 @@ function renderBoardManager(){
             <div class="form-field"><label>Instagram</label><input id="board-social-instagram" type="text" value="${escapeHtml(formEntry.socialLinks?.instagram || "")}" placeholder="https://instagram.com/..."></div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>Projects</label><textarea id="board-projects" placeholder="Project title | Description | Link | Thumbnail URL (optional) | tag one, tag two">${escapeHtml(boardProjectsText(formEntry))}</textarea></div>
+            <div class="form-field"><label>Projects</label>${boardProjectRowsMarkup(formEntry)}</div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>Experience</label><textarea id="board-experience" placeholder="Role | Company | Period | Description">${escapeHtml(boardExperienceText(formEntry))}</textarea></div>
+            <div class="form-field"><label>Experience</label>${boardExperienceRowsMarkup(formEntry)}</div>
           </div>
           <div class="form-row full">
-            <div class="service-admin-note">Board cards show only photo, name, designation, and Portfolio. Projects format: Title | Description | Link | Thumbnail URL optional | tags. If Link is empty, the project card will not redirect. Experience format: Role | Company | Period | Description. Keep each item on a new line.</div>
+            <div class="service-admin-note">Board cards show only photo, name, designation, and Portfolio. Project thumbnail and link are optional. If Link is empty, the project card will not redirect.</div>
           </div>
           <label class="board-admin-check"><input id="board-active" type="checkbox" ${formEntry.active !== false ? "checked" : ""}> Show this member on the public site</label>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
@@ -4321,8 +4384,8 @@ async function saveBoardMember(){
     ctaUrl: document.getElementById("board-cta-url")?.value.trim(),
     contactEmail: document.getElementById("board-contact-email")?.value.trim(),
     socialLinks,
-    projects: parseBoardProjects(document.getElementById("board-projects")?.value),
-    experienceItems: parseBoardExperience(document.getElementById("board-experience")?.value),
+    projects: collectBoardProjects(),
+    experienceItems: collectBoardExperience(),
     order: Number(document.getElementById("board-order")?.value || 0),
     active: !!document.getElementById("board-active")?.checked
   };
