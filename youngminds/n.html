@@ -1177,16 +1177,10 @@ async function loadSalesAdminData(options = {}){
     if (render && activeAdminView === "sales") renderSalesManager();
   }
   try{
-    const [executivesResponse, candidatesResponse] = await Promise.all([
-      fetch(`${API}/api/sales/admin/executives`, { headers: adminAuthHeaders() }),
-      fetch(`${API}/api/sales/admin/candidates`, { headers: adminAuthHeaders() })
-    ]);
+    const executivesResponse = await fetch(`${API}/api/sales/admin/executives`, { headers: adminAuthHeaders() });
     const executivesData = await executivesResponse.json().catch(() => []);
-    const candidatesData = await candidatesResponse.json().catch(() => []);
     if (!executivesResponse.ok) throw new Error(executivesData.error || "Could not load sales executives");
-    if (!candidatesResponse.ok) throw new Error(candidatesData.error || "Could not load sales candidates");
     salesExecutives = Array.isArray(executivesData) ? executivesData : [];
-    salesCandidates = Array.isArray(candidatesData) ? candidatesData : [];
     if (salesAdminState.selectedId && !salesExecutives.find(item => String(item.id) === String(salesAdminState.selectedId))) {
       salesAdminState.selectedId = "";
     }
@@ -4060,25 +4054,7 @@ async function connectInterviewAdminSocket(){
 }
 
 function getSelectedSalesExecutive(){
-  if (salesAdminState.selectedId === "__new__") {
-    return {
-      id: "__new__",
-      applicationId: "",
-      name: "",
-      email: "",
-      phone: "",
-      designation: "Sales Executive",
-      city: "",
-      notes: "",
-      status: "active"
-    };
-  }
   return salesExecutives.find(item => String(item.id) === String(salesAdminState.selectedId)) || salesExecutives[0] || null;
-}
-
-function openSalesExecutiveDraft(){
-  salesAdminState.selectedId = "__new__";
-  renderSalesManager();
 }
 
 function selectSalesExecutive(id){
@@ -4090,9 +4066,8 @@ function renderSalesManager(){
   const el = document.getElementById("sales-admin-content");
   if (!el) return;
   const current = getSelectedSalesExecutive();
-  const availableCandidates = salesCandidates.filter(item => !item.salesAccess || String(item.id) === String(current?.id));
   if (salesAdminState.loading && !salesExecutives.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📨</div><div class="empty-title">Loading sales executives</div><div class="empty-sub">Fetching the current sales team access list from the backend.</div></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📨</div><div class="empty-title">Loading sales members</div><div class="empty-sub">Fetching members whose skill label is set to sales.</div></div>`;
     return;
   }
 
@@ -4123,43 +4098,35 @@ function renderSalesManager(){
       <div class="service-admin-card">
         <div class="service-admin-head">
           <div>
-            <div class="service-admin-title">Sales team access</div>
-            <div class="service-admin-sub">Grant sales portal access to existing YoungMinds application accounts. They will sign in with the same application email and password, not a separate default login.</div>
+            <div class="service-admin-title">Sales members</div>
+            <div class="service-admin-sub">Any application marked with the skill label <strong>sales</strong> appears here automatically and uses the Sales Portal only.</div>
           </div>
-          <button class="btn-sm primary" type="button" onclick="openSalesExecutiveDraft()">+ Grant Access</button>
         </div>
         <div class="service-admin-list">
-          ${rowsHtml || `<div class="empty"><div class="empty-icon">📨</div><div class="empty-title">No sales executives yet</div><div class="empty-sub">Grant access to the first existing member account to open the sales workspace for your outreach team.</div></div>`}
+          ${rowsHtml || `<div class="empty"><div class="empty-icon">📨</div><div class="empty-title">No sales members found</div><div class="empty-sub">Set a member skill to sales in the hiring application list and they will appear here automatically.</div></div>`}
         </div>
       </div>
       <div class="service-admin-card">
         <div class="service-admin-head">
           <div>
-            <div class="service-admin-title">${current?.id === "__new__" ? "Grant sales access" : `Edit ${escapeHtml(current?.name || "executive")}`}</div>
-            <div class="service-admin-sub">Sales data stays separate, but login stays the same as the application/member portal. Reset credentials only if they forget their original password.</div>
+            <div class="service-admin-title">${current?.id ? `Edit ${escapeHtml(current?.name || "executive")}` : "Sales details"}</div>
+            <div class="service-admin-sub">Sales members use their existing application email and password. Reset only if they forget it.</div>
           </div>
         </div>
         <div class="service-admin-form">
           ${salesAdminState.error ? `<div class="service-admin-note" style="margin-bottom:10px;color:var(--orange)">${escapeHtml(salesAdminState.error)}</div>` : ``}
           ${salesAdminState.result ? `<div class="service-admin-note" style="margin-bottom:10px">${escapeHtml(salesAdminState.result)}</div>` : ``}
+          ${current ? `
           <div class="form-row">
-            <div class="form-field">
-              <label>${current?.id === "__new__" ? "Choose Existing Account" : "Application Email"}</label>
-              ${current?.id === "__new__"
-                ? `<select id="sales-admin-application-id">
-                    <option value="">Select a member account</option>
-                    ${availableCandidates.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name || "Member")} · ${escapeHtml(item.email || "No email")} · ${escapeHtml(item.status || "accepted")}</option>`).join("")}
-                  </select>`
-                : `<input id="sales-admin-email" type="email" value="${escapeHtml(current?.email || "")}" placeholder="member@gmail.com" disabled>`}
-            </div>
-            <div class="form-field"><label>Name</label><input id="sales-admin-name" type="text" value="${escapeHtml(current?.name || "")}" placeholder="Aisha Khan" ${current?.id === "__new__" ? "disabled" : ""}></div>
+            <div class="form-field"><label>Application Email</label><input id="sales-admin-email" type="email" value="${escapeHtml(current?.email || "")}" placeholder="member@gmail.com" disabled></div>
+            <div class="form-field"><label>Name</label><input id="sales-admin-name" type="text" value="${escapeHtml(current?.name || "")}" placeholder="Aisha Khan"></div>
           </div>
           <div class="form-row">
-            <div class="form-field"><label>Phone</label><input id="sales-admin-phone" type="text" value="${escapeHtml(current?.phone || "")}" placeholder="+91 98765 43210" ${current?.id === "__new__" ? "disabled" : ""}></div>
+            <div class="form-field"><label>Phone</label><input id="sales-admin-phone" type="text" value="${escapeHtml(current?.phone || "")}" placeholder="+91 98765 43210"></div>
             <div class="form-field"><label>Designation</label><input id="sales-admin-designation" type="text" value="${escapeHtml(current?.designation || "Sales Executive")}" placeholder="Sales Executive"></div>
           </div>
           <div class="form-row">
-            <div class="form-field"><label>City</label><input id="sales-admin-city" type="text" value="${escapeHtml(current?.city || "")}" placeholder="Chennai" ${current?.id === "__new__" ? "disabled" : ""}></div>
+            <div class="form-field"><label>City</label><input id="sales-admin-city" type="text" value="${escapeHtml(current?.city || "")}" placeholder="Chennai"></div>
             <div class="form-field"><label>Access Status</label>
               <select id="sales-admin-status">
                 <option value="active" ${String(current?.status || "active") === "active" ? "selected" : ""}>Active</option>
@@ -4168,20 +4135,15 @@ function renderSalesManager(){
             </div>
           </div>
           <div class="form-row full">
-            <div class="form-field"><label>Login Logic</label><textarea disabled>${current?.id === "__new__"
-              ? "The selected member will sign in with the same application Gmail and password they already use. No extra password is created during access grant."
-              : "This sales account signs in with the same application Gmail/password unless you later reset sales credentials because they forgot it."}</textarea></div>
-          </div>
-          <div class="form-row full">
             <div class="form-field"><label>Notes</label><textarea id="sales-admin-notes" placeholder="Territory, lead type, handoff notes, or operating context.">${escapeHtml(current?.notes || "")}</textarea></div>
           </div>
           <div class="service-admin-actions">
             <button class="btn-sm" type="button" onclick="renderSalesManager()">Reset</button>
-            ${current?.id && current.id !== "__new__" ? `<button class="btn-sm" type="button" onclick="window.open('/sales','_blank','noopener')">Portal</button>` : ``}
-            ${current?.id && current.id !== "__new__" ? `<button class="btn-sm" type="button" onclick="resetSalesExecutiveCredentials('${escapeHtml(current.id)}')">Reset Credentials</button>` : ``}
-            ${current?.id && current.id !== "__new__" ? `<button class="btn-sm" type="button" onclick="deleteSalesExecutive('${escapeHtml(current.id)}')">Remove Access</button>` : ``}
-            <button class="btn-sm primary" type="button" onclick="saveSalesExecutive()" ${salesAdminState.saving ? "disabled" : ""}>${salesAdminState.saving ? "Saving…" : current?.id === "__new__" ? "Grant Access" : "Save Access"}</button>
+            <button class="btn-sm" type="button" onclick="window.open('/sales','_blank','noopener')">Open Portal</button>
+            <button class="btn-sm" type="button" onclick="resetSalesExecutiveCredentials('${escapeHtml(current.id)}')">Reset Password</button>
+            <button class="btn-sm primary" type="button" onclick="saveSalesExecutive()" ${salesAdminState.saving ? "disabled" : ""}>${salesAdminState.saving ? "Saving…" : "Save Details"}</button>
           </div>
+          ` : `<div class="empty"><div class="empty-icon">🧾</div><div class="empty-title">No sales member selected</div><div class="empty-sub">Choose a sales-labelled member from the left to edit their designation, phone, city, and notes.</div></div>`}
         </div>
       </div>
     </div>
@@ -4191,7 +4153,6 @@ function renderSalesManager(){
 async function saveSalesExecutive(){
   const current = getSelectedSalesExecutive();
   const payload = {
-    applicationId: document.getElementById("sales-admin-application-id")?.value.trim(),
     name: document.getElementById("sales-admin-name")?.value.trim(),
     phone: document.getElementById("sales-admin-phone")?.value.trim(),
     designation: document.getElementById("sales-admin-designation")?.value.trim(),
@@ -4199,8 +4160,8 @@ async function saveSalesExecutive(){
     status: document.getElementById("sales-admin-status")?.value || "active",
     notes: document.getElementById("sales-admin-notes")?.value.trim()
   };
-  if (current?.id === "__new__" && !payload.applicationId) {
-    showToast("Choose an existing member account first");
+  if (!current?.id) {
+    showToast("Choose a sales member first");
     return;
   }
   salesAdminState.saving = true;
@@ -4208,22 +4169,18 @@ async function saveSalesExecutive(){
   salesAdminState.result = "";
   renderSalesManager();
   try{
-    const isNew = !current || current.id === "__new__";
-    const response = await fetch(
-      isNew ? `${API}/api/sales/admin/executives` : `${API}/api/sales/admin/executives/${encodeURIComponent(current.id)}`,
-      {
-        method: isNew ? "POST" : "PUT",
-        headers: adminAuthHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(payload)
-      }
-    );
+    const response = await fetch(`${API}/api/sales/admin/executives/${encodeURIComponent(current.id)}`, {
+      method: "PUT",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload)
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Could not save sales executive");
     salesAdminState.selectedId = data.id || data._id || "";
-    salesAdminState.result = isNew ? "Sales access granted. They can now sign in through the Sales Portal using the same application Gmail and password." : "Sales access updated.";
+    salesAdminState.result = "Sales details updated.";
     await loadSalesAdminData({ render: false, silent: true });
     renderSalesManager();
-    showToast(isNew ? "Sales access granted" : "Sales executive updated");
+    showToast("Sales details updated");
   }catch(err){
     salesAdminState.error = err.message || "Could not save sales executive";
     renderSalesManager();
@@ -4231,25 +4188,6 @@ async function saveSalesExecutive(){
   }finally{
     salesAdminState.saving = false;
     renderSalesManager();
-  }
-}
-
-async function deleteSalesExecutive(id){
-  if (!id || !confirm("Remove sales portal access for this member?")) return;
-  try{
-    const response = await fetch(`${API}/api/sales/admin/executives/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-      headers: adminAuthHeaders()
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Could not delete sales executive");
-    if (String(salesAdminState.selectedId) === String(id)) salesAdminState.selectedId = "";
-    salesAdminState.result = "";
-    await loadSalesAdminData({ render: false, silent: true });
-    renderSalesManager();
-    showToast("Sales access removed");
-  }catch(err){
-    showToast(err.message || "Could not delete sales executive");
   }
 }
 
@@ -4269,9 +4207,9 @@ async function resetSalesExecutiveCredentials(id){
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Could not reset credentials");
-    salesAdminState.result = `${data.memberName || "Member"} can now use the reset sales password for the sales portal only. Their member portal password stays unchanged.`;
+    salesAdminState.result = `${data.memberName || "Member"} can now use the reset sales password for the Sales Portal only. Member portal access stays blocked for sales members.`;
     renderSalesManager();
-    showToast("Sales reset password updated");
+    showToast("Sales password reset");
   }catch(err){
     showToast(err.message || "Could not reset credentials");
   }

@@ -2043,7 +2043,9 @@ async function getMemberSessionFromToken(req) {
   }
 
   const member = await Application.findById(payload.sub);
-  if (!member || !["hired", "inwork", "accepted"].includes(member.status) || member.salesAccess === true) {
+  const memberSkill = String(member?.skill || "").trim().toLowerCase();
+  const isSalesMember = memberSkill === "sales" || memberSkill.includes("sales");
+  if (!member || !["hired", "inwork", "accepted"].includes(member.status) || isSalesMember) {
     return null;
   }
 
@@ -2640,11 +2642,13 @@ app.post("/api/auth/login", async (req, res) => {
     const member = await Application.findOne({
       $or: [{ gmail: email }, { email: email }],
       password: hashed,
-      status: { $in: ["hired", "inwork", "accepted"] },
-      salesAccess: { $ne: true }
+      status: { $in: ["hired", "inwork", "accepted"] }
     });
 
     if (!member) return res.status(401).json({ error: "Invalid credentials or account not active" });
+    const memberSkill = String(member?.skill || "").trim().toLowerCase();
+    const isSalesMember = memberSkill === "sales" || memberSkill.includes("sales");
+    if (isSalesMember) return res.status(401).json({ error: "Sales members must use the Sales Portal" });
     const payload = sanitizeApp(member);
     res.json({
       member: payload,

@@ -227,21 +227,21 @@ a{text-decoration:none;color:inherit}
   <div class="login-shell">
     <div class="login-hero">
       <div>
-        <div class="l-badge">Sales executive ready</div>
-        <div class="l-hero-title">Pipeline control with <em>clean follow-ups</em>.</div>
-        <div class="l-hero-copy">YoungMinds sales executives can import leads, launch personalized email and WhatsApp campaigns, track results, and stay in sync with the wider team from one focused portal.</div>
+        <div class="l-badge">Sales Portal</div>
+        <div class="l-hero-title">Sales work, <em>kept simple</em>.</div>
+        <div class="l-hero-copy">Use this portal only if your application skill is marked as sales. Sign in with your existing YoungMinds email and password, manage leads, and run follow-ups from one place.</div>
       </div>
       <div class="l-feature-grid">
-        <div class="l-feature"><div class="l-feature-title">Bulk outreach</div><div class="l-feature-sub">Run lead campaigns with safe delays, message variables, and duplicate prevention built in.</div></div>
-        <div class="l-feature"><div class="l-feature-title">Member portal logic</div><div class="l-feature-sub">Same remember-me flow, app shell, team profile area, and notification rhythm as the member workspace.</div></div>
-        <div class="l-feature"><div class="l-feature-title">Real analytics</div><div class="l-feature-sub">See sent, delivered, failed, and converted totals without leaving the portal.</div></div>
-        <div class="l-feature"><div class="l-feature-title">Admin-controlled</div><div class="l-feature-sub">Sales executives are created from the admin panel so access stays structured and easy to manage.</div></div>
+        <div class="l-feature"><div class="l-feature-title">Same login</div><div class="l-feature-sub">Use the same application email and password you already have.</div></div>
+        <div class="l-feature"><div class="l-feature-title">Sales only</div><div class="l-feature-sub">Members marked as sales use this portal and do not use the member portal.</div></div>
+        <div class="l-feature"><div class="l-feature-title">Leads</div><div class="l-feature-sub">Keep your contact list, status updates, and notes in one workspace.</div></div>
+        <div class="l-feature"><div class="l-feature-title">Campaigns</div><div class="l-feature-sub">Create follow-up campaigns for email and WhatsApp with simple controls.</div></div>
       </div>
     </div>
     <div class="login-box">
       <div class="l-logo"><div class="l-dot">Y</div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Sales</div></div></div>
       <div class="l-title">Welcome back</div>
-      <div class="l-sub">Use the same application Gmail and password already registered with YoungMinds to open the campaign workspace.</div>
+      <div class="l-sub">Sign in with the same application email and password you already use with YoungMinds.</div>
       <div class="l-field"><label>Email</label><input type="email" id="sales-email" placeholder="sales@example.com" autocomplete="username"></div>
       <div class="l-field"><label>Password</label><input type="password" id="sales-password" placeholder="••••••••" autocomplete="current-password"></div>
       <div class="l-options">
@@ -249,7 +249,7 @@ a{text-decoration:none;color:inherit}
       </div>
       <div class="l-err" id="sales-login-error">Incorrect sales credentials.</div>
       <button class="l-btn" id="sales-login-btn" type="button" onclick="doSalesLogin()">Sign in →</button>
-      <div class="l-footnote">If your sales access hasn’t been granted yet, ask the YoungMinds admin team to enable Sales Portal access for your existing application account.</div>
+      <div class="l-footnote">Only members whose skill label is set to sales can open this portal. If you forget your password, ask admin to reset your sales login.</div>
     </div>
   </div>
 </div>
@@ -288,7 +288,6 @@ a{text-decoration:none;color:inherit}
         <div class="api-dot" id="sales-api-dot"></div>
         <span id="sales-api-ts" style="font-size:11px;color:var(--muted3)"></span>
         <a class="tb-btn" href="https://youngmindsagency.vercel.app/" target="_blank" rel="noopener">Public Website</a>
-        <a class="tb-btn" href="/member" target="_blank" rel="noopener">Member Portal</a>
         <div class="tb-notif-wrap">
           <button class="notif-bell" type="button" onclick="toggleSalesNotifications()">🔔<span class="notif-badge-dot" id="salesNotifDot">0</span></button>
           <div class="notif-dropdown hidden" id="salesNotifDropdown">
@@ -610,7 +609,7 @@ function renderLeads() {
             <div class="dropzone-sub">Columns supported: name, email, phone, company, source, tags.</div>
             <input id="salesCsvInput" type="file" accept=".csv,text/csv" class="hidden" onchange="handleSalesCsvUpload(event)">
           </div>
-          <div class="note" style="margin-top:14px">Right now this sales portal supports CSV import directly in-browser. Email and WhatsApp sending still work from the stored lead records after import.</div>
+          <div class="note" style="margin-top:14px">Import your lead sheet here, then manage the same list from the Leads and Campaigns tabs.</div>
         </div>
       </div>
       <div class="card">
@@ -719,13 +718,13 @@ function renderAnalytics() {
             <span class="chip">Delivered · ${fmtNumber(analytics.totalDelivered || 0)}</span>
             <span class="chip">Failed · ${fmtNumber(analytics.totalFailed || 0)}</span>
           </div>
-          <div class="note" style="margin-top:14px">Daily send caps are enforced by the backend so bulk outreach stays controlled instead of blasting too fast.</div>
+          <div class="note" style="margin-top:14px">Daily send caps are enforced by the backend so outreach stays controlled and does not spam too fast.</div>
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Portal logic</div></div>
+        <div class="card-header"><div class="card-title">How login works</div></div>
         <div class="card-body">
-          <div class="note">Email and WhatsApp campaigns use placeholder replacement, delay controls, duplicate protection, and stored message logs. This keeps the sales workspace aligned with the wider YoungMinds portal logic instead of becoming a disconnected tool.</div>
+          <div class="note">If your skill label is sales, you use this portal. If your skill label is not sales, you use the member portal instead.</div>
         </div>
       </div>
     </div>
@@ -744,7 +743,7 @@ function renderTeam() {
               <div class="item-top"><div><div class="item-name">${escapeHtml(item.name || "Executive")}</div><div class="item-meta">${escapeHtml(item.designation || "Sales Executive")} · ${escapeHtml(item.email || "")}</div></div><span class="badge completed">${escapeHtml(item.status || "active")}</span></div>
               <div class="item-copy">${escapeHtml(item.city || "City not added yet.")}${item.phone ? ` · ${escapeHtml(item.phone)}` : ""}</div>
             </div>
-          `).join("") || `<div class="empty"><div class="empty-title">No team members found</div><div class="empty-sub">Sales executives will appear here once added by admin.</div></div>`}
+          `).join("") || `<div class="empty"><div class="empty-title">No team members found</div><div class="empty-sub">Sales-labelled members will appear here automatically.</div></div>`}
         </div>
       </div>
     </div>

@@ -97,8 +97,13 @@ function registerSalesPortal(app, deps) {
     return remember ? REMEMBER_ME_TTL_SECONDS : Math.min(DEFAULT_TTL_SECONDS, 60 * 60 * 12);
   }
 
+  function hasSalesLabel(doc) {
+    const skill = String(doc?.skill || "").trim().toLowerCase();
+    return skill === "sales" || skill.includes("sales");
+  }
+
   function isSalesApplication(doc) {
-    return Boolean(doc?.salesAccess) && SALES_ALLOWED_MEMBER_STATUSES.includes(String(doc?.status || ""));
+    return hasSalesLabel(doc) && SALES_ALLOWED_MEMBER_STATUSES.includes(String(doc?.status || ""));
   }
 
   function isSalesExecutiveActive(doc) {
@@ -117,6 +122,7 @@ function registerSalesPortal(app, deps) {
       notes: doc?.salesNotes || "",
       role: "sales",
       status: String(doc?.salesStatus || SALES_STATUS_ACTIVE) === "inactive" ? "inactive" : "active",
+      skill: doc?.skill || "",
       applicationStatus: doc?.status || "new",
       lastLoginAt: doc?.salesLastLoginAt || null
     };
@@ -245,7 +251,7 @@ function registerSalesPortal(app, deps) {
       SalesCampaign.find({ ownerId }).sort({ updatedAt: -1 }).limit(100),
       SalesMessageLog.find({ ownerId }).sort({ createdAt: -1 }).limit(300),
       SalesNotification.find({ ownerId }).sort({ createdAt: -1 }).limit(30),
-      Application.find({ salesAccess: true, status: { $in: SALES_ALLOWED_MEMBER_STATUSES }, salesStatus: { $ne: "inactive" } }).sort({ name: 1 }).limit(100)
+      Application.find({ status: { $in: SALES_ALLOWED_MEMBER_STATUSES }, skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 }).limit(100)
     ]);
     const totalSent = logs.filter(item => item.status === "sent").length;
     const totalFailed = logs.filter(item => item.status === "failed").length;
@@ -442,54 +448,8 @@ function registerSalesPortal(app, deps) {
     try {
       const session = await requireAdminSession(req, res);
       if (!session) return;
-      const entries = await Application.find({ salesAccess: true }).sort({ timestamp: -1 });
+      const entries = await Application.find({ skill: /sales/i, status: { $in: SALES_ALLOWED_MEMBER_STATUSES } }).sort({ timestamp: -1 });
       res.json(entries.map(sanitizeSalesExecutive));
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  app.get("/api/sales/admin/candidates", async (req, res) => {
-    try {
-      const session = await requireAdminSession(req, res);
-      if (!session) return;
-      const entries = await Application.find({
-        status: { $in: SALES_ALLOWED_MEMBER_STATUSES },
-        password: { $exists: true, $ne: "" },
-        $or: [{ gmail: { $exists: true, $ne: "" } }, { email: { $exists: true, $ne: "" } }]
-      }).sort({ timestamp: -1 }).limit(300);
-      res.json(entries.map(item => ({
-        id: String(item._id),
-        name: item.name || "",
-        email: item.gmail || item.email || "",
-        phone: item.phone || "",
-        city: item.city || "",
-        skill: item.skill || "",
-        status: item.status || "new",
-        salesAccess: Boolean(item.salesAccess)
-      })));
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  app.post("/api/sales/admin/executives", async (req, res) => {
-    try {
-      const session = await requireAdminSession(req, res);
-      if (!session) return;
-      const applicationId = String(req.body?.applicationId || "").trim();
-      if (!applicationId) return res.status(400).json({ error: "Select an existing application account to grant sales access" });
-      const member = await Application.findById(applicationId);
-      if (!member) return res.status(404).json({ error: "Application account not found" });
-      if (!member.password || !(member.gmail || member.email)) return res.status(400).json({ error: "This member does not have a usable application login yet" });
-      member.salesAccess = true;
-      member.salesStatus = String(req.body?.status || SALES_STATUS_ACTIVE).trim() === "inactive" ? "inactive" : "active";
-      member.salesDesignation = String(req.body?.designation || member.salesDesignation || "Sales Executive").trim() || "Sales Executive";
-      member.salesNotes = String(req.body?.notes || member.salesNotes || "").trim();
-      if (req.body?.city !== undefined) member.city = String(req.body.city || "").trim();
-      member.salesSessionNonce = "";
-      await member.save();
-      res.status(201).json(sanitizeSalesExecutive(member));
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -500,7 +460,7 @@ function registerSalesPortal(app, deps) {
       const session = await requireAdminSession(req, res);
       if (!session) return;
       const member = await Application.findById(req.params.id);
-      if (!member || !member.salesAccess) return res.status(404).json({ error: "Sales access record not found" });
+      if (!member || !hasSalesLabel(member)) return res.status(404).json({ error: "Sales member not found" });
       member.name = String(req.body?.name || member.name || "").trim() || member.name;
       member.phone = normalizePhone(req.body?.phone || member.phone || "");
       member.city = String(req.body?.city || member.city || "").trim();
@@ -519,7 +479,7 @@ function registerSalesPortal(app, deps) {
       const session = await requireAdminSession(req, res);
       if (!session) return;
       const member = await Application.findById(req.params.id);
-      if (!member || !member.salesAccess) return res.status(404).json({ error: "Sales access record not found" });
+      if (!member || !hasSalesLabel(member)) return res.status(404).json({ error: "Sales member not found" });
       const rawPassword = String(req.body?.password || "").trim();
       if (rawPassword.length < 8) return res.status(400).json({ error: "Sales portal reset password must be at least 8 characters" });
       member.salesPassword = hashPassword(rawPassword);
@@ -533,25 +493,6 @@ function registerSalesPortal(app, deps) {
         email: member.gmail || member.email || "",
         password: rawPassword
       });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  app.delete("/api/sales/admin/executives/:id", async (req, res) => {
-    try {
-      const session = await requireAdminSession(req, res);
-      if (!session) return;
-      const member = await Application.findById(req.params.id);
-      if (!member || !member.salesAccess) return res.status(404).json({ error: "Sales access record not found" });
-      member.salesAccess = false;
-      member.salesStatus = undefined;
-      member.salesDesignation = undefined;
-      member.salesNotes = undefined;
-      member.salesPassword = undefined;
-      member.salesSessionNonce = "";
-      await member.save();
-      res.json({ ok: true, id: String(member._id) });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -614,7 +555,7 @@ function registerSalesPortal(app, deps) {
       const session = await requireSalesExecutiveSession(req, res);
       if (!session) return;
       const member = await Application.findById(session.executive._id);
-      if (!member || !member.salesAccess) return res.status(404).json({ error: "Sales account not found" });
+      if (!member || !hasSalesLabel(member)) return res.status(404).json({ error: "Sales account not found" });
       member.name = String(req.body?.name || member.name || "").trim() || member.name;
       member.phone = normalizePhone(req.body?.phone || member.phone || "");
       member.city = String(req.body?.city || member.city || "").trim();
@@ -631,7 +572,7 @@ function registerSalesPortal(app, deps) {
     try {
       const session = await requireSalesExecutiveSession(req, res);
       if (!session) return;
-      const team = await Application.find({ salesAccess: true, status: { $in: SALES_ALLOWED_MEMBER_STATUSES }, salesStatus: { $ne: "inactive" } }).sort({ name: 1 });
+      const team = await Application.find({ status: { $in: SALES_ALLOWED_MEMBER_STATUSES }, skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 });
       res.json(team.map(sanitizeSalesExecutive));
     } catch (err) {
       res.status(500).json({ error: err.message });
