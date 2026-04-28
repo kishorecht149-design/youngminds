@@ -98,7 +98,17 @@ function registerSalesPortal(app, deps) {
 
   function hasSalesLabel(doc) {
     const skill = String(doc?.skill || "").trim().toLowerCase();
-    return skill === "sales" || skill.includes("sales");
+    const salesDesignation = String(doc?.salesDesignation || "").trim().toLowerCase();
+    return skill === "sales" || skill.includes("sales") || salesDesignation === "sales" || salesDesignation.includes("sales");
+  }
+
+  function salesMemberQuery() {
+    return {
+      $or: [
+        { skill: /sales/i },
+        { salesDesignation: /sales/i }
+      ]
+    };
   }
 
   function isSalesApplication(doc) {
@@ -250,7 +260,7 @@ function registerSalesPortal(app, deps) {
       SalesCampaign.find({ ownerId }).sort({ updatedAt: -1 }).limit(100),
       SalesMessageLog.find({ ownerId }).sort({ createdAt: -1 }).limit(300),
       SalesNotification.find({ ownerId }).sort({ createdAt: -1 }).limit(30),
-      Application.find({ skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 }).limit(100)
+      Application.find({ ...salesMemberQuery(), salesStatus: { $ne: "inactive" } }).sort({ name: 1 }).limit(100)
     ]);
     const totalSent = logs.filter(item => item.status === "sent").length;
     const totalFailed = logs.filter(item => item.status === "failed").length;
@@ -447,7 +457,7 @@ function registerSalesPortal(app, deps) {
     try {
       const session = await requireAdminSession(req, res);
       if (!session) return;
-      const entries = await Application.find({ skill: /sales/i }).sort({ timestamp: -1 });
+      const entries = await Application.find(salesMemberQuery()).sort({ timestamp: -1 });
       res.json(entries.map(sanitizeSalesExecutive));
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -466,6 +476,9 @@ function registerSalesPortal(app, deps) {
       member.salesDesignation = String(req.body?.designation || member.salesDesignation || "Sales Executive").trim() || "Sales Executive";
       member.salesNotes = String(req.body?.notes || member.salesNotes || "").trim();
       member.salesStatus = String(req.body?.status || SALES_STATUS_ACTIVE).trim() === "inactive" ? "inactive" : "active";
+      if (!String(member.skill || "").trim().toLowerCase().includes("sales")) {
+        member.skill = "sales";
+      }
       await member.save();
       res.json(sanitizeSalesExecutive(member));
     } catch (err) {
@@ -499,11 +512,19 @@ function registerSalesPortal(app, deps) {
 
   app.post("/api/sales/auth/login", async (req, res) => {
     try {
-      const email = normalizeEmail(req.body?.email || "");
+      const identifierRaw = String(req.body?.email || req.body?.identifier || "").trim();
+      const email = normalizeEmail(identifierRaw);
+      const phone = normalizePhone(identifierRaw);
       const password = String(req.body?.password || "");
       const remember = Boolean(req.body?.remember);
-      if (!email || !password) return res.status(400).json({ error: "email and password required" });
-      const executive = await Application.findOne({ $or: [{ gmail: email }, { email }] });
+      if (!identifierRaw || !password) return res.status(400).json({ error: "email/phone and password required" });
+      const executive = await Application.findOne({
+        $or: [
+          { gmail: email },
+          { email },
+          ...(phone ? [{ phone }, { phone: identifierRaw }] : [])
+        ]
+      });
       if (!executive || !isSalesExecutiveActive(executive)) {
         return res.status(401).json({ error: "Sales access is not enabled for this account" });
       }
@@ -571,7 +592,7 @@ function registerSalesPortal(app, deps) {
     try {
       const session = await requireSalesExecutiveSession(req, res);
       if (!session) return;
-      const team = await Application.find({ skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 });
+      const team = await Application.find({ ...salesMemberQuery(), salesStatus: { $ne: "inactive" } }).sort({ name: 1 });
       res.json(team.map(sanitizeSalesExecutive));
     } catch (err) {
       res.status(500).json({ error: err.message });
