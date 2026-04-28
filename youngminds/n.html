@@ -4099,18 +4099,18 @@ function renderSalesManager(){
         <div class="service-admin-head">
           <div>
             <div class="service-admin-title">Sales members</div>
-            <div class="service-admin-sub">Any application marked with the skill label <strong>sales</strong> appears here automatically and uses the Sales Portal only.</div>
+            <div class="service-admin-sub">Only hired members whose skill label contains <strong>sales</strong> appear here and can use the Sales Portal.</div>
           </div>
         </div>
         <div class="service-admin-list">
-          ${rowsHtml || `<div class="empty"><div class="empty-icon">📨</div><div class="empty-title">No sales members found</div><div class="empty-sub">Set a member skill to sales in the hiring application list and they will appear here automatically.</div></div>`}
+          ${rowsHtml || `<div class="empty"><div class="empty-icon">📨</div><div class="empty-title">No sales members found</div><div class="empty-sub">Set the skill label to sales and hire the member first. They will appear here automatically after that.</div></div>`}
         </div>
       </div>
       <div class="service-admin-card">
         <div class="service-admin-head">
           <div>
             <div class="service-admin-title">${current?.id ? `Edit ${escapeHtml(current?.name || "executive")}` : "Sales details"}</div>
-            <div class="service-admin-sub">Sales members use their existing application email and password. Reset only if they forget it.</div>
+            <div class="service-admin-sub">Sales members use their existing application email and password. This screen only updates their sales profile details and lets you reset the password if needed.</div>
           </div>
         </div>
         <div class="service-admin-form">
@@ -4127,12 +4127,7 @@ function renderSalesManager(){
           </div>
           <div class="form-row">
             <div class="form-field"><label>City</label><input id="sales-admin-city" type="text" value="${escapeHtml(current?.city || "")}" placeholder="Chennai"></div>
-            <div class="form-field"><label>Access Status</label>
-              <select id="sales-admin-status">
-                <option value="active" ${String(current?.status || "active") === "active" ? "selected" : ""}>Active</option>
-                <option value="inactive" ${String(current?.status || "") === "inactive" ? "selected" : ""}>Inactive</option>
-              </select>
-            </div>
+            <div class="form-field"><label>Application Status</label><input type="text" value="${escapeHtml(current?.applicationStatus || "—")}" disabled></div>
           </div>
           <div class="form-row full">
             <div class="form-field"><label>Notes</label><textarea id="sales-admin-notes" placeholder="Territory, lead type, handoff notes, or operating context.">${escapeHtml(current?.notes || "")}</textarea></div>
@@ -4157,7 +4152,6 @@ async function saveSalesExecutive(){
     phone: document.getElementById("sales-admin-phone")?.value.trim(),
     designation: document.getElementById("sales-admin-designation")?.value.trim(),
     city: document.getElementById("sales-admin-city")?.value.trim(),
-    status: document.getElementById("sales-admin-status")?.value || "active",
     notes: document.getElementById("sales-admin-notes")?.value.trim()
   };
   if (!current?.id) {

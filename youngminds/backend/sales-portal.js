@@ -18,6 +18,7 @@ function registerSalesPortal(app, deps) {
   } = deps;
 
   const SALES_STATUS_ACTIVE = "active";
+  const SALES_ALLOWED_MEMBER_STATUSES = ["accepted", "hired", "inwork"];
   const SALES_DAILY_EMAIL_LIMIT = Math.max(1, Number(process.env.SALES_DAILY_EMAIL_LIMIT || 200));
   const SALES_DAILY_WHATSAPP_LIMIT = Math.max(1, Number(process.env.SALES_DAILY_WHATSAPP_LIMIT || 120));
   const SALES_DELAY_MIN_SECONDS = 5;
@@ -98,21 +99,18 @@ function registerSalesPortal(app, deps) {
 
   function hasSalesLabel(doc) {
     const skill = String(doc?.skill || "").trim().toLowerCase();
-    const salesDesignation = String(doc?.salesDesignation || "").trim().toLowerCase();
-    return skill === "sales" || skill.includes("sales") || salesDesignation === "sales" || salesDesignation.includes("sales");
+    return skill === "sales" || skill.includes("sales");
   }
 
   function salesMemberQuery() {
     return {
-      $or: [
-        { skill: /sales/i },
-        { salesDesignation: /sales/i }
-      ]
+      skill: /sales/i,
+      status: { $in: SALES_ALLOWED_MEMBER_STATUSES }
     };
   }
 
   function isSalesApplication(doc) {
-    return hasSalesLabel(doc);
+    return hasSalesLabel(doc) && SALES_ALLOWED_MEMBER_STATUSES.includes(String(doc?.status || ""));
   }
 
   function isSalesExecutiveActive(doc) {
@@ -476,9 +474,6 @@ function registerSalesPortal(app, deps) {
       member.salesDesignation = String(req.body?.designation || member.salesDesignation || "Sales Executive").trim() || "Sales Executive";
       member.salesNotes = String(req.body?.notes || member.salesNotes || "").trim();
       member.salesStatus = String(req.body?.status || SALES_STATUS_ACTIVE).trim() === "inactive" ? "inactive" : "active";
-      if (!String(member.skill || "").trim().toLowerCase().includes("sales")) {
-        member.skill = "sales";
-      }
       await member.save();
       res.json(sanitizeSalesExecutive(member));
     } catch (err) {
@@ -528,7 +523,7 @@ function registerSalesPortal(app, deps) {
         ]
       });
       if (!executive || !isSalesExecutiveActive(executive)) {
-        return res.status(401).json({ error: "Sales access is not enabled for this account" });
+        return res.status(401).json({ error: "Only hired members with a sales skill label can use the Sales Portal" });
       }
       const expectedPassword = String(executive.salesPassword || executive.password || "");
       if (!expectedPassword) return res.status(403).json({ error: "This sales account does not have a valid password on file" });
