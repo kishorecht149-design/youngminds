@@ -712,23 +712,15 @@ function renderAnalytics() {
       <div class="scard"><div class="scard-lbl">Replied</div><div class="scard-n">${fmtNumber(analytics.replied || 0)}</div><div class="scard-sub">Leads marked replied.</div></div>
       <div class="scard"><div class="scard-lbl">Converted</div><div class="scard-n">${fmtNumber(analytics.converted || 0)}</div><div class="scard-sub">Leads moved to converted status.</div></div>
     </div>
-    <div class="panel-grid">
-      <div class="card">
-        <div class="card-header"><div class="card-title">Performance summary</div></div>
-        <div class="card-body">
-          <div class="chip-row">
-            <span class="chip">Leads · ${fmtNumber(analytics.totalLeads || 0)}</span>
-            <span class="chip">Delivered · ${fmtNumber(analytics.totalDelivered || 0)}</span>
-            <span class="chip">Failed · ${fmtNumber(analytics.totalFailed || 0)}</span>
-          </div>
-          <div class="note" style="margin-top:14px">Daily send caps are enforced by the backend so outreach stays controlled and does not spam too fast.</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Performance summary</div></div>
+      <div class="card-body">
+        <div class="chip-row">
+          <span class="chip">Leads · ${fmtNumber(analytics.totalLeads || 0)}</span>
+          <span class="chip">Delivered · ${fmtNumber(analytics.totalDelivered || 0)}</span>
+          <span class="chip">Failed · ${fmtNumber(analytics.totalFailed || 0)}</span>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">How login works</div></div>
-        <div class="card-body">
-          <div class="note">If your skill label is sales, you use this portal. If your skill label is not sales, you use the member portal instead.</div>
-        </div>
+        <div class="note" style="margin-top:14px">Daily send caps are enforced by the backend so outreach stays controlled and does not spam too fast.</div>
       </div>
     </div>
   `;
