@@ -22,7 +22,6 @@ function registerSalesPortal(app, deps) {
   const SALES_DAILY_WHATSAPP_LIMIT = Math.max(1, Number(process.env.SALES_DAILY_WHATSAPP_LIMIT || 120));
   const SALES_DELAY_MIN_SECONDS = 5;
   const SALES_DELAY_MAX_SECONDS = 10;
-  const SALES_ALLOWED_MEMBER_STATUSES = ["accepted", "hired", "inwork"];
   const salesJobs = new Map();
 
   const salesLeadSchema = new mongoose.Schema({
@@ -103,7 +102,7 @@ function registerSalesPortal(app, deps) {
   }
 
   function isSalesApplication(doc) {
-    return hasSalesLabel(doc) && SALES_ALLOWED_MEMBER_STATUSES.includes(String(doc?.status || ""));
+    return hasSalesLabel(doc);
   }
 
   function isSalesExecutiveActive(doc) {
@@ -251,7 +250,7 @@ function registerSalesPortal(app, deps) {
       SalesCampaign.find({ ownerId }).sort({ updatedAt: -1 }).limit(100),
       SalesMessageLog.find({ ownerId }).sort({ createdAt: -1 }).limit(300),
       SalesNotification.find({ ownerId }).sort({ createdAt: -1 }).limit(30),
-      Application.find({ status: { $in: SALES_ALLOWED_MEMBER_STATUSES }, skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 }).limit(100)
+      Application.find({ skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 }).limit(100)
     ]);
     const totalSent = logs.filter(item => item.status === "sent").length;
     const totalFailed = logs.filter(item => item.status === "failed").length;
@@ -448,7 +447,7 @@ function registerSalesPortal(app, deps) {
     try {
       const session = await requireAdminSession(req, res);
       if (!session) return;
-      const entries = await Application.find({ skill: /sales/i, status: { $in: SALES_ALLOWED_MEMBER_STATUSES } }).sort({ timestamp: -1 });
+      const entries = await Application.find({ skill: /sales/i }).sort({ timestamp: -1 });
       res.json(entries.map(sanitizeSalesExecutive));
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -572,7 +571,7 @@ function registerSalesPortal(app, deps) {
     try {
       const session = await requireSalesExecutiveSession(req, res);
       if (!session) return;
-      const team = await Application.find({ status: { $in: SALES_ALLOWED_MEMBER_STATUSES }, skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 });
+      const team = await Application.find({ skill: /sales/i, salesStatus: { $ne: "inactive" } }).sort({ name: 1 });
       res.json(team.map(sanitizeSalesExecutive));
     } catch (err) {
       res.status(500).json({ error: err.message });
