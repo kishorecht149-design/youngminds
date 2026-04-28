@@ -109,8 +109,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .board-track{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:10px;margin-bottom:-10px}
 .board-track::-webkit-scrollbar{display:none}
 .board-slide{flex:0 0 clamp(228px,22vw,280px);scroll-snap-align:start}
-.board-card{display:block;width:100%;height:100%;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.18);transition:transform .25s ease,border-color .25s ease}
-.board-card:hover{transform:translateY(-4px);border-color:rgba(255,215,0,.42)}
+.board-card{display:block;width:100%;height:100%;border-radius:18px;perspective:900px;outline:none}
+.board-card-inner{position:relative;width:100%;height:100%;min-height:100%;border:1px solid var(--border2);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));box-shadow:0 16px 40px rgba(0,0,0,0.18);transform-style:preserve-3d;transition:transform .58s cubic-bezier(.2,.8,.2,1),border-color .25s ease,box-shadow .25s ease}
+.board-card:hover .board-card-inner,.board-card:focus-visible .board-card-inner{transform:rotateY(180deg) translateY(-4px);border-color:rgba(255,215,0,.42);box-shadow:0 22px 58px rgba(0,0,0,.28)}
+.board-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;overflow:hidden;min-height:100%;display:flex;flex-direction:column}
+.board-front{position:relative}
+.board-back{position:absolute;inset:0;transform:rotateY(180deg);align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(circle at top,rgba(255,215,0,.18),transparent 52%),linear-gradient(180deg,rgba(255,215,0,.08),rgba(255,255,255,.02))}
+.board-back-kicker{font-size:10px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.board-back-title{font-size:24px;font-weight:900;letter-spacing:-.04em;line-height:1.05;color:var(--text)}
+.board-back-copy{margin-top:12px;font-size:13px;line-height:1.7;color:var(--muted)}
+.board-back-cta{margin-top:18px;display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;background:var(--accent);color:#050507;font-size:12px;font-weight:900}
 .board-photo{aspect-ratio:4/5;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,255,255,0.03));position:relative;overflow:hidden}
 .board-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .board-photo-fallback{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;font-weight:900;letter-spacing:-1px;color:rgba(255,215,0,0.9);background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,255,255,0.02))}
@@ -361,7 +369,7 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
   .board-slide{flex-basis:min(78vw,280px)}
   .board-window{overflow:visible}
   .board-track{gap:14px;padding-bottom:12px}
-  .board-card{border-radius:22px}
+  .board-card,.board-card-inner,.board-face{border-radius:22px}
   .board-photo{aspect-ratio:4/4.8}
   .board-body{padding:16px}
   .board-name{font-size:17px}
@@ -961,7 +969,7 @@ function serviceDetailUrl(item){
 
 function memberPortfolioUrl(member){
   const slug = member?.slug || String(member?.name || 'member').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  return appUrl(`/members/${encodeURIComponent(slug)}/`);
+  return `${appUrl('/members/')}?member=${encodeURIComponent(slug)}`;
 }
 
 function goToPortal(path){
@@ -1046,14 +1054,24 @@ function renderBoardMembers(entries){
     host.innerHTML=`<div class="board-grid">${entries.map(member=>{
       const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
       return `<a class="board-card" href="${escapeHtml(memberPortfolioUrl(member))}" aria-label="Open ${escapeHtml(member.name||'member')} portfolio">
-        <div class="board-photo">
-          ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
-          <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
-        </div>
-        <div class="board-body">
-          <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
-          <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
-          ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
+        <div class="board-card-inner">
+          <div class="board-face board-front">
+            <div class="board-photo">
+              ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
+              <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
+            </div>
+            <div class="board-body">
+              <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
+              <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
+              ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
+            </div>
+          </div>
+          <div class="board-face board-back">
+            <div class="board-back-kicker">Member Portfolio</div>
+            <div class="board-back-title">Click to view portfolio</div>
+            <div class="board-back-copy">${escapeHtml(member.name||'YoungMinds Member')}&#39;s skills, projects, experience, and contact links.</div>
+            <div class="board-back-cta">Open Portfolio →</div>
+          </div>
         </div>
       </a>`;
     }).join('')}</div>`;
@@ -1064,14 +1082,24 @@ function renderBoardMembers(entries){
       <div class="board-track" id="boardTrack" onscroll="onBoardScroll()">${entries.map(member=>{
     const initial=escapeHtml((member.name||'Y').trim().charAt(0).toUpperCase()||'Y');
     return `<div class="board-slide"><a class="board-card" href="${escapeHtml(memberPortfolioUrl(member))}" aria-label="Open ${escapeHtml(member.name||'member')} portfolio">
-      <div class="board-photo">
-        ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
-        <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
-      </div>
-      <div class="board-body">
-        <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
-        <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
-        ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
+      <div class="board-card-inner">
+        <div class="board-face board-front">
+          <div class="board-photo">
+            ${member.photo?`<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name||'YoungMinds member')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}
+            <div class="board-photo-fallback"${member.photo?' style="display:none"':''}>${initial}</div>
+          </div>
+          <div class="board-body">
+            <div class="board-name">${escapeHtml(member.name||'YoungMinds Member')}</div>
+            <div class="board-role">${escapeHtml(member.designation||'Team Member')}</div>
+            ${member.bio ? `<div class="board-bio">${escapeHtml(member.bio)}</div>` : ``}
+          </div>
+        </div>
+        <div class="board-face board-back">
+          <div class="board-back-kicker">Member Portfolio</div>
+          <div class="board-back-title">Click to view portfolio</div>
+          <div class="board-back-copy">${escapeHtml(member.name||'YoungMinds Member')}&#39;s skills, projects, experience, and contact links.</div>
+          <div class="board-back-cta">Open Portfolio →</div>
+        </div>
       </div>
     </a></div>`;
   }).join('')}</div>

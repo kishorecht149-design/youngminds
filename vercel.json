@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/members/:slug*",
-      "destination": "/members/index.html"
+      "destination": "/members/"
     }
   ]
 }

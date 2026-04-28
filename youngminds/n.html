@@ -2537,7 +2537,7 @@ function slugifyText(value){
 
 function boardPortfolioUrl(entry){
   const slug = entry?.slug || slugifyText(entry?.name || entry?.id || entry?._id || "");
-  return `https://youngmindsagency.vercel.app/members/${encodeURIComponent(slug)}/`;
+  return `https://youngmindsagency.vercel.app/members/?member=${encodeURIComponent(slug)}`;
 }
 
 function boardSkillsText(entry){
