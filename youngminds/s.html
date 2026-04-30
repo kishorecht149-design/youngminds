@@ -3406,7 +3406,6 @@ window.addEventListener("popstate", event => {
 async function restoreMemberSession() {
   const token = getStoredMemberToken();
   if (!token) {
-    if (await restoreAdminAccessIfAvailable()) return;
     showMemberLogin();
     return;
   }
@@ -3427,7 +3426,6 @@ async function restoreMemberSession() {
     });
   } catch {
     clearMemberSession({ keepIdentity: true });
-    if (await restoreAdminAccessIfAvailable()) return;
     showMemberLogin();
   } finally {
     document.getElementById("loginBtn").disabled = false;

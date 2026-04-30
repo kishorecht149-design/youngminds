@@ -1300,7 +1300,6 @@ function doSalesLogout() {
 async function restoreSalesSession() {
   const token = getStoredSalesToken();
   if (!token) {
-    if (await restoreAdminAccessIfAvailable()) return;
     showSalesLogin();
     return;
   }
@@ -1311,7 +1310,6 @@ async function restoreSalesSession() {
     await completeSalesLogin(token, data.executive, localStorage.getItem(SALES_REMEMBER_KEY) !== "0");
   } catch {
     doSalesLogout();
-    await restoreAdminAccessIfAvailable();
   }
 }
 

@@ -610,7 +610,6 @@ async function restoreInterviewSession() {
     localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);
     interviewToken = "";
-    if (await restoreAdminAccessIfAvailable()) return;
     logoutInterview(); showToast(err.message, "error");
   }
 }
@@ -1150,7 +1149,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     restoreInterviewSession();
     return;
   }
-  if (await restoreAdminAccessIfAvailable()) return;
   setViewState("guest");
 });
 </script>
