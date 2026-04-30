@@ -404,6 +404,10 @@ h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8
 const API = window.location.origin;
 const SESSION_KEY = "ym_interview_session";
 const REMEMBER_KEY = "ym_interview_remember";
+const ADMIN_SESSION_KEY = "ym_admin_session";
+const ADMIN_REMEMBER_KEY = "ym_admin_remember";
+const ADMIN_USERNAME_KEY = "ym_admin_username";
+const INTERVIEW_HERO_TEMPLATE = document.getElementById("heroSection")?.innerHTML || "";
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return str;
@@ -416,6 +420,109 @@ let candidateState = null, interviewAttempts = [], activeAttempt = null, activeE
 let activeQuestionIndex = 0, timerInterval = null, socket = null, localStream = null;
 let snapshotInterval = null, inactivityTimer = null, faceInterval = null;
 let lastActivityAt = Date.now(), faceApiReady = false, peerConnection = null;
+
+function getStoredAdminToken() {
+  return localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || "";
+}
+
+function persistAdminSession(token, username, remember) {
+  localStorage.setItem(ADMIN_REMEMBER_KEY, remember ? "1" : "0");
+  if (username) localStorage.setItem(ADMIN_USERNAME_KEY, username);
+  if (remember) {
+    localStorage.setItem(ADMIN_SESSION_KEY, token);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  } else {
+    sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+  }
+}
+
+function restoreInterviewHeroTemplate() {
+  const hero = document.getElementById("heroSection");
+  if (hero && INTERVIEW_HERO_TEMPLATE && !document.getElementById("loginEmail")) {
+    hero.innerHTML = INTERVIEW_HERO_TEMPLATE;
+  }
+}
+
+function showInterviewLogin() {
+  restoreInterviewHeroTemplate();
+  document.getElementById("rememberInterview").checked = localStorage.getItem(REMEMBER_KEY) === "1";
+  setViewState("guest");
+}
+
+function showInterviewAdminAccess(admin = {}) {
+  stopExamRuntime();
+  interviewToken = "";
+  candidateState = null;
+  interviewAttempts = [];
+  activeAttempt = null;
+  activeExam = null;
+  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
+  document.getElementById("dashboardSection").classList.add("hidden");
+  document.getElementById("examSection").classList.add("hidden");
+  document.getElementById("resultSection").classList.add("hidden");
+  document.getElementById("logoutBtn").classList.add("hidden");
+  const hero = document.getElementById("heroSection");
+  hero.classList.remove("hidden");
+  hero.innerHTML = `
+    <div class="glass-card">
+      <div class="pill accent" style="margin-bottom:16px;">Admin Access</div>
+      <h1>Interview portal <span class="text-accent">unlocked.</span></h1>
+      <p class="text-muted" style="max-width:54ch;font-size:1.05rem;">Signed in as <b>${escapeHtml(admin.username || "admin")}</b>. Admin can open the interview controls without using candidate credentials.</p>
+      <div class="hero-list">
+        <div class="hero-item"><div class="hero-item-icon">1</div> Create and assign interviews</div>
+        <div class="hero-item"><div class="hero-item-icon">2</div> Manage question banks</div>
+        <div class="hero-item"><div class="hero-item-icon">3</div> Review live activity and logs</div>
+        <div class="hero-item"><div class="hero-item-icon">4</div> Reset candidate access</div>
+      </div>
+    </div>
+    <div class="glass-card">
+      <h2>Admin controls</h2>
+      <p class="text-muted">Candidate dashboards remain candidate-only so attempts and proctoring logs stay accurate.</p>
+      <div style="display:grid;gap:12px;margin-top:24px;">
+        <button class="btn primary" onclick="location.href='/admin/interviews'">Open Interview Admin</button>
+        <button class="btn" onclick="location.href='/admin'">Open Admin Panel</button>
+        <button class="btn" onclick="showInterviewLogin()">Use candidate credentials instead</button>
+      </div>
+    </div>
+  `;
+}
+
+async function restoreAdminAccessIfAvailable() {
+  const token = getStoredAdminToken();
+  if (!token) return false;
+  try {
+    const response = await fetch(`${API}/api/admin/auth/session`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "admin_session_expired");
+    showInterviewAdminAccess(data.admin);
+    return true;
+  } catch {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    return false;
+  }
+}
+
+async function tryAdminLoginFromInterviewPortal(username, password, remember) {
+  try {
+    const response = await fetch(`${API}/api/admin/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, remember })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return false;
+    persistAdminSession(data.token, data.admin?.username, remember);
+    showInterviewAdminAccess(data.admin);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // UI Helpers
 function showToast(msg, type = "info") {
@@ -470,6 +577,7 @@ async function loginInterview() {
     setRememberSession(interviewToken, remember);
     await restoreInterviewSession();
   } catch (err) {
+    if (await tryAdminLoginFromInterviewPortal(email, password, remember)) return;
     showToast(err.message, "error");
   } finally {
     btn.disabled = false; btn.textContent = "Access Interview";
@@ -481,6 +589,7 @@ function logoutInterview() {
   interviewToken = ""; candidateState = null; interviewAttempts = [];
   activeAttempt = null; activeExam = null;
   localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY);
+  restoreInterviewHeroTemplate();
   setViewState("guest");
   showToast("Signed out successfully");
 }
@@ -498,6 +607,10 @@ async function restoreInterviewSession() {
     renderAttempts();
     connectSocket();
   } catch (err) {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    interviewToken = "";
+    if (await restoreAdminAccessIfAvailable()) return;
     logoutInterview(); showToast(err.message, "error");
   }
 }
@@ -1030,10 +1143,15 @@ async function createPeerConnection() {
   return peerConnection;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("rememberInterview").checked = localStorage.getItem(REMEMBER_KEY) === "1";
-  setViewState(interviewToken ? "dashboard" : "guest");
-  restoreInterviewSession();
+  if (interviewToken) {
+    setViewState("dashboard");
+    restoreInterviewSession();
+    return;
+  }
+  if (await restoreAdminAccessIfAvailable()) return;
+  setViewState("guest");
 });
 </script>
 </body>

@@ -3077,6 +3077,10 @@ renderProjects = function(){
 const MEMBER_SESSION_KEY = "ym_member_session";
 const MEMBER_REMEMBER_KEY = "ym_member_remember";
 const MEMBER_GMAIL_KEY = "ym_member_gmail";
+const ADMIN_SESSION_KEY = "ym_admin_session";
+const ADMIN_REMEMBER_KEY = "ym_admin_remember";
+const ADMIN_USERNAME_KEY = "ym_admin_username";
+const MEMBER_LOGIN_TEMPLATE = document.getElementById("loginScreen")?.innerHTML || "";
 const MEMBER_PAGE_SET = new Set([
   "dash", "profile", "achievements", "projects", "requests",
   "tasks", "team", "chat", "payouts", "stats"
@@ -3141,6 +3145,95 @@ function clearMemberSession(options = {}) {
   }
 }
 
+function getStoredAdminToken() {
+  return localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || "";
+}
+
+function persistAdminSession(token, username, remember) {
+  localStorage.setItem(ADMIN_REMEMBER_KEY, remember ? "1" : "0");
+  if (username) localStorage.setItem(ADMIN_USERNAME_KEY, username);
+  if (remember) {
+    localStorage.setItem(ADMIN_SESSION_KEY, token);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  } else {
+    sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+  }
+}
+
+function restoreMemberLoginTemplate() {
+  const login = document.getElementById("loginScreen");
+  if (login && MEMBER_LOGIN_TEMPLATE && !document.getElementById("l-email")) {
+    login.innerHTML = MEMBER_LOGIN_TEMPLATE;
+  }
+}
+
+function showMemberAdminAccess(admin = {}) {
+  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
+  disconnectMemberEvents();
+  currentMember = null;
+  currentAuthToken = null;
+  document.getElementById("appShell").style.display = "none";
+  const login = document.getElementById("loginScreen");
+  login.style.display = "flex";
+  login.innerHTML = `
+    <div class="login-box">
+      <div class="l-logo">
+        <img src="/assets/logo.png" alt="YoungMinds" style="height:32px;width:auto;border-radius:6px;object-fit:contain;">
+        <span class="l-badge" style="margin-left:8px;">Admin Access</span>
+      </div>
+      <div class="l-title">Member Portal unlocked</div>
+      <div class="l-sub">Signed in as <b>${escapeHtml(admin.username || "admin")}</b>. Admin accounts can open every YoungMinds portal without being assigned as a member.</div>
+      <div class="l-hint" style="text-align:left;margin:16px 0 18px">
+        Use the admin panel to manage members, projects, payouts, and access. Member-only dashboard data still belongs to the actual member account.
+      </div>
+      <button class="l-btn" onclick="location.href='/admin'">Open Admin Panel</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <button type="button" class="tb-btn" style="padding:12px" onclick="location.href='/sales'">Sales Portal</button>
+        <button type="button" class="tb-btn" style="padding:12px" onclick="location.href='/interview'">Interview Portal</button>
+      </div>
+      <div class="l-hint">
+        <button type="button" class="tb-btn" style="margin-top:12px;padding:8px 12px" onclick="showMemberLogin()">Use member credentials instead</button>
+      </div>
+    </div>
+  `;
+}
+
+async function restoreAdminAccessIfAvailable() {
+  const token = getStoredAdminToken();
+  if (!token) return false;
+  try {
+    const response = await fetch(`${API}/api/admin/auth/session`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "admin_session_expired");
+    showMemberAdminAccess(data.admin);
+    return true;
+  } catch {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    return false;
+  }
+}
+
+async function tryAdminLoginFromMemberPortal(username, password, remember) {
+  try {
+    const response = await fetch(`${API}/api/admin/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, remember })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return false;
+    persistAdminSession(data.token, data.admin?.username, remember);
+    showMemberAdminAccess(data.admin);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function sanitizeMemberPage(page) {
   return MEMBER_PAGE_SET.has(page) ? page : "dash";
 }
@@ -3175,6 +3268,7 @@ function showMemberShell(member) {
 }
 
 function showMemberLogin() {
+  restoreMemberLoginTemplate();
   const remember = localStorage.getItem(MEMBER_REMEMBER_KEY) === "1";
   const rememberedGmail = localStorage.getItem(MEMBER_GMAIL_KEY) || "";
   currentMember = null;
@@ -3250,6 +3344,11 @@ doLogin = async function(){
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      if (await tryAdminLoginFromMemberPortal(gmail, password, remember)) {
+        btn.disabled = false;
+        btn.textContent = "Sign in →";
+        return;
+      }
       errEl.textContent = payload.error || "Unable to sign in";
       errEl.style.display = "block";
       btn.disabled = false;
@@ -3307,6 +3406,7 @@ window.addEventListener("popstate", event => {
 async function restoreMemberSession() {
   const token = getStoredMemberToken();
   if (!token) {
+    if (await restoreAdminAccessIfAvailable()) return;
     showMemberLogin();
     return;
   }
@@ -3327,6 +3427,7 @@ async function restoreMemberSession() {
     });
   } catch {
     clearMemberSession({ keepIdentity: true });
+    if (await restoreAdminAccessIfAvailable()) return;
     showMemberLogin();
   } finally {
     document.getElementById("loginBtn").disabled = false;

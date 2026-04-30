@@ -306,6 +306,59 @@ html[data-theme="light"] .stp.active .stp-lbl,html[data-theme="light"] .fg label
 footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;background:linear-gradient(180deg,transparent,rgba(255,215,0,0.02))}
 .ft-logo{font-size:14px;font-weight:800;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 html[data-theme="light"] .ft-logo{background:linear-gradient(135deg,#15130c,#6b4900);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+html[data-theme="light"] .hero-badge,
+html[data-theme="light"] .eyebrow,
+html[data-theme="light"] .svc-num,
+html[data-theme="light"] .proc-num,
+html[data-theme="light"] .fg label,
+html[data-theme="light"] .rv-lbl{
+  color:#5f3b00;
+  text-shadow:0 1px 0 rgba(255,255,255,.72),0 8px 22px rgba(159,107,0,.28);
+}
+html[data-theme="light"] .hero-char.accent,
+html[data-theme="light"] .hero-headline.is-ready .hero-char.accent,
+html[data-theme="light"] .hero-kicker-accent,
+html[data-theme="light"] .sec-h2 em,
+html[data-theme="light"] .board-role,
+html[data-theme="light"] .board-back-kicker,
+html[data-theme="light"] .board-skill,
+html[data-theme="light"] .svc-price,
+html[data-theme="light"] .svc-cta,
+html[data-theme="light"] .stp.active .stp-lbl,
+html[data-theme="light"] .sk-opt.sel .sk-lbl{
+  color:#8a5800;
+  background:linear-gradient(105deg,#4f3100 0%,#a86b00 24%,#ffd21d 43%,#fff3a3 50%,#c98400 61%,#5b3a00 100%);
+  background-size:220% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 8px 18px rgba(159,107,0,.22));
+  animation:lightTextShine 5.5s ease-in-out infinite alternate;
+}
+html[data-theme="light"] .sec-h2,
+html[data-theme="light"] .stat-n,
+html[data-theme="light"] .ft-logo{
+  background:linear-gradient(110deg,#15130c 0%,#3d2b00 34%,#a86b00 48%,#f1bb12 57%,#15130c 78%);
+  background-size:220% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 10px 24px rgba(159,107,0,.12));
+  animation:lightTextShine 6.5s ease-in-out infinite alternate;
+}
+html[data-theme="light"] .hero-badge{
+  background:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,229,88,.28));
+}
+html[data-theme="light"] .hero-sweep,
+html[data-theme="light"] .stp-fill,
+html[data-theme="light"] .board-progress-fill{
+  background:linear-gradient(90deg,rgba(159,107,0,0),#9f6b00,#ffe86a,#9f6b00,rgba(159,107,0,0));
+  box-shadow:0 0 20px rgba(159,107,0,.28);
+}
+@keyframes lightTextShine{
+  from{background-position:0% center}
+  to{background-position:100% center}
+}
 .ft-dot{height:26px;width:auto;border-radius:4px;object-fit:contain;display:block}
 .ft-links{display:flex;gap:28px}
 .ft-links a{font-size:13px;color:var(--muted);transition:all .3s;font-weight:500}

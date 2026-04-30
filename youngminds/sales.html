@@ -379,6 +379,10 @@ const API = window.location.origin;
 const SALES_SESSION_KEY = "ym_sales_session";
 const SALES_REMEMBER_KEY = "ym_sales_remember";
 const SALES_EMAIL_KEY = "ym_sales_email";
+const ADMIN_SESSION_KEY = "ym_admin_session";
+const ADMIN_REMEMBER_KEY = "ym_admin_remember";
+const ADMIN_USERNAME_KEY = "ym_admin_username";
+const SALES_LOGIN_TEMPLATE = document.getElementById("loginScreen")?.innerHTML || "";
 const SALES_VIEW_SET = new Set(["dashboard","leads","campaigns","activity","analytics","team","profile"]);
 const SALES_TITLES = { dashboard:"Dashboard", leads:"Leads", campaigns:"Campaigns", activity:"Activity", analytics:"Analytics", team:"Team", profile:"My Profile" };
 let currentSalesToken = "";
@@ -453,6 +457,96 @@ function persistSalesSession(token, email, remember) {
 function clearSalesSession() {
   localStorage.removeItem(SALES_SESSION_KEY);
   sessionStorage.removeItem(SALES_SESSION_KEY);
+}
+
+function getStoredAdminToken() {
+  return localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || "";
+}
+
+function persistAdminSession(token, username, remember) {
+  localStorage.setItem(ADMIN_REMEMBER_KEY, remember ? "1" : "0");
+  if (username) localStorage.setItem(ADMIN_USERNAME_KEY, username);
+  if (remember) {
+    localStorage.setItem(ADMIN_SESSION_KEY, token);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  } else {
+    sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+  }
+}
+
+function restoreSalesLoginTemplate() {
+  const login = document.getElementById("loginScreen");
+  if (login && SALES_LOGIN_TEMPLATE && !document.getElementById("sales-email")) {
+    login.innerHTML = SALES_LOGIN_TEMPLATE;
+  }
+}
+
+function showSalesAdminAccess(admin = {}) {
+  if (salesPollInterval) clearInterval(salesPollInterval);
+  salesPollInterval = null;
+  currentSalesToken = "";
+  currentExecutive = null;
+  document.getElementById("salesApp").classList.add("hidden");
+  const login = document.getElementById("loginScreen");
+  login.classList.remove("hidden");
+  login.innerHTML = `
+    <div class="login-shell">
+      <div class="login-hero" style="min-height:460px">
+        <div>
+          <div class="l-badge">Admin Access</div>
+          <div class="l-hero-title">Sales portal <em>unlocked</em>.</div>
+          <div class="l-hero-copy">Signed in as ${escapeHtml(admin.username || "admin")}. Admin can open the sales workspace entry and manage sales members from the admin panel without needing a sales label.</div>
+        </div>
+      </div>
+      <div class="login-box">
+        <div class="l-logo"><div class="l-dot">Y</div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Admin</div></div></div>
+        <div class="l-title">Access ready</div>
+        <div class="l-sub">Sales lead and campaign data remains scoped to each sales executive. Use admin controls to review and manage the team.</div>
+        <button class="l-btn" type="button" onclick="location.href='/admin/sales'">Open Sales Admin</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+          <button type="button" class="tb-btn" style="padding:12px" onclick="location.href='/member'">Member Portal</button>
+          <button type="button" class="tb-btn" style="padding:12px" onclick="location.href='/interview'">Interview Portal</button>
+        </div>
+        <div class="l-footnote"><button type="button" class="tb-btn" style="margin-top:12px;padding:8px 12px" onclick="showSalesLogin()">Use sales credentials instead</button></div>
+      </div>
+    </div>
+  `;
+}
+
+async function restoreAdminAccessIfAvailable() {
+  const token = getStoredAdminToken();
+  if (!token) return false;
+  try {
+    const response = await fetch(`${API}/api/admin/auth/session`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "admin_session_expired");
+    showSalesAdminAccess(data.admin);
+    return true;
+  } catch {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    return false;
+  }
+}
+
+async function tryAdminLoginFromSalesPortal(username, password, remember) {
+  try {
+    const response = await fetch(`${API}/api/admin/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, remember })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return false;
+    persistAdminSession(data.token, data.admin?.username, remember);
+    showSalesAdminAccess(data.admin);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function getUnreadNotificationCount() {
@@ -1131,6 +1225,7 @@ function showSalesApp() {
 }
 
 function showSalesLogin() {
+  restoreSalesLoginTemplate();
   document.getElementById("salesApp").classList.add("hidden");
   document.getElementById("loginScreen").classList.remove("hidden");
   document.getElementById("sales-password").value = "";
@@ -1178,6 +1273,9 @@ async function doSalesLogin() {
     await completeSalesLogin(data.token, data.executive, remember);
     showToast(`Signed in as ${data.executive?.name || "sales"}`);
   } catch (err) {
+    if (await tryAdminLoginFromSalesPortal(email, password, remember)) {
+      return;
+    }
     doSalesLogout();
     errEl.textContent = err.message || "Invalid sales credentials";
     errEl.style.display = "block";
@@ -1202,6 +1300,7 @@ function doSalesLogout() {
 async function restoreSalesSession() {
   const token = getStoredSalesToken();
   if (!token) {
+    if (await restoreAdminAccessIfAvailable()) return;
     showSalesLogin();
     return;
   }
@@ -1212,6 +1311,7 @@ async function restoreSalesSession() {
     await completeSalesLogin(token, data.executive, localStorage.getItem(SALES_REMEMBER_KEY) !== "0");
   } catch {
     doSalesLogout();
+    await restoreAdminAccessIfAvailable();
   }
 }
 
