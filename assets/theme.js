@@ -4,12 +4,8 @@
   const sun = '<svg class="ym-theme-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.42-1.42M4.92 19.08l1.42-1.42m0-11.32L4.92 4.92m14.16 14.16-1.42-1.42" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/></svg>';
   const moon = '<svg class="ym-theme-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.2 14.35A7.9 7.9 0 0 1 9.65 3.8 8.5 8.5 0 1 0 20.2 14.35Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
 
-  function systemTheme() {
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  }
-
   function currentTheme() {
-    return root.dataset.theme || systemTheme();
+    return root.dataset.theme || "light";
   }
 
   function updateButtons(theme) {
@@ -73,27 +69,15 @@
 
   try {
     const saved = localStorage.getItem(KEY);
-    applyTheme(saved || currentTheme(), false);
+    applyTheme(saved || "light", false);
   } catch (err) {
-    applyTheme(currentTheme(), false);
+    applyTheme("light", false);
   }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", mountButton);
   } else {
     mountButton();
-  }
-
-  if (window.matchMedia) {
-    const media = window.matchMedia("(prefers-color-scheme: light)");
-    const onChange = (event) => {
-      try {
-        if (localStorage.getItem(KEY)) return;
-      } catch (err) {}
-      applyTheme(event.matches ? "light" : "dark", false);
-    };
-    if (media.addEventListener) media.addEventListener("change", onChange);
-    else if (media.addListener) media.addListener(onChange);
   }
 
   window.ymApplyTheme = applyTheme;

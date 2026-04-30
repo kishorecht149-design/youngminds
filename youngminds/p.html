@@ -9,10 +9,9 @@
 (function(){
   try{
     const saved = localStorage.getItem('ym-theme');
-    const systemLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-    document.documentElement.dataset.theme = saved || (systemLight ? 'light' : 'dark');
+    document.documentElement.dataset.theme = saved || 'light';
   }catch(err){
-    document.documentElement.dataset.theme = 'dark';
+    document.documentElement.dataset.theme = 'light';
   }
 })();
 </script>
@@ -851,15 +850,8 @@ function toggleTheme(){
 }
 
 function initTheme(){
-  const current = document.documentElement.dataset.theme || 'dark';
+  const current = document.documentElement.dataset.theme || 'light';
   updateThemeToggle(current);
-  try{
-    const media = window.matchMedia('(prefers-color-scheme: light)');
-    media.addEventListener('change', event=>{
-      if(localStorage.getItem('ym-theme')) return;
-      setTheme(event.matches ? 'light' : 'dark', { persist:false });
-    });
-  }catch(err){}
 }
 initTheme();
 
