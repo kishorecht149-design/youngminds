@@ -5,22 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YoungMinds Agency</title>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>
+(function(){
+  try{
+    const saved = localStorage.getItem('ym-theme');
+    const systemLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    document.documentElement.dataset.theme = saved || (systemLight ? 'light' : 'dark');
+  }catch(err){
+    document.documentElement.dataset.theme = 'dark';
+  }
+})();
+</script>
 <style>
 :root{--bg:#050507;--bg2:#0f0f12;--bg3:#1a1a1f;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--text:#f5f5f7;--muted:#8b8b95;--muted2:#666;--accent:#ffd700;--accent2:#ff6b6b;--green:#00d084;--purple:#9d7fff;--radius:12px;--font:'Geist',system-ui,sans-serif;--shadow:0 8px 32px rgba(0,0,0,0.4);--shadow-lg:0 20px 60px rgba(0,0,0,0.5)}
+html{color-scheme:dark}
+html[data-theme="light"]{color-scheme:light;--bg:#fff9df;--bg2:#fff4bd;--bg3:#fffdf2;--border:rgba(31,25,10,0.08);--border2:rgba(31,25,10,0.16);--text:#15130c;--muted:#5f5845;--muted2:#857a5c;--shadow:0 8px 32px rgba(82,64,8,0.12);--shadow-lg:0 20px 60px rgba(82,64,8,0.16)}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:96px}
 body{background:
 radial-gradient(circle at top right,rgba(255,215,0,0.08),transparent 28%),
 radial-gradient(circle at left 20%,rgba(255,255,255,0.035),transparent 24%),
 var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative;width:100%;max-width:100vw}
+body,nav,.nav-panel,.nav-link,.nav-login,.nav-signup,.theme-toggle,.feature-card,.hero-preview,.svc-row-link,.board-card-inner,.modal,.form-wrap,.stat-cell,.contact-card,.footer,.sec,.strip,input,select,textarea{transition:background-color .42s ease,color .42s ease,border-color .42s ease,box-shadow .42s ease,background .42s ease}
+html[data-theme="light"] body{background:radial-gradient(circle at top right,rgba(255,215,0,0.24),transparent 30%),radial-gradient(circle at left 18%,rgba(255,107,107,0.10),transparent 25%),linear-gradient(180deg,#fff9df 0%,#fffdf2 44%,#fff7d1 100%)}
 a{text-decoration:none;color:inherit}
 button{font-family:var(--font);cursor:pointer}
 input,select,textarea{font-family:var(--font)}
 
 nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(5,5,7,0.72);backdrop-filter:blur(22px);border-bottom:1px solid rgba(255,255,255,0.05);box-shadow:0 12px 40px rgba(0,0,0,0.24)}
+html[data-theme="light"] nav{background:rgba(255,253,242,0.78);border-bottom-color:rgba(31,25,10,0.08);box-shadow:0 12px 36px rgba(82,64,8,0.10)}
 .nav-logo{font-size:16px;font-weight:800;letter-spacing:-0.5px;display:flex;align-items:center;gap:12px}
 .nav-logo-mark{height:34px;width:auto;border-radius:6px;object-fit:contain;display:block;flex-shrink:0}
 .nav-logo-text{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-quick{display:flex;align-items:center;gap:10px;margin-left:12px}
+.theme-toggle{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:999px;border:1px solid var(--border2);background:rgba(255,255,255,0.045);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08)}
+.theme-toggle:hover{border-color:rgba(255,215,0,0.45);background:rgba(255,215,0,0.1);color:var(--accent);transform:translateY(-1px)}
+.theme-icon{position:absolute;width:18px;height:18px;transition:opacity .32s ease,transform .42s cubic-bezier(.16,1,.3,1)}
+.theme-sun{opacity:0;transform:scale(.45) rotate(-80deg)}
+.theme-moon{opacity:1;transform:scale(1) rotate(0deg)}
+html[data-theme="light"] .theme-toggle{background:rgba(255,255,255,0.72)}
+html[data-theme="light"] .theme-sun{opacity:1;transform:scale(1) rotate(0deg)}
+html[data-theme="light"] .theme-moon{opacity:0;transform:scale(.45) rotate(80deg)}
 .nav-toggle{display:none;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--text);font-size:18px;font-weight:700}
 .nav-panel{display:flex;align-items:center;gap:12px;flex:1;justify-content:space-between}
 .nav-links{display:flex}
@@ -35,11 +60,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .nav-signup:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(255,215,0,0.35)}
 
 .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:156px 80px 88px;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(255,215,0,0.02) 0%,rgba(5,5,7,0) 52%)}
+html[data-theme="light"] .hero{background:linear-gradient(180deg,rgba(255,215,0,0.14) 0%,rgba(255,253,242,0) 55%)}
 .hero-glow{position:absolute;top:-220px;right:-160px;width:720px;height:720px;background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 64%);pointer-events:none;filter:blur(48px)}
 .hero-badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--accent);background:rgba(255,215,0,0.08);border:1px solid var(--accent);border-radius:100px;padding:6px 14px 6px 10px;margin-bottom:40px;width:fit-content;opacity:0;animation:up .6s .05s ease forwards;box-shadow:inset 0 1px 2px rgba(255,255,255,0.1)}
 .hero-badge-pill{background:var(--accent);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px}
 .hero-badge,.hero-h1,.hero-sub,.hero-ctas,.hero-preview,.hero-features{position:relative;z-index:1}
 .hero-h1{font-size:clamp(54px,10vw,150px);font-weight:900;line-height:.9;letter-spacing:-0.02em;margin-bottom:24px;max-width:1120px;color:#fff;text-transform:uppercase;opacity:1;animation:none}
+html[data-theme="light"] .hero-h1{color:#15130c}
 .hero-headline{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.03em .01em}
 .hero-word{display:inline-flex;gap:.01em;position:relative}
 .hero-word + .hero-word{margin-left:.22em}
@@ -52,6 +79,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;ali
 .hero-sweep{position:absolute;left:0;right:0;bottom:-10px;height:1px;background:linear-gradient(90deg,rgba(255,215,0,0),var(--accent),rgba(255,215,0,0));transform:scaleX(0);transform-origin:left center;opacity:0;pointer-events:none}
 .hero-sweep.is-active{opacity:1;animation:heroSweep .4s ease forwards}
 .hero-kicker{font-size:clamp(18px,2.4vw,34px);font-weight:700;line-height:1.08;letter-spacing:-0.03em;color:rgba(255,255,255,0.92);margin:0 0 26px;max-width:760px}
+html[data-theme="light"] .hero-kicker{color:rgba(21,19,12,0.92)}
 .hero-kicker-accent{color:var(--accent)}
 .hero-sub{font-size:18px;color:var(--muted);line-height:1.78;max-width:640px;margin-bottom:42px;opacity:0;transform:translateY(10px);transition:opacity .55s ease,transform .55s ease}
 .hero-sub.is-visible{opacity:1;transform:translateY(0)}
@@ -310,14 +338,19 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
 @media(max-width:480px){
   body.nav-open{overflow:hidden}
   body.nav-open::before{content:'';position:fixed;inset:0;z-index:190;background:radial-gradient(circle at top,rgba(255,215,0,0.08),transparent 35%),rgba(5,5,7,0.72);backdrop-filter:blur(10px)}
+  html[data-theme="light"] body.nav-open::before{background:radial-gradient(circle at top,rgba(255,215,0,0.18),transparent 35%),rgba(255,253,242,0.72)}
   .hero,.sec,.forms-sec{padding:104px 16px 54px}
   .faq-sec{padding:0 16px 54px}
   nav{padding:14px 16px calc(12px + env(safe-area-inset-top,0px));height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(5,5,7,0.88);backdrop-filter:blur(24px)}
+  html[data-theme="light"] nav{background:rgba(255,253,242,0.9)}
   .nav-logo{font-size:13px;gap:10px}
   .nav-logo-mark{height:30px;width:auto}
   .nav-logo-text{display:block !important;font-size:13px;letter-spacing:-0.35px}
   .nav-toggle{display:flex;flex-shrink:0;width:44px;height:44px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));box-shadow:0 10px 24px rgba(0,0,0,0.22)}
+  .nav-quick{margin-left:auto;gap:8px}
+  .theme-toggle{width:44px;height:44px;border-radius:14px;flex-shrink:0}
   .nav-panel{position:fixed;top:78px;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;gap:16px;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));border:1px solid rgba(255,255,255,0.08);border-radius:24px;background:linear-gradient(180deg,rgba(17,17,20,0.98),rgba(8,8,10,0.98));box-shadow:0 28px 80px rgba(0,0,0,0.52);backdrop-filter:blur(24px);opacity:0;pointer-events:none;transform:translateY(18px) scale(.98);transform-origin:top center;transition:opacity .28s ease,transform .36s cubic-bezier(.16,1,.3,1)}
+  html[data-theme="light"] .nav-panel{border-color:rgba(31,25,10,0.1);background:linear-gradient(180deg,rgba(255,253,242,0.98),rgba(255,247,209,0.98));box-shadow:0 28px 80px rgba(82,64,8,0.18)}
   .nav-panel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
   .nav-links{display:grid;width:100%;grid-template-columns:1fr;gap:10px}
   .nav-links a{display:flex;align-items:center;justify-content:flex-start;min-width:0;padding:14px 16px;font-size:13px;font-weight:700;background:linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015));border:1px solid var(--border);border-radius:16px;text-align:left;letter-spacing:.01em}
@@ -419,7 +452,6 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
 
 <nav>
   <div class="nav-logo"><img class="nav-logo-mark" src="/assets/logo.png" alt="YoungMinds logo"><span class="nav-logo-text" style="display:none">YoungMinds</span></div>
-  <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="toggleMobileNav()">☰</button>
   <div class="nav-panel" id="navPanel">
     <div class="nav-links">
       <a href="#services" onclick="closeMobileNav()">Services</a>
@@ -433,6 +465,13 @@ footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify
       <button class="nav-login" type="button" onclick="closeMobileNav();openFormsTab('join')">Join the team</button>
       <button class="nav-signup" type="button" onclick="closeMobileNav();openFormsTab('client')">Hire us</button>
     </div>
+  </div>
+  <div class="nav-quick">
+    <button class="theme-toggle" type="button" aria-label="Toggle theme" onclick="toggleTheme()">
+      <svg class="theme-icon theme-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg class="theme-icon theme-moon" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M21 14.7A8.8 8.8 0 0 1 9.3 3 7.4 7.4 0 1 0 21 14.7Z"/></svg>
+    </button>
+    <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="toggleMobileNav()">☰</button>
   </div>
 </nav>
 
@@ -721,6 +760,41 @@ function closeMobileNav(){
   panel.classList.remove('open');
   setBodyScrollLock(false);
 }
+
+function updateThemeToggle(theme){
+  document.querySelectorAll('.theme-toggle').forEach(button=>{
+    const label = theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
+  });
+}
+
+function setTheme(theme,{persist=true}={}){
+  const next = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  updateThemeToggle(next);
+  if(persist){
+    try{ localStorage.setItem('ym-theme', next); }catch(err){}
+  }
+}
+
+function toggleTheme(){
+  const current = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  setTheme(current === 'light' ? 'dark' : 'light');
+}
+
+function initTheme(){
+  const current = document.documentElement.dataset.theme || 'dark';
+  updateThemeToggle(current);
+  try{
+    const media = window.matchMedia('(prefers-color-scheme: light)');
+    media.addEventListener('change', event=>{
+      if(localStorage.getItem('ym-theme')) return;
+      setTheme(event.matches ? 'light' : 'dark', { persist:false });
+    });
+  }catch(err){}
+}
+initTheme();
 
 let lockedScrollY = 0;
 function setBodyScrollLock(locked){
