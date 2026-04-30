@@ -1096,6 +1096,8 @@ const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
 let boardCarouselIndex = 0;
 let boardCarouselTimer = null;
 let boardCarouselCount = 0;
+let boardCarouselInView = false;
+let boardCarouselObserver = null;
 let serviceEntries = [];
 
 function appUrl(path){
@@ -1124,6 +1126,39 @@ function stopBoardCarousel(){
     clearInterval(boardCarouselTimer);
     boardCarouselTimer = null;
   }
+}
+
+function isBoardSectionInView(){
+  const section=document.getElementById('board');
+  if(!section)return false;
+  const rect=section.getBoundingClientRect();
+  const viewportHeight=window.innerHeight||document.documentElement.clientHeight||0;
+  return rect.top < viewportHeight * 0.72 && rect.bottom > viewportHeight * 0.24;
+}
+
+function syncBoardCarouselVisibility(){
+  boardCarouselInView = isBoardSectionInView();
+  if(boardCarouselInView) startBoardCarousel();
+  else stopBoardCarousel();
+}
+
+function setupBoardCarouselObserver(){
+  if(boardCarouselObserver?.disconnect) boardCarouselObserver.disconnect();
+  const section=document.getElementById('board');
+  boardCarouselInView = isBoardSectionInView();
+  if('IntersectionObserver' in window && section){
+    boardCarouselObserver = new IntersectionObserver((entries)=>{
+      boardCarouselInView = entries.some(entry=>entry.isIntersecting && entry.intersectionRatio > 0.18);
+      if(boardCarouselInView) startBoardCarousel();
+      else stopBoardCarousel();
+    }, { threshold:[0,0.18,0.35] });
+    boardCarouselObserver.observe(section);
+  } else {
+    window.removeEventListener('scroll', syncBoardCarouselVisibility);
+    window.addEventListener('scroll', syncBoardCarouselVisibility, { passive:true });
+  }
+  if(boardCarouselInView) startBoardCarousel();
+  else stopBoardCarousel();
 }
 
 function boardMetrics(){
@@ -1173,7 +1208,7 @@ function onBoardScroll() {
 
 function startBoardCarousel(){
   stopBoardCarousel();
-  if(boardCarouselCount<=3)return;
+  if(!boardCarouselInView||boardCarouselCount<=3)return;
   boardCarouselTimer=setInterval(()=>{
     const nextIndex = boardCarouselIndex >= boardCarouselCount - 1 ? 0 : boardCarouselIndex + 1;
     goBoardSlide(nextIndex,true);
@@ -1186,6 +1221,8 @@ function renderBoardMembers(entries){
   const host=document.getElementById('boardMembers');
   if(!host)return;
   stopBoardCarousel();
+  if(boardCarouselObserver?.disconnect) boardCarouselObserver.disconnect();
+  boardCarouselInView=false;
   if(!entries.length){
     host.innerHTML=`<div class="board-empty"><div class="board-empty-title">Board will be updated soon.</div><div class="board-empty-sub">We are curating the public member board right now. Check back shortly to meet the team.</div></div>`;
     return;
@@ -1249,10 +1286,10 @@ function renderBoardMembers(entries){
     <div class="board-rail"><div class="board-progress"><div class="board-progress-fill" id="boardProgressFill"></div></div><div class="board-controls"><button class="board-nav-btn" id="boardPrev" type="button" onclick="prevBoardSlide()" aria-label="Previous board member">←</button><button class="board-nav-btn" id="boardNext" type="button" onclick="nextBoardSlide()" aria-label="Next board member">→</button><div class="board-count" id="boardCount">01 / ${String(entries.length).padStart(2,'0')}</div></div></div>
   </div>`;
   goBoardSlide(0,false);
-  startBoardCarousel();
+  setupBoardCarouselObserver();
 }
 
-window.addEventListener('resize',()=>{ if(boardCarouselCount) goBoardSlide(boardCarouselIndex===boardCarouselCount?0:boardCarouselIndex,false); });
+window.addEventListener('resize',()=>{ if(boardCarouselCount) goBoardSlide(boardCarouselIndex===boardCarouselCount?0:boardCarouselIndex,false); syncBoardCarouselVisibility(); });
 
 async function loadBoardMembers(){
   try{
