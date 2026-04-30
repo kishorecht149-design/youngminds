@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YoungMinds Sales Portal</title>
+<script>
+(() => {
+  try {
+    const saved = localStorage.getItem("ym-theme");
+    const light = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+    document.documentElement.dataset.theme = saved || (light ? "light" : "dark");
+  } catch (err) {
+    document.documentElement.dataset.theme = "dark";
+  }
+})();
+</script>
 <style>
 :root{--bg:#070808;--bg2:#111315;--border:rgba(255,255,255,.08);--text:#efefef;--muted:#8c8f95;--accent:#e8c547;--green:#3ecf8e;font-family:"DM Sans",system-ui,sans-serif}
 *{box-sizing:border-box}
@@ -19,6 +30,8 @@ p{margin:0 0 12px;color:var(--muted);line-height:1.7}
 .btn-primary{background:var(--accent);color:#000}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
 </style>
+<link rel="stylesheet" href="/assets/theme.css">
+<script src="/assets/theme.js" defer></script>
 </head>
 <body>
   <div class="card">

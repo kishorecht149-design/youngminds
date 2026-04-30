@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YoungMinds — Sales Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+(() => {
+  try {
+    const saved = localStorage.getItem("ym-theme");
+    const light = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+    document.documentElement.dataset.theme = saved || (light ? "light" : "dark");
+  } catch (err) {
+    document.documentElement.dataset.theme = "dark";
+  }
+})();
+</script>
 <style>
 :root{
   --bg:#070808;--bg2:#0d0e0f;--bg3:#131415;--bg4:#181a1b;--bg5:#1f2122;
@@ -221,6 +232,8 @@ a{text-decoration:none;color:inherit}
   .modal{border-radius:18px 18px 0 0;align-self:flex-end;width:100%;max-height:94vh}
 }
 </style>
+<link rel="stylesheet" href="/assets/theme.css">
+<script src="/assets/theme.js" defer></script>
 </head>
 <body>
 <div class="login-screen" id="loginScreen">
