@@ -444,11 +444,7 @@ html[data-theme="light"] .board-progress-fill{
   body.nav-open::before{content:'';position:fixed;inset:0;z-index:190;background:radial-gradient(circle at top,rgba(255,215,0,0.08),transparent 35%),rgba(5,5,7,0.72);backdrop-filter:blur(10px)}
   html[data-theme="light"] body.nav-open::before{background:radial-gradient(circle at top,rgba(255,215,0,0.18),transparent 35%),rgba(255,253,242,0.72)}
   .hero,.sec,.forms-sec{padding:104px 16px 54px}
-  .hero-video-bg{inset:82px 16px auto 16px;height:clamp(330px,92vw,460px);border:1px solid rgba(255,215,0,.22);border-radius:28px;background:#050507;box-shadow:0 22px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08);-webkit-mask-image:none;mask-image:none}
-  .hero-bg-video{object-fit:contain;object-position:center center;transform:none;opacity:1;background:#050507;filter:saturate(1.03) contrast(1.02)}
-  .hero-video-overlay{background:linear-gradient(180deg,rgba(5,5,7,.28),rgba(5,5,7,.18) 48%,rgba(5,5,7,.38)),linear-gradient(90deg,rgba(5,5,7,.42),rgba(5,5,7,.12))}
-  html[data-theme="light"] .hero-video-bg{background:#fff8d8;border-color:rgba(159,107,0,.22);box-shadow:0 22px 70px rgba(159,107,0,.18),inset 0 1px 0 rgba(255,255,255,.7)}
-  html[data-theme="light"] .hero-video-overlay{background:linear-gradient(180deg,rgba(255,249,220,.22),rgba(255,238,122,.08) 48%,rgba(255,253,242,.34)),linear-gradient(90deg,rgba(255,253,242,.26),rgba(255,247,190,.06))}
+
   .faq-sec{padding:0 16px 54px}
   nav{padding:14px 16px calc(12px + env(safe-area-inset-top,0px));height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(5,5,7,0.88);backdrop-filter:blur(24px)}
   html[data-theme="light"] nav{background:rgba(255,253,242,0.9)}
@@ -468,7 +464,7 @@ html[data-theme="light"] .board-progress-fill{
   .nav-login,.nav-signup{min-width:0;width:100%;padding:13px 14px;font-size:12px;border-radius:14px}
   .nav-signup{grid-column:1 / -1}
   .hero{min-height:auto;padding-top:120px}
-  .hero::before{content:'';position:absolute;top:82px;left:14px;right:14px;bottom:18px;border-radius:28px;background:linear-gradient(180deg,rgba(255,215,0,0.06),rgba(255,255,255,0.015) 30%,transparent 72%);border:1px solid rgba(255,255,255,0.04);pointer-events:none}
+  .hero::before{display:none}
   .hero-glow{top:-150px;right:-220px;width:480px;height:480px;filter:blur(56px);opacity:.82}
   .hero-badge{margin-bottom:24px;padding:8px 12px 8px 10px;font-size:11px;line-height:1.5}
   .hero-h1{font-size:clamp(40px,15vw,58px);letter-spacing:-2px;line-height:.88}
