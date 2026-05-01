@@ -305,6 +305,37 @@ html[data-theme="light"] .stp.active .stp-lbl,html[data-theme="light"] .fg label
 footer{border-top:1px solid var(--border);padding:48px 80px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;background:linear-gradient(180deg,transparent,rgba(255,215,0,0.02))}
 .ft-logo{font-size:14px;font-weight:800;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 html[data-theme="light"] .ft-logo{background:linear-gradient(135deg,#15130c,#6b4900);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-char.accent,
+.hero-headline.is-ready .hero-char.accent,
+.hero-kicker-accent,
+.sec-h2 em,
+.board-role,
+.board-back-kicker,
+.board-skill,
+.svc-price,
+.svc-cta,
+.stp.active .stp-lbl,
+.sk-opt.sel .sk-lbl{
+  color:#ffd700;
+  background:linear-gradient(105deg,#6c4700 0%,#ffd700 26%,#fff5a8 45%,#ffb300 58%,#fff0a0 74%,#d59100 100%);
+  background-size:240% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 12px rgba(255,215,0,.24)) drop-shadow(0 10px 24px rgba(255,215,0,.14));
+  animation:lightTextShine 5.5s ease-in-out infinite alternate;
+}
+.sec-h2,
+.stat-n,
+.ft-logo{
+  background:linear-gradient(110deg,#f7f5ee 0%,#ffffff 28%,#ffd700 48%,#fff3a0 58%,#f7f5ee 82%);
+  background-size:240% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 14px rgba(255,215,0,.13));
+  animation:lightTextShine 6.5s ease-in-out infinite alternate;
+}
 html[data-theme="light"] .hero-badge,
 html[data-theme="light"] .eyebrow,
 html[data-theme="light"] .svc-num,
