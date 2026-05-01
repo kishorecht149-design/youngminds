@@ -58,14 +58,19 @@ html[data-theme="light"] .theme-moon{opacity:0;transform:scale(.45) rotate(80deg
 .nav-signup{font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--accent),#ffea00);color:#000;padding:8px 20px;border-radius:8px;border:none;transition:all .2s;box-shadow:0 4px 12px rgba(255,215,0,0.25);font-weight:600}
 .nav-signup:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(255,215,0,0.35)}
 
-.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:156px 80px 88px;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(255,215,0,0.02) 0%,rgba(5,5,7,0) 52%)}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:156px 80px 88px;position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(180deg,rgba(255,215,0,0.02) 0%,rgba(5,5,7,0) 52%)}
 html[data-theme="light"] .hero{background:linear-gradient(180deg,rgba(255,215,0,0.14) 0%,rgba(255,253,242,0) 55%)}
-.hero-glow{position:absolute;top:-220px;right:-160px;width:720px;height:720px;background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 64%);pointer-events:none;filter:blur(48px)}
+.hero-video-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(circle at 70% 20%,rgba(255,215,0,.14),transparent 38%),linear-gradient(135deg,var(--bg),var(--bg2))}
+.hero-bg-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;transform:scale(1.02);opacity:.78;filter:saturate(1.08) contrast(1.04)}
+.hero-video-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,5,7,.86) 0%,rgba(5,5,7,.58) 52%,rgba(5,5,7,.88) 100%),linear-gradient(180deg,rgba(5,5,7,.34),rgba(5,5,7,.78));transition:background .42s ease}
+html[data-theme="light"] .hero-bg-video{opacity:.58;filter:saturate(1.04) contrast(1.02) brightness(1.08)}
+html[data-theme="light"] .hero-video-overlay{background:linear-gradient(90deg,rgba(255,249,220,.82) 0%,rgba(255,247,190,.54) 52%,rgba(255,253,242,.86) 100%),linear-gradient(180deg,rgba(255,240,120,.38),rgba(255,253,242,.78))}
+.hero-glow{position:absolute;top:-220px;right:-160px;width:720px;height:720px;background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 64%);pointer-events:none;filter:blur(48px);z-index:0}
 .hero-badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--accent);background:rgba(255,215,0,0.08);border:1px solid var(--accent);border-radius:100px;padding:6px 14px 6px 10px;margin-bottom:40px;width:fit-content;opacity:0;animation:up .6s .05s ease forwards;box-shadow:inset 0 1px 2px rgba(255,255,255,0.1)}
 .hero-badge-pill{background:var(--accent);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px}
 html[data-theme="light"] .hero-badge{color:#251c07;background:rgba(255,255,255,0.46);border-color:rgba(159,107,0,0.42);box-shadow:0 12px 34px rgba(159,107,0,0.12)}
 html[data-theme="light"] .hero-badge-pill{background:#15130c;color:#fff}
-.hero-badge,.hero-h1,.hero-sub,.hero-ctas,.hero-preview,.hero-features{position:relative;z-index:1}
+.hero-badge,.hero-h1,.hero-sub,.hero-ctas,.hero-preview,.hero-features,.hero-headline-wrap,.hero-kicker{position:relative;z-index:1}
 .hero-h1{font-size:clamp(54px,10vw,150px);font-weight:900;line-height:.9;letter-spacing:-0.02em;margin-bottom:24px;max-width:1120px;color:#fff;text-transform:uppercase;opacity:1;animation:none}
 html[data-theme="light"] .hero-h1{color:#15130c}
 .hero-headline{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.03em .01em}
@@ -376,6 +381,9 @@ html[data-theme="light"] .board-progress-fill{
   from{background-position:0% center}
   to{background-position:100% center}
 }
+@media (prefers-reduced-motion:reduce){
+  .hero-bg-video{display:none}
+}
 .ft-dot{height:26px;width:auto;border-radius:4px;object-fit:contain;display:block}
 .ft-links{display:flex;gap:28px}
 .ft-links a{font-size:13px;color:var(--muted);transition:all .3s;font-weight:500}
@@ -436,6 +444,9 @@ html[data-theme="light"] .board-progress-fill{
   body.nav-open::before{content:'';position:fixed;inset:0;z-index:190;background:radial-gradient(circle at top,rgba(255,215,0,0.08),transparent 35%),rgba(5,5,7,0.72);backdrop-filter:blur(10px)}
   html[data-theme="light"] body.nav-open::before{background:radial-gradient(circle at top,rgba(255,215,0,0.18),transparent 35%),rgba(255,253,242,0.72)}
   .hero,.sec,.forms-sec{padding:104px 16px 54px}
+  .hero-bg-video{object-position:center top;transform:scale(1.08)}
+  .hero-video-overlay{background:linear-gradient(180deg,rgba(5,5,7,.78),rgba(5,5,7,.62) 42%,rgba(5,5,7,.88)),linear-gradient(90deg,rgba(5,5,7,.82),rgba(5,5,7,.48))}
+  html[data-theme="light"] .hero-video-overlay{background:linear-gradient(180deg,rgba(255,249,220,.78),rgba(255,238,122,.48) 44%,rgba(255,253,242,.88)),linear-gradient(90deg,rgba(255,253,242,.72),rgba(255,247,190,.42))}
   .faq-sec{padding:0 16px 54px}
   nav{padding:14px 16px calc(12px + env(safe-area-inset-top,0px));height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(5,5,7,0.88);backdrop-filter:blur(24px)}
   html[data-theme="light"] nav{background:rgba(255,253,242,0.9)}
@@ -572,6 +583,14 @@ html[data-theme="light"] .board-progress-fill{
 </nav>
 
 <section class="hero">
+  <div class="hero-video-bg" aria-hidden="true">
+    <video class="hero-bg-video" autoplay muted loop playsinline preload="metadata">
+      <source src="/assets/hero-video.mp4" type="video/mp4">
+      <source src="../assets/hero-video.mp4" type="video/mp4">
+      <source src="/assets/hero-video.m4v" type="video/mp4">
+    </video>
+    <div class="hero-video-overlay"></div>
+  </div>
   <div class="hero-glow"></div>
   <div class="hero-badge"><span class="hero-badge-pill">NEW</span> Now accepting client projects and hiring members</div>
   <div class="hero-headline-wrap">
