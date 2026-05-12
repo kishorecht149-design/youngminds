@@ -24,14 +24,14 @@
   --font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace;--r:10px;--sb:226px;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 body.portal-open{overflow:hidden}
 button,input,select,textarea{font-family:var(--font)}
 a{text-decoration:none;color:inherit}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px}
 .hidden{display:none!important}
 
-.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;overflow-y:auto}
 .login-shell{width:min(1100px,100%);display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:stretch}
 .login-hero,.login-box{background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:24px}
 .login-hero{padding:38px 36px;display:flex;flex-direction:column;justify-content:space-between;min-height:560px;position:relative;overflow:hidden}
@@ -46,7 +46,8 @@ a{text-decoration:none;color:inherit}
 .l-feature-sub{font-size:13px;color:var(--muted3);line-height:1.65}
 .login-box{padding:30px}
 .l-logo{display:flex;align-items:center;gap:10px;margin-bottom:34px}
-.l-dot{width:32px;height:32px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:#000;font-size:14px;font-weight:900}
+.l-dot{width:32px;height:32px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:#000;font-size:14px;font-weight:900;overflow:hidden}
+.l-dot img{width:100%;height:100%;object-fit:cover;background:#fff}
 .l-name{font-size:18px;font-weight:800;letter-spacing:-.03em}
 .l-badge-mini{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted3);background:var(--bg4);border:1px solid var(--border2);padding:4px 9px;border-radius:999px;margin-left:4px}
 .l-title{font-size:42px;font-weight:900;letter-spacing:-.04em;margin-bottom:8px}
@@ -70,7 +71,8 @@ a{text-decoration:none;color:inherit}
 .sidebar{width:var(--sb);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:transform .25s ease;z-index:90}
 .sb-header{padding:18px 14px;border-bottom:1px solid var(--border)}
 .sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.sb-dot{width:24px;height:24px;background:var(--accent);border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:900;color:#000;flex-shrink:0}
+.sb-dot{width:24px;height:24px;background:var(--accent);border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:900;color:#000;flex-shrink:0;overflow:hidden}
+.sb-dot img{width:100%;height:100%;object-fit:cover;background:#fff}
 .sb-brand{font-size:14px;font-weight:800}
 .sb-member-name{font-size:13px;font-weight:700;color:var(--text)}
 .sb-member-role{font-size:11px;color:var(--muted3);margin-top:3px}
@@ -256,7 +258,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="login-box">
-      <div class="l-logo"><div class="l-dot">Y</div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Sales</div></div></div>
+      <div class="l-logo"><div class="l-dot"><img src="/assets/logo.png" alt="Y"></div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Sales</div></div></div>
       <div class="l-title">Welcome back</div>
       <div class="l-sub">Sign in with the same application email or phone and password you already use with YoungMinds.</div>
       <div class="l-field"><label>Email or phone</label><input type="text" id="sales-email" placeholder="member@gmail.com or phone" autocomplete="username"></div>
@@ -275,7 +277,7 @@ a{text-decoration:none;color:inherit}
   <div class="sb-overlay" id="sbOverlay" onclick="closeSalesSidebar()"></div>
   <div class="sidebar" id="salesSidebar">
     <div class="sb-header">
-      <div class="sb-logo"><div class="sb-dot">Y</div><div class="sb-brand">YoungMinds Sales</div></div>
+      <div class="sb-logo"><div class="sb-dot"><img src="/assets/logo.png" alt="Y"></div><div class="sb-brand">YoungMinds Sales</div></div>
       <div class="sb-member-name" id="sbExecName">Sales Executive</div>
       <div class="sb-member-role" id="sbExecRole">Sales Executive</div>
     </div>
@@ -510,7 +512,7 @@ function showSalesAdminAccess(admin = {}) {
         </div>
       </div>
       <div class="login-box">
-        <div class="l-logo"><div class="l-dot">Y</div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Admin</div></div></div>
+        <div class="l-logo"><div class="l-dot"><img src="/assets/logo.png" alt="Y"></div><div><div class="l-name">YoungMinds</div><div class="l-badge-mini">Admin</div></div></div>
         <div class="l-title">Access ready</div>
         <div class="l-sub">Sales lead and campaign data remains scoped to each sales executive. Use admin controls to review and manage the team.</div>
         <button class="l-btn" type="button" onclick="location.href='/admin/sales'">Open Sales Admin</button>
