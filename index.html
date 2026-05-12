@@ -898,7 +898,7 @@ html[data-theme="light"] .board-progress-fill{
         </div>
         <div class="frow">
           <div class="fg"><label>WhatsApp *</label><input id="cph" type="tel" placeholder="+91 00000 00000"></div>
-          <div class="fg"><label>Email</label><input id="cem" type="email" placeholder="you@email.com"></div>
+          <div class="fg"><label>Email *</label><input id="cem" type="email" placeholder="you@email.com"></div>
         </div>
         <div class="frow">
           <div class="fg"><label>City</label><input id="cct" type="text" placeholder="Your city"></div>
@@ -1622,7 +1622,7 @@ async function submitJoin(){
 let cS=1;
 function cGo(t){
   if(t>cS){
-    if(cS===1&&(!gv('cnm')||!gv('cph'))){alert('Please fill required fields (*).');return}
+    if(cS===1&&(!gv('cnm')||!gv('cph')||!gv('cem'))){alert('Please fill required fields (*).');return}
     if(cS===2){
       if(!gv('cservice')||!gv('csector')||!gv('cpackage')){alert('Please select service, sector, and package.');return}
       if(!gv('cds')){alert('Please describe your project.');return}
@@ -1644,6 +1644,7 @@ async function submitClient(){
   const sector = getSelectedCatalogueSector();
   const pkg = getSelectedCataloguePackage();
   if(!service || !sector || !pkg){ alert('Please select service, sector, and package.'); return; }
+  if(!gv('cem')){ alert('Please enter your email so we can send confirmation.'); return; }
   const btn = document.querySelector('#cp-3 .btn-sub');
   if(btn){ btn.disabled=true; btn.textContent='Sending...'; }
   const data = {

@@ -342,16 +342,29 @@
   }
 
   function toggleModal(open){
+    ensureLeadEmailField();
     document.getElementById("quoteModal").classList.toggle("open", !!open);
   }
 
+  function ensureLeadEmailField(){
+    if (document.getElementById("lead-email")) return;
+    const phoneField = document.getElementById("lead-phone")?.closest(".field");
+    if (!phoneField) return;
+    const wrapper = document.createElement("div");
+    wrapper.className = "field";
+    wrapper.innerHTML = '<label>Email *</label><input id="lead-email" type="email" placeholder="you@email.com">';
+    phoneField.insertAdjacentElement("afterend", wrapper);
+  }
+
   async function submitLead(){
+    ensureLeadEmailField();
     const name = document.getElementById("lead-name").value.trim();
     const phone = document.getElementById("lead-phone").value.trim();
+    const email = document.getElementById("lead-email").value.trim();
     const service = document.getElementById("service-field").value.trim();
     const status = document.getElementById("quote-status");
-    if (!name || !phone) {
-      status.textContent = "Enter your name and WhatsApp number.";
+    if (!name || !phone || !email) {
+      status.textContent = "Enter your name, WhatsApp number, and email.";
       return;
     }
     status.textContent = "Sending...";
@@ -362,6 +375,7 @@
         body: JSON.stringify({
           name: name,
           phone: phone,
+          email: email,
           service: service,
           slug: slug,
           source: "vercel-service-page"
@@ -372,6 +386,7 @@
       status.textContent = "Thanks - we will reach out on WhatsApp soon.";
       document.getElementById("lead-name").value = "";
       document.getElementById("lead-phone").value = "";
+      document.getElementById("lead-email").value = "";
     } catch (error) {
       status.textContent = error.message || "Could not submit right now.";
     }
@@ -379,6 +394,7 @@
 
   window.toggleQuoteModal = toggleModal;
   window.submitQuickLead = submitLead;
+  ensureLeadEmailField();
 
   Promise.all([
     fetch(API_BASE + "/api/services/" + encodeURIComponent(slug)).then(res => res.ok ? res.json() : null).catch(() => null),

@@ -474,6 +474,10 @@ function normalizePhone(raw) {
 function normalizeAdminUsername(raw) {
   return String(raw || "").trim().toLowerCase();
 }
+function displayName(raw, fallback = "there") {
+  const clean = String(raw || "").trim().replace(/\s+/g, " ");
+  return clean || fallback;
+}
 function hashPassword(pw) {
   return crypto.createHash("sha256").update(pw + "ym-salt-2026").digest("hex");
 }
@@ -490,6 +494,163 @@ function readBearerToken(req) {
     return req.query.token.trim();
   }
   return null;
+}
+let confirmationTransporter = null;
+function getConfirmationTransporter() {
+  const user = process.env.SMTP_USER || process.env.GMAIL_SMTP_USER || "";
+  const pass = process.env.SMTP_PASS || process.env.GMAIL_SMTP_PASS || "";
+  if (!user || !pass) return null;
+  if (!confirmationTransporter) {
+    let nodemailer = null;
+    try {
+      nodemailer = require("nodemailer");
+    } catch (err) {
+      console.warn("Confirmation email skipped: nodemailer is not installed.");
+      return null;
+    }
+    confirmationTransporter = nodemailer.createTransport(
+      process.env.SMTP_HOST
+        ? {
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT || 587),
+            secure: String(process.env.SMTP_SECURE || "false") === "true",
+            auth: { user, pass }
+          }
+        : { service: "gmail", auth: { user, pass } }
+    );
+  }
+  return confirmationTransporter;
+}
+function getYoungMindsMailFrom() {
+  const user = process.env.SMTP_USER || process.env.GMAIL_SMTP_USER || "";
+  return process.env.YOUNGMINDS_EMAIL_FROM || process.env.SALES_EMAIL_FROM || (user ? `"Young Minds" <${user}>` : "");
+}
+function makeEmailButton(url, label) {
+  if (!url) return "";
+  return `<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:22px;padding:13px 18px;border-radius:999px;background:#f4d84f;color:#080808;text-decoration:none;font-weight:900;letter-spacing:.02em">${escapeHtml(label)}</a>`;
+}
+function makeYoungMindsEmailShell({ preheader, title, intro, sections = [], buttonUrl = "", buttonLabel = "Visit Young Minds" }) {
+  const sectionHtml = sections.map(section => `
+    <tr>
+      <td style="padding:18px 0 0">
+        <div style="border:1px solid rgba(244,216,79,.26);border-radius:20px;background:linear-gradient(135deg,rgba(244,216,79,.08),rgba(255,255,255,.035));padding:18px">
+          <div style="margin:0 0 10px;color:#f4d84f;font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase">${escapeHtml(section.label || "Update")}</div>
+          <div style="color:#f7f3dc;font-size:15px;line-height:1.7">${section.html || escapeHtml(section.text || "")}</div>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+  return `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background:#050505;font-family:Inter,Arial,sans-serif;color:#f7f3dc">
+  <div style="display:none;max-height:0;overflow:hidden;color:transparent;opacity:0">${escapeHtml(preheader || "")}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050505;padding:28px 12px">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;border:1px solid rgba(244,216,79,.22);border-radius:28px;overflow:hidden;background:radial-gradient(circle at top right,rgba(244,216,79,.22),transparent 34%),linear-gradient(180deg,#111,#050505)">
+          <tr>
+            <td style="padding:28px 28px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
+              <div style="display:inline-block;padding:10px 14px;border-radius:14px;background:#0b0b0b;border:1px solid rgba(244,216,79,.26);color:#f4d84f;font-weight:900;letter-spacing:.04em">YM</div>
+              <span style="display:inline-block;margin-left:10px;color:#fff;font-size:18px;font-weight:900;vertical-align:middle">Young <span style="color:#f4d84f">Minds</span></span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:34px 28px 10px">
+              <div style="display:inline-block;margin-bottom:18px;padding:7px 11px;border-radius:999px;background:rgba(244,216,79,.12);border:1px solid rgba(244,216,79,.32);color:#f4d84f;font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase">Automated confirmation</div>
+              <h1 style="margin:0;color:#fff;font-size:34px;line-height:1.05;letter-spacing:-.04em">${escapeHtml(title || "Request received")}</h1>
+              <p style="margin:18px 0 0;color:#cfcfcf;font-size:16px;line-height:1.75">${intro || ""}</p>
+              ${makeEmailButton(buttonUrl, buttonLabel)}
+            </td>
+          </tr>
+          ${sectionHtml}
+          <tr>
+            <td style="padding:26px 28px 30px">
+              <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(244,216,79,.5),transparent);margin-bottom:18px"></div>
+              <p style="margin:0;color:#8f8f8f;font-size:12px;line-height:1.6">This is an automated confirmation from Young Minds. Please do not share private login or assessment credentials with anyone outside the official Young Minds team.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+function makeClientConfirmationEmail(data = {}) {
+  const name = displayName(data.name);
+  const service = displayName(data.service || data.packageName || "your request", "your request");
+  const intro = `Hi ${escapeHtml(name)}, thank you for reaching out to <strong style="color:#fff">Young Minds</strong>. Your ${escapeHtml(service)} request has been successfully received.`;
+  return {
+    subject: "Young Minds received your request",
+    text: `Hi ${name},\n\nThank you for reaching out to Young Minds. Your request has been successfully received.\n\nOur team will review your requirements and contact you shortly regarding the next steps.\n\nYoung Minds`,
+    html: makeYoungMindsEmailShell({
+      preheader: "Your Young Minds request has been received.",
+      title: "Your request is in.",
+      intro,
+      sections: [
+        {
+          label: "What happens next",
+          html: "Our team will review your requirements, understand the scope, and contact you shortly with the next steps, timeline, and any clarifying questions."
+        },
+        {
+          label: "Request summary",
+          html: `<strong style="color:#fff">Service:</strong> ${escapeHtml(data.service || "Not specified")}<br><strong style="color:#fff">Package:</strong> ${escapeHtml(data.packageName || "To be discussed")}<br><strong style="color:#fff">Preferred contact:</strong> ${escapeHtml(data.phone || "Your submitted contact details")}`
+        }
+      ],
+      buttonUrl: process.env.YOUNGMINDS_PUBLIC_URL || "https://youngmindsagency.vercel.app/",
+      buttonLabel: "Visit Young Minds"
+    })
+  };
+}
+function makeApplicantConfirmationEmail(data = {}) {
+  const name = displayName(data.name);
+  return {
+    subject: "Young Minds application received",
+    text: `Hi ${name},\n\nYour Young Minds application has been successfully received.\n\nA descriptive and MCQ-based interview assessment will be conducted shortly. The interview process may be monitored live to ensure a safe and fair evaluation environment. Warnings may be issued for suspicious activity or violations during the assessment.\n\nThe Young Minds team will contact you shortly with interview details and further instructions.\n\nYoung Minds`,
+    html: makeYoungMindsEmailShell({
+      preheader: "Your Young Minds application has been received.",
+      title: "Application received.",
+      intro: `Hi ${escapeHtml(name)}, your application to <strong style="color:#fff">Young Minds</strong> has been successfully received.`,
+      sections: [
+        {
+          label: "Assessment process",
+          html: "A descriptive and MCQ-based interview assessment will be conducted shortly. The Young Minds team will share the interview details and further instructions after reviewing your application."
+        },
+        {
+          label: "Fair evaluation",
+          html: "The interview process will be monitored live to maintain a safe and fair evaluation environment. Warnings may be issued for suspicious activity or violations during the assessment."
+        },
+        {
+          label: "Your application track",
+          html: `<strong style="color:#fff">Skill:</strong> ${escapeHtml(data.skill || "To be reviewed")}<br><strong style="color:#fff">Contact:</strong> ${escapeHtml(data.email || data.gmail || "Your submitted email")}`
+        }
+      ],
+      buttonUrl: process.env.YOUNGMINDS_PUBLIC_URL || "https://youngmindsagency.vercel.app/",
+      buttonLabel: "Open Young Minds"
+    })
+  };
+}
+async function sendYoungMindsConfirmationEmail(kind, data = {}) {
+  const to = normalizeEmail(data.email || data.gmail || data.contactEmail || "");
+  if (!to) return { skipped: true, reason: "missing_email" };
+  const transporter = getConfirmationTransporter();
+  const from = getYoungMindsMailFrom();
+  if (!transporter || !from) return { skipped: true, reason: "smtp_not_configured" };
+  const message = kind === "applicant"
+    ? makeApplicantConfirmationEmail({ ...data, email: to })
+    : makeClientConfirmationEmail({ ...data, email: to });
+  const info = await transporter.sendMail({ from, to, subject: message.subject, text: message.text, html: message.html });
+  return { ok: true, providerId: info?.messageId || "" };
+}
+function queueYoungMindsConfirmationEmail(kind, data = {}) {
+  Promise.resolve()
+    .then(() => sendYoungMindsConfirmationEmail(kind, data))
+    .then(result => {
+      if (result?.skipped && result.reason !== "missing_email") {
+        console.warn(`Confirmation email skipped: ${result.reason}`);
+      }
+    })
+    .catch(err => console.warn("Confirmation email failed:", err.message));
 }
 function getDefaultAdminUsername() {
   return normalizeAdminUsername(process.env.ADMIN_USERNAME || "admin") || "admin";
@@ -1143,6 +1304,7 @@ const leadSchema = new mongoose.Schema({
   type:        { type: String, default: "service-quote" },
   name:        { type: String, required: true },
   phone:       { type: String, required: true },
+  email:       String,
   service:     { type: String, required: true },
   slug:        String,
   source:      String,
@@ -1894,6 +2056,7 @@ a{text-decoration:none;color:inherit} button,input,textarea{font:inherit}
     <div class="quote-copy">A lighter version of the hire form for fast WhatsApp follow-up.</div>
     <div class="field"><label>Name</label><input id="lead-name" type="text" placeholder="Your name"></div>
     <div class="field"><label>WhatsApp</label><input id="lead-phone" type="tel" placeholder="+91 90000 00000"></div>
+    <div class="field"><label>Email *</label><input id="lead-email" type="email" placeholder="you@email.com"></div>
     <div class="field"><label>Service</label><input id="lead-service" type="text" value="${quoteServiceName}" readonly></div>
     <div class="quote-actions">
       <button class="btn btn-ghost" type="button" onclick="toggleQuoteModal(false)">Cancel</button>
@@ -1907,16 +2070,18 @@ function toggleQuoteModal(open){document.getElementById('quoteModalWrap').classL
 async function submitQuickLead(){
   const name=document.getElementById('lead-name').value.trim();
   const phone=document.getElementById('lead-phone').value.trim();
+  const email=document.getElementById('lead-email').value.trim();
   const service=document.getElementById('lead-service').value.trim();
   const status=document.getElementById('quoteStatus');
-  if(!name||!phone){status.textContent='Enter your name and WhatsApp number.';return;}
+  if(!name||!phone||!email){status.textContent='Enter your name, WhatsApp number, and email.';return;}
   status.textContent='Sending...';
   try{
-    const res=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,phone,service,slug:'${escapeHtml(service.slug)}',source:'service-page'})});
+    const res=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,phone,email,service,slug:'${escapeHtml(service.slug)}',source:'service-page'})});
     if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error||'Could not submit');}
     status.textContent='Thanks — we will reach out on WhatsApp soon.';
     document.getElementById('lead-name').value='';
     document.getElementById('lead-phone').value='';
+    document.getElementById('lead-email').value='';
   }catch(err){status.textContent=err.message||'Could not submit right now.';}
 }
 </script>
@@ -2271,12 +2436,20 @@ const APP_TRANSITIONS = {
 app.post("/api/applications", async (req, res) => {
   try {
     if (!req.body.name) return res.status(400).json({ error: "name is required" });
+    if (!normalizeEmail(req.body.email || req.body.gmail || "")) return res.status(400).json({ error: "email is required for confirmation" });
     // Hash password if provided
     const body = { ...req.body, type: "application", status: "new" };
     if (body.password) body.password = hashPassword(body.password);
-    if (body.email) body.gmail = normalizeEmail(body.email);
+    body.email = normalizeEmail(body.email || body.gmail || "");
+    body.gmail = body.email;
     const doc = new Application(body);
     await doc.save();
+    queueYoungMindsConfirmationEmail("applicant", {
+      name: doc.name,
+      email: doc.gmail || doc.email,
+      gmail: doc.gmail,
+      skill: doc.skill
+    });
     res.status(201).json(sanitizeApp(doc));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2600,20 +2773,28 @@ app.post("/api/leads", async (req, res) => {
   try {
     const name = String(req.body?.name || "").trim();
     const phone = String(req.body?.phone || "").trim();
+    const email = normalizeEmail(req.body?.email || req.body?.gmail || "");
     const service = String(req.body?.service || "").trim();
-    if (!name || !phone || !service) {
-      return res.status(400).json({ error: "name, phone, and service are required" });
+    if (!name || !phone || !email || !service) {
+      return res.status(400).json({ error: "name, phone, email, and service are required" });
     }
 
     const doc = new Lead({
       name,
       phone,
+      email,
       service,
       slug: String(req.body?.slug || "").trim(),
       source: String(req.body?.source || "service-page").trim(),
       note: String(req.body?.note || "").trim()
     });
     await doc.save();
+    queueYoungMindsConfirmationEmail("client", {
+      name,
+      email,
+      phone,
+      service
+    });
     res.status(201).json({ success: true, lead: doc });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3618,6 +3799,10 @@ const Project = mongoose.model("Project", projectSchema);
 // ── POST ──
 app.post("/api/projects", async (req, res) => {
   try {
+    const clientEmail = normalizeEmail(req.body?.email || "");
+    if (!clientEmail) {
+      return res.status(400).json({ error: "email is required for confirmation" });
+    }
     const serviceSlug = String(req.body?.serviceSlug || slugifyServiceName(req.body?.service || "")).trim();
     const service = await getServiceRecord(serviceSlug);
     const selectedSector = (Array.isArray(service?.sectors) ? service.sectors : []).find(item => item.title === String(req.body?.serviceSector || "").trim());
@@ -3627,6 +3812,7 @@ app.post("/api/projects", async (req, res) => {
       ...req.body,
       type: "project",
       status: "new",
+      email: clientEmail,
       service: String(req.body?.service || service?.name || "").trim(),
       serviceSlug,
       serviceSector: String(req.body?.serviceSector || selectedSector?.title || "").trim(),
@@ -3637,6 +3823,13 @@ app.post("/api/projects", async (req, res) => {
     };
     const doc = new Project(payload);
     await doc.save();
+    queueYoungMindsConfirmationEmail("client", {
+      name: doc.name || doc.clientName || doc.business,
+      email: doc.email,
+      phone: doc.phone,
+      service: doc.service,
+      packageName: doc.packageName
+    });
     res.status(201).json(doc);
   } catch (err) {
     res.status(500).json({ error: err.message });
