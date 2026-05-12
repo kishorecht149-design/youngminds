@@ -541,16 +541,30 @@ function getConfirmationTransporter() {
       console.warn("Confirmation email skipped: nodemailer is not installed.");
       return null;
     }
-    confirmationTransporter = nodemailer.createTransport(
-      process.env.SMTP_HOST
-        ? {
-            host: process.env.SMTP_HOST,
-            port: Number(process.env.SMTP_PORT || 587),
-            secure: String(process.env.SMTP_SECURE || "false") === "true",
-            auth: { user, pass }
-          }
-        : { service: "gmail", auth: { user, pass } }
-    );
+    const smtpHost = String(process.env.SMTP_HOST || "").trim();
+    const smtpPort = Number(process.env.SMTP_PORT || 587);
+    const smtpSecure = String(process.env.SMTP_SECURE || "false") === "true";
+    const smtpConfig = smtpHost
+      ? {
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpSecure,
+          auth: { user, pass },
+          connectionTimeout: 12000,
+          greetingTimeout: 12000,
+          socketTimeout: 20000
+        }
+      : {
+          host: "smtp.gmail.com",
+          port: smtpPort,
+          secure: smtpSecure,
+          auth: { user, pass },
+          connectionTimeout: 12000,
+          greetingTimeout: 12000,
+          socketTimeout: 20000,
+          tls: { servername: "smtp.gmail.com" }
+        };
+    confirmationTransporter = nodemailer.createTransport(smtpConfig);
   }
   return confirmationTransporter;
 }
@@ -684,6 +698,21 @@ function queueYoungMindsConfirmationEmail(kind, data = {}) {
       }
     })
     .catch(err => console.warn("Confirmation email failed:", err.message));
+}
+async function verifyConfirmationTransporterWithTimeout(timeoutMs = 15000) {
+  const transporter = getConfirmationTransporter();
+  if (!transporter) {
+    return { ok: false, error: "smtp_not_configured" };
+  }
+  try {
+    await Promise.race([
+      transporter.verify(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`verify_timeout_${timeoutMs}ms`)), timeoutMs))
+    ]);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }
 function getDefaultAdminUsername() {
   return normalizeAdminUsername(process.env.ADMIN_USERNAME || "admin") || "admin";
@@ -2885,13 +2914,58 @@ app.get("/api/admin/email/status", async (req, res) => {
     if (!shouldVerify || !status.configured) {
       return res.json(status);
     }
-    try {
-      const transporter = getConfirmationTransporter();
-      await transporter.verify();
-      res.json({ ...status, verifyOk: true });
-    } catch (err) {
-      res.json({ ...status, verifyOk: false, verifyError: err.message });
+    const verifyStatus = await verifyConfirmationTransporterWithTimeout();
+    res.json({
+      ...status,
+      verifyOk: verifyStatus.ok,
+      verifyError: verifyStatus.ok ? "" : verifyStatus.error
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/admin/email/test", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+    const to = normalizeEmail(req.body?.email || req.body?.to || "");
+    const kind = String(req.body?.kind || "client").trim().toLowerCase() === "applicant" ? "applicant" : "client";
+    if (!to) {
+      return res.status(400).json({ error: "email is required" });
     }
+
+    const verifyStatus = await verifyConfirmationTransporterWithTimeout();
+    if (!verifyStatus.ok) {
+      return res.status(500).json({
+        error: "SMTP verification failed",
+        verifyError: verifyStatus.error,
+        status: getConfirmationEmailStatus()
+      });
+    }
+
+    const result = await sendYoungMindsConfirmationEmail(
+      kind,
+      kind === "applicant"
+        ? {
+            name: "Young Minds Applicant",
+            email: to,
+            skill: "Application Review"
+          }
+        : {
+            name: "Young Minds Client",
+            email: to,
+            phone: "+91 00000 00000",
+            service: "Confirmation Test",
+            packageName: "Test Request"
+          }
+    );
+
+    res.json({
+      ok: Boolean(result?.ok),
+      result,
+      status: getConfirmationEmailStatus()
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
