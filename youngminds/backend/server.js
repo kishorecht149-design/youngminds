@@ -496,9 +496,42 @@ function readBearerToken(req) {
   return null;
 }
 let confirmationTransporter = null;
+function firstConfiguredEnv(names) {
+  for (const name of names) {
+    const value = String(process.env[name] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+function getSmtpUser() {
+  return firstConfiguredEnv(["SMTP_USER", "GMAIL_SMTP_USER", "GMAIL_USER", "EMAIL_USER", "MAIL_USER", "SMTP_EMAIL"]);
+}
+function getSmtpPass() {
+  return firstConfiguredEnv(["SMTP_PASS", "GMAIL_SMTP_PASS", "GMAIL_APP_PASSWORD", "EMAIL_PASS", "MAIL_PASS", "SMTP_PASSWORD"]);
+}
+function getMaskedEmail(value) {
+  const email = normalizeEmail(value || "");
+  if (!email || !email.includes("@")) return "";
+  const [name, domain] = email.split("@");
+  return `${name.slice(0, 2)}***@${domain}`;
+}
+function getConfirmationEmailStatus() {
+  const user = getSmtpUser();
+  const pass = getSmtpPass();
+  return {
+    configured: Boolean(user && pass),
+    userConfigured: Boolean(user),
+    passConfigured: Boolean(pass),
+    smtpUser: getMaskedEmail(user),
+    smtpHost: process.env.SMTP_HOST || "gmail",
+    smtpPort: Number(process.env.SMTP_PORT || 587),
+    smtpSecure: String(process.env.SMTP_SECURE || "false") === "true",
+    fromConfigured: Boolean(process.env.YOUNGMINDS_EMAIL_FROM || process.env.SALES_EMAIL_FROM)
+  };
+}
 function getConfirmationTransporter() {
-  const user = process.env.SMTP_USER || process.env.GMAIL_SMTP_USER || "";
-  const pass = process.env.SMTP_PASS || process.env.GMAIL_SMTP_PASS || "";
+  const user = getSmtpUser();
+  const pass = getSmtpPass();
   if (!user || !pass) return null;
   if (!confirmationTransporter) {
     let nodemailer = null;
@@ -522,7 +555,7 @@ function getConfirmationTransporter() {
   return confirmationTransporter;
 }
 function getYoungMindsMailFrom() {
-  const user = process.env.SMTP_USER || process.env.GMAIL_SMTP_USER || "";
+  const user = getSmtpUser();
   return process.env.YOUNGMINDS_EMAIL_FROM || process.env.SALES_EMAIL_FROM || (user ? `"Young Minds" <${user}>` : "");
 }
 function makeEmailButton(url, label) {
@@ -2838,6 +2871,27 @@ app.get("/api/admin/auth/session", async (req, res) => {
     }
 
     res.json({ admin: sanitizeAdminAccount(session.admin) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/admin/email/status", async (req, res) => {
+  try {
+    const session = await requireAdminSession(req, res);
+    if (!session) return;
+    const status = getConfirmationEmailStatus();
+    const shouldVerify = String(req.query?.verify || "") === "1";
+    if (!shouldVerify || !status.configured) {
+      return res.json(status);
+    }
+    try {
+      const transporter = getConfirmationTransporter();
+      await transporter.verify();
+      res.json({ ...status, verifyOk: true });
+    } catch (err) {
+      res.json({ ...status, verifyOk: false, verifyError: err.message });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
