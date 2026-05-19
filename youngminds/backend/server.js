@@ -69,6 +69,17 @@ function adminServicesHotfixScript() {
     const pathname = String(window.location.pathname || "").replace(/\\/+$/, "");
     if (pathname === "/admin/services") return "services";
     if (pathname === "/admin/packages-pricing") return "packages";
+    try {
+      if (typeof activeAdminView !== "undefined" && activeAdminView) {
+        return String(activeAdminView);
+      }
+    } catch (err) {}
+    if (document.getElementById("view-services") && document.getElementById("view-services").classList.contains("active")) {
+      return "services";
+    }
+    if (document.getElementById("view-packages") && document.getElementById("view-packages").classList.contains("active")) {
+      return "packages";
+    }
     return String(window.activeAdminView || "");
   }
 
