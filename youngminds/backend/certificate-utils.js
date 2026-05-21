@@ -120,6 +120,13 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   doc.setFont("Helvetica", eventConf.fontStyle || "normal");
   doc.setFontSize(eventConf.fontSize || 20);
   doc.setTextColor(textColor);
+
+  // Mask out the pre-printed "WORKSHOP NAME" text from the custom template background image
+  if (template && template.backgroundUrl && template.backgroundUrl.includes("certificate-template.jpg")) {
+    doc.setFillColor("#fdfbf7");
+    doc.rect(80, 133, 137, 9, "F");
+  }
+
   doc.text(cert.eventName, eventConf.x, eventConf.y, { align: eventConf.align || "center" });
 
   // Date

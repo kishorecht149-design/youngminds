@@ -4831,11 +4831,11 @@ async function getOrCreateDefaultTemplate() {
   const fieldsConfig = {
     studentName: { x: 148.5, y: 118, fontSize: 32, fontStyle: "bold", align: "center" },
     eventName: { x: 148.5, y: 139, fontSize: 20, fontStyle: "bold", align: "center" },
-    date: { x: 95, y: 182, fontSize: 12, fontStyle: "normal", align: "center" },
-    venue: { x: 148.5, y: 150, fontSize: 12, fontStyle: "normal", align: "center" },
-    certificateId: { x: 40, y: 182, fontSize: 10, fontStyle: "italic", align: "center" },
+    date: { x: 93, y: 182, fontSize: 12, fontStyle: "normal", align: "center" },
+    venue: { x: 148.5, y: 168, fontSize: 12, fontStyle: "normal", align: "center" },
+    certificateId: { x: 37, y: 182, fontSize: 10, fontStyle: "italic", align: "center" },
     qrCode: { x: 227, y: 157, width: 26, height: 26 },
-    signature: { x: 170, y: 182, label: "AUTHORIZED SIGNATURE", fontSize: 11, fontStyle: "normal", align: "center" }
+    signature: { x: 158, y: 182, label: "AUTHORIZED SIGNATURE", fontSize: 11, fontStyle: "normal", align: "center" }
   };
 
   let sigTemp = await Template.findOne({ name: "YoungMinds Signature Template" });
