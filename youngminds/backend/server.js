@@ -5010,7 +5010,7 @@ app.post("/api/admin/certificates/generate", async (req, res) => {
       });
 
       // Generate A4 dynamic PDF and store path
-      const pdfRelativePath = await generateCertificatePdf(
+      const { relativePath: pdfRelativePath, base64Data } = await generateCertificatePdf(
         {
           certificateId: certId,
           studentName: name,
@@ -5024,6 +5024,7 @@ app.post("/api/admin/certificates/generate", async (req, res) => {
       );
 
       newCert.pdfUrl = pdfRelativePath;
+      newCert.pdfData = base64Data;
       newCert.qrUrl = `/verify/${certId}`;
       await newCert.save();
 
@@ -5174,9 +5175,36 @@ app.get("/api/certificates/verify/:certificateId", async (req, res) => {
   }
 });
 
+// Serve PDF certificates dynamically from MongoDB base64 data to survive restarts/redeployments on Render/Serverless!
+app.get("/uploads/certificates/:filename", async (req, res) => {
+  try {
+    const filename = String(req.params.filename || "");
+    const certId = filename.replace(/\.pdf$/i, "");
+    
+    // Find in MongoDB
+    const cert = await Certificate.findOne({ certificateId: certId });
+    if (cert && cert.pdfData) {
+      const pdfBuffer = Buffer.from(cert.pdfData, "base64");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      return res.send(pdfBuffer);
+    }
+    
+    // Fallback to static disk if it exists
+    const localPath = path.join(rootDir, "uploads", "certificates", filename);
+    if (fs.existsSync(localPath)) {
+      return res.sendFile(localPath);
+    }
+    
+    res.status(404).json({ error: "Certificate PDF not found" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 10. Serve Certificate Public Pages
-app.get("/verify", (req, res) => sendShellFile(res, "verify.html"));
-app.get("/verify/:certificateId", (req, res) => sendShellFile(res, "verify.html"));
+app.get("/verify", (req, res) => sendShellFile(res, "verify/index.html"));
+app.get("/verify/:certificateId", (req, res) => sendShellFile(res, "verify/index.html"));
 
 
 /* ══════════════════════════════════════════

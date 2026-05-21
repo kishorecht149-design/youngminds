@@ -73,7 +73,7 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
           const imgData = fs.readFileSync(localPath);
           const ext = path.extname(localPath).toLowerCase();
           const format = ext.includes("png") ? "PNG" : "JPEG";
-          doc.addImage(imgData, format, 0, 0, pageWidth, pageHeight);
+          doc.addImage(imgData.toString("base64"), format, 0, 0, pageWidth, pageHeight);
           bgLoaded = true;
         }
       }
@@ -175,9 +175,10 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   const absolutePath = path.join(certificatesDir, filename);
 
   const pdfBuffer = doc.output("arraybuffer");
-  fs.writeFileSync(absolutePath, Buffer.from(pdfBuffer));
+  const buffer = Buffer.from(pdfBuffer);
+  fs.writeFileSync(absolutePath, buffer);
 
-  return relativePath;
+  return { relativePath, base64Data: buffer.toString("base64") };
 }
 
 /**

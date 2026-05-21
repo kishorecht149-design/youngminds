@@ -7,7 +7,7 @@
     },
     {
       "source": "/verify/:slug*",
-      "destination": "/verify.html"
+      "destination": "/verify/"
     }
   ]
 }

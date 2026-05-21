@@ -54,6 +54,7 @@ const certificateSchema = new mongoose.Schema({
   qrUrl: { type: String, default: "" },
   pdfUrl: { type: String, default: "" },
   verified: { type: Boolean, default: true },
+  pdfData: { type: String, default: "" },
   eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
   templateId: { type: mongoose.Schema.Types.ObjectId, ref: "Template" }
 }, { timestamps: true });
