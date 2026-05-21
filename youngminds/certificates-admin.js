@@ -262,8 +262,11 @@
     `;
   }
 
+  window.renderCertificatesManager = render;
+
   // ── EVENT ACTIONS ──
   window.__ymCertificatesAdmin = {
+    loadData: loadData,
     selectTab: function (tab) {
       state.activeTab = tab;
       render();

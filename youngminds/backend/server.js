@@ -400,7 +400,7 @@ function sendShellFile(res, fileName) {
     "X-YoungMinds-Build": FRONTEND_BUILD_TAG
   });
   const fullPath = path.join(rootDir, fileName);
-  if (fileName === "n.html") {
+  if (fileName === "n.html" || fileName === "youngminds/n.html" || fileName.endsWith("n.html")) {
     try {
       const html = fs.readFileSync(fullPath, "utf8");
       return res.send(html.replace("</body>", `${adminServicesHotfixScript()}</body>`));
@@ -5154,8 +5154,8 @@ app.get("/api/certificates/verify/:certificateId", async (req, res) => {
 });
 
 // 10. Serve Certificate Public Pages
-app.get("/verify", (req, res) => sendShellFile(res, "youngminds/verify.html"));
-app.get("/verify/:certificateId", (req, res) => sendShellFile(res, "youngminds/verify.html"));
+app.get("/verify", (req, res) => sendShellFile(res, "verify.html"));
+app.get("/verify/:certificateId", (req, res) => sendShellFile(res, "verify.html"));
 
 
 /* ══════════════════════════════════════════

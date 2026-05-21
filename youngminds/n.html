@@ -1335,6 +1335,7 @@ function renderAllViews(){
   safeAdminRender('packages-manager', ()=>renderPackagesPricingManager());
   safeAdminRender('interviews-manager', ()=>renderInterviewsManager());
   safeAdminRender('sales-manager', ()=>renderSalesManager());
+  safeAdminRender('certificates-manager', ()=>window.renderCertificatesManager ? window.renderCertificatesManager() : null);
   APP_STS.forEach(s=>safeAdminRender(`app-${s}`, ()=>renderView('app',s)));
   PRJ_STS.forEach(s=>safeAdminRender(`prj-${s}`, ()=>renderView('prj',s)));
 }
@@ -5071,7 +5072,7 @@ const ADMIN_SESSION_KEY = "ym_admin_session";
 const ADMIN_REMEMBER_KEY = "ym_admin_remember";
 const ADMIN_USERNAME_KEY = "ym_admin_username";
 const ADMIN_PAGE_SET = new Set([
-  "overview", "revenue", "comm", "chat", "board", "services", "packages", "interviews", "sales",
+  "overview", "revenue", "comm", "chat", "board", "services", "packages", "interviews", "sales", "certificates",
   "app-new", "app-reviewing", "app-hired", "app-rejected",
   "prj-new", "prj-reviewing", "prj-accepted", "prj-assigning",
   "prj-assigned", "prj-inprogress", "prj-completed", "prj-rejected"
@@ -5123,6 +5124,7 @@ function getAdminPageFromLocation() {
   if (pathname === "/admin/packages-pricing") return "packages";
   if (pathname === "/admin/interviews") return "interviews";
   if (pathname === "/admin/sales") return "sales";
+  if (pathname === "/admin/certificates") return "certificates";
   const hash = String(window.location.hash || "").replace(/^#/, "");
   return sanitizeAdminPage(hash.startsWith("admin-") ? hash.slice(6) : "overview");
 }
@@ -5137,8 +5139,10 @@ function setAdminHistory(page, mode = "push") {
         ? "/admin/interviews"
         : cleanPage === "sales"
           ? "/admin/sales"
-          : "/admin";
-  const hash = ["services","packages","interviews","sales"].includes(cleanPage) ? "" : `#admin-${cleanPage}`;
+          : cleanPage === "certificates"
+            ? "/admin/certificates"
+            : "/admin";
+  const hash = ["services","packages","interviews","sales","certificates"].includes(cleanPage) ? "" : `#admin-${cleanPage}`;
   const url = `${basePath}${window.location.search}${hash}`;
   const state = { panel: "admin", page: cleanPage };
   if (mode === "replace") history.replaceState(state, "", url);
@@ -5390,6 +5394,11 @@ nav = function(page, options = {}) {
   }
   if (cleanPage === "sales") {
     loadSalesAdminData({ render: true });
+  }
+  if (cleanPage === "certificates") {
+    if (window.__ymCertificatesAdmin && typeof window.__ymCertificatesAdmin.loadData === "function") {
+      window.__ymCertificatesAdmin.loadData();
+    }
   }
   if (currentAdmin) {
     if (options.replace) setAdminHistory(cleanPage, "replace");
