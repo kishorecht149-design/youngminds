@@ -285,8 +285,22 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   const W = 297;
   const H = 210;
 
-  // 1. Premium soft warm Ivory background color
-  doc.setFillColor("#fffcf5");
+  // Resolve dynamic custom text labels from database template
+  const labels = template?.labelsConfig || {};
+  const titleText = labels.titleText || "CERTIFICATE";
+  const subtitleText = labels.subtitleText || "OF PARTICIPATION";
+  const kickerText = labels.kickerText || "THIS IS TO CERTIFY THAT";
+  const participationText = labels.participationText || "has successfully participated in the";
+  const footerParagraph1 = labels.footerParagraph1 || "conducted by YoungMinds Agency,";
+  const footerParagraph2 = labels.footerParagraph2 || "focused on practical skills and real-world learning.";
+  const footerParagraph3 = labels.footerParagraph3 || "We appreciate your enthusiasm and commitment to growth.";
+  const authorizedSignLabel = labels.authorizedSignLabel || "AUTHORIZED SIGNATURE";
+  const certificateIdLabel = labels.certificateIdLabel || "CERTIFICATE ID";
+  const dateLabel = labels.dateLabel || "DATE";
+  const scanToVerifyLabel = labels.scanToVerifyLabel || "SCAN TO VERIFY";
+
+  // 1. Crisp, clean premium white background color (allows JPG white backgrounds to blend perfectly)
+  doc.setFillColor("#ffffff");
   doc.rect(0, 0, W, H, "F");
 
   // 2. Overlapping Modern Gold and Charcoal Geometric Corners
@@ -332,14 +346,25 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setLineWidth(1.2);
   doc.rect(10, 10, W - 20, H - 20, "D");
 
-  // 4. Official Brand Logo
-  const logoPath = path.join(rootDir, "assets", "logo.png");
+  // 4. Official Brand Logo (3D Metallic YA monogram)
+  const logoPath = path.join(rootDir, "assets", "logo-gold-3d.jpg");
   if (fs.existsSync(logoPath)) {
     try {
       const logoBuffer = fs.readFileSync(logoPath);
-      doc.addImage(logoBuffer.toString("base64"), "PNG", 140.5, 16, 16, 16, undefined, "NONE");
+      doc.addImage(logoBuffer.toString("base64"), "JPEG", 133.5, 14, 30, 15, undefined, "NONE");
     } catch (err) {
       console.error("Failed to load logo image:", err.message);
+    }
+  }
+
+  // 4b. Official Hanging Banner (laurels "Building Skills Creating Impact")
+  const bannerPath = path.join(rootDir, "assets", "banner-laurels.jpg");
+  if (fs.existsSync(bannerPath)) {
+    try {
+      const bannerBuffer = fs.readFileSync(bannerPath);
+      doc.addImage(bannerBuffer.toString("base64"), "JPEG", 247, 10.5, 36, 36, undefined, "NONE");
+    } catch (err) {
+      console.error("Failed to load banner image:", err.message);
     }
   }
 
@@ -347,25 +372,25 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   
   // Brand Header
   doc.setFont("Helvetica", "bold");
-  doc.setFontSize(15);
+  doc.setFontSize(13);
   doc.setTextColor("#a57c1e");
-  doc.text("YOUNGMINDS AGENCY", 148.5, 38, { align: "center" });
+  doc.text("YOUNGMINDS AGENCY", 148.5, 34, { align: "center" });
 
   doc.setFont("Helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor("#8b8b95");
-  doc.text("CREATIVE MINDS. REAL IMPACT.", 148.5, 42, { align: "center" });
+  doc.text("CREATIVE MINDS. REAL IMPACT.", 148.5, 38, { align: "center" });
 
   // Main Titles
   doc.setFont("Helvetica", "bold");
   doc.setFontSize(32);
   doc.setTextColor("#15130c");
-  doc.text("CERTIFICATE", 148.5, 56, { align: "center" });
+  doc.text(titleText, 148.5, 54, { align: "center" });
 
   doc.setFont("Helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor("#a57c1e");
-  doc.text("OF PARTICIPATION", 148.5, 63, { align: "center" });
+  doc.text(subtitleText, 148.5, 61, { align: "center" });
 
   // Gold Diamond Divider
   doc.setDrawColor("#a57c1e");
@@ -381,7 +406,7 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setFont("Helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor("#8b8b95");
-  doc.text("THIS IS TO CERTIFY THAT", 148.5, 78, { align: "center" });
+  doc.text(kickerText, 148.5, 78, { align: "center" });
 
   // Recipient Name
   doc.setFont("Helvetica", "bold");
@@ -398,7 +423,7 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setFont("Helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor("#4b4b55");
-  doc.text("has successfully participated in the", 148.5, 105, { align: "center" });
+  doc.text(participationText, 148.5, 105, { align: "center" });
 
   // Event Name
   doc.setFont("Helvetica", "bold");
@@ -410,9 +435,9 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setFont("Helvetica", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor("#4b4b55");
-  doc.text("conducted by YoungMinds Agency,", 148.5, 125, { align: "center" });
-  doc.text("focused on practical skills and real-world learning.", 148.5, 131, { align: "center" });
-  doc.text("We appreciate your enthusiasm and commitment to growth.", 148.5, 137, { align: "center" });
+  doc.text(footerParagraph1, 148.5, 125, { align: "center" });
+  doc.text(footerParagraph2, 148.5, 131, { align: "center" });
+  doc.text(footerParagraph3, 148.5, 137, { align: "center" });
 
   // Venue
   if (cert.venue) {
@@ -438,7 +463,7 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setFont("Helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor("#a57c1e");
-  doc.text("CERTIFICATE ID", 52.5, lineY + 5, { align: "center" });
+  doc.text(certificateIdLabel, 52.5, lineY + 5, { align: "center" });
 
   // Center Block: Authorized Signature
   doc.setDrawColor("#a57c1e");
@@ -453,7 +478,7 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setFont("Helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor("#a57c1e");
-  doc.text("AUTHORIZED SIGNATURE", 148.5, lineY + 5, { align: "center" });
+  doc.text(authorizedSignLabel, 148.5, lineY + 5, { align: "center" });
 
   // Right Block: Date
   doc.setDrawColor("#a57c1e");
@@ -468,7 +493,7 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setFont("Helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor("#a57c1e");
-  doc.text("DATE", 244.5, lineY + 5, { align: "center" });
+  doc.text(dateLabel, 244.5, lineY + 5, { align: "center" });
 
   // 7. Dynamic High-Resolution QR Code (placed symmetrically between Center and Right)
   const qrX = 190;
@@ -481,30 +506,21 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setFont("Helvetica", "bold");
   doc.setFontSize(7.5);
   doc.setTextColor("#a57c1e");
-  doc.text("SCAN TO VERIFY", qrX + (qrSize / 2), qrY + qrSize + 4, { align: "center" });
+  doc.text(scanToVerifyLabel, qrX + (qrSize / 2), qrY + qrSize + 4, { align: "center" });
 
-  // 8. Premium Triple-Ring Wax Seal (placed symmetrically between Left and Center)
-  const sealX = 99;
-  const sealY = 171;
-  
-  // Seal Ribbons
-  doc.setFillColor("#a57c1e");
-  doc.triangle(sealX - 4, sealY + 8, sealX - 8, sealY + 22, sealX, sealY + 20, "F");
-  doc.triangle(sealX + 4, sealY + 8, sealX + 8, sealY + 22, sealX, sealY + 20, "F");
-
-  // Triple Ring
-  doc.setFillColor("#a57c1e");
-  doc.circle(sealX, sealY, 10, "F");
-  doc.setFillColor("#15130c");
-  doc.circle(sealX, sealY, 8.8, "F");
-  doc.setFillColor("#a57c1e");
-  doc.circle(sealX, sealY, 8.2, "F");
-
-  // YA Seal Monogram
-  doc.setFont("Helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor("#15130c");
-  doc.text("YA", sealX, sealY + 2.5, { align: "center" });
+  // 8. Premium Gold Seal Badge Image (placed symmetrically between Left and Center)
+  const sealPath = path.join(rootDir, "assets", "seal-gold-badge.jpg");
+  const sealX = 85;
+  const sealY = 153;
+  const sealSize = 28;
+  if (fs.existsSync(sealPath)) {
+    try {
+      const sealBuffer = fs.readFileSync(sealPath);
+      doc.addImage(sealBuffer.toString("base64"), "JPEG", sealX, sealY, sealSize, sealSize, undefined, "NONE");
+    } catch (err) {
+      console.error("Failed to load gold seal image:", err.message);
+    }
+  }
 }
 
 module.exports = {

@@ -25,6 +25,22 @@ const templateSchema = new mongoose.Schema({
       qrCode: { x: 220, y: 140, width: 35, height: 35 },
       signature: { x: 165, y: 155, label: "Authorized Signatory", fontSize: 12, fontStyle: "normal", align: "center" }
     }
+  },
+  labelsConfig: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {
+      titleText: "CERTIFICATE",
+      subtitleText: "OF PARTICIPATION",
+      kickerText: "THIS IS TO CERTIFY THAT",
+      participationText: "has successfully participated in the",
+      footerParagraph1: "conducted by YoungMinds Agency,",
+      footerParagraph2: "focused on practical skills and real-world learning.",
+      footerParagraph3: "We appreciate your enthusiasm and commitment to growth.",
+      authorizedSignLabel: "AUTHORIZED SIGNATURE",
+      certificateIdLabel: "CERTIFICATE ID",
+      dateLabel: "DATE",
+      scanToVerifyLabel: "SCAN TO VERIFY"
+    }
   }
 }, { timestamps: true });
 

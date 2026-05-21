@@ -318,10 +318,38 @@
           certificateId: { x: 80, y: 170, fontSize: 10, fontStyle: "italic", align: "center" },
           qrCode: { x: 232, y: 142, width: 35, height: 35 },
           signature: { x: 165, y: 155, label: "Authorized Signatory", fontSize: 12, fontStyle: "normal", align: "center" }
+        },
+        labelsConfig: {
+          titleText: "CERTIFICATE",
+          subtitleText: "OF PARTICIPATION",
+          kickerText: "THIS IS TO CERTIFY THAT",
+          participationText: "has successfully participated in the",
+          footerParagraph1: "conducted by YoungMinds Agency,",
+          footerParagraph2: "focused on practical skills and real-world learning.",
+          footerParagraph3: "We appreciate your enthusiasm and commitment to growth.",
+          authorizedSignLabel: "AUTHORIZED SIGNATURE",
+          certificateIdLabel: "CERTIFICATE ID",
+          dateLabel: "DATE",
+          scanToVerifyLabel: "SCAN TO VERIFY"
         }
       };
 
       const isEdit = !!templateId;
+
+      // Extract dynamic static text labels
+      const labels = template.labelsConfig || {
+        titleText: "CERTIFICATE",
+        subtitleText: "OF PARTICIPATION",
+        kickerText: "THIS IS TO CERTIFY THAT",
+        participationText: "has successfully participated in the",
+        footerParagraph1: "conducted by YoungMinds Agency,",
+        footerParagraph2: "focused on practical skills and real-world learning.",
+        footerParagraph3: "We appreciate your enthusiasm and commitment to growth.",
+        authorizedSignLabel: "AUTHORIZED SIGNATURE",
+        certificateIdLabel: "CERTIFICATE ID",
+        dateLabel: "DATE",
+        scanToVerifyLabel: "SCAN TO VERIFY"
+      };
 
       // Build coordinates form HTML
       const fields = template.fieldsConfig || {};
@@ -366,9 +394,9 @@
       dialog.className = "cert-modal";
       dialog.id = "temp-editor-modal";
       dialog.innerHTML = `
-        <div class="cert-modal-content">
+        <div class="cert-modal-content" style="max-height:85vh;overflow-y:auto">
           <div class="cert-modal-hdr">
-            <span class="cert-modal-title">${isEdit ? "Edit Template Coordinates" : "Create New Template"}</span>
+            <span class="cert-modal-title">${isEdit ? "Edit Template Details & Texts" : "Create New Template"}</span>
             <button class="btn-sm" style="border:none" onclick="document.getElementById('temp-editor-modal').remove()">✕</button>
           </div>
           <div class="cert-modal-body">
@@ -390,6 +418,56 @@
               <div class="form-group">
                 <label>Accent Color (Hex)</label>
                 <input type="color" id="temp-accentColor" value="${template.accentColor || "#ffd700"}">
+              </div>
+            </div>
+            
+            <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
+              <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--accent)">Certificate Text Labels</div>
+              <div style="display:grid;grid-template-columns:1fr;gap:10px">
+                <div class="form-group">
+                  <label>Header Title</label>
+                  <input type="text" id="label-titleText" value="${escapeHtml(labels.titleText || "CERTIFICATE")}">
+                </div>
+                <div class="form-group">
+                  <label>Header Subtitle</label>
+                  <input type="text" id="label-subtitleText" value="${escapeHtml(labels.subtitleText || "OF PARTICIPATION")}">
+                </div>
+                <div class="form-group">
+                  <label>Certification Prefix (Kicker)</label>
+                  <input type="text" id="label-kickerText" value="${escapeHtml(labels.kickerText || "THIS IS TO CERTIFY THAT")}">
+                </div>
+                <div class="form-group">
+                  <label>Participation Middle Paragraph</label>
+                  <input type="text" id="label-participationText" value="${escapeHtml(labels.participationText || "has successfully participated in the")}">
+                </div>
+                <div class="form-group">
+                  <label>Footer Paragraph Line 1</label>
+                  <input type="text" id="label-footerParagraph1" value="${escapeHtml(labels.footerParagraph1 || "conducted by YoungMinds Agency,")}">
+                </div>
+                <div class="form-group">
+                  <label>Footer Paragraph Line 2</label>
+                  <input type="text" id="label-footerParagraph2" value="${escapeHtml(labels.footerParagraph2 || "focused on practical skills and real-world learning.")}">
+                </div>
+                <div class="form-group">
+                  <label>Footer Paragraph Line 3</label>
+                  <input type="text" id="label-footerParagraph3" value="${escapeHtml(labels.footerParagraph3 || "We appreciate your enthusiasm and commitment to growth.")}">
+                </div>
+                <div class="form-group">
+                  <label>Signature Line Label</label>
+                  <input type="text" id="label-authorizedSignLabel" value="${escapeHtml(labels.authorizedSignLabel || "AUTHORIZED SIGNATURE")}">
+                </div>
+                <div class="form-group">
+                  <label>Certificate ID Label</label>
+                  <input type="text" id="label-certificateIdLabel" value="${escapeHtml(labels.certificateIdLabel || "CERTIFICATE ID")}">
+                </div>
+                <div class="form-group">
+                  <label>Date Label</label>
+                  <input type="text" id="label-dateLabel" value="${escapeHtml(labels.dateLabel || "DATE")}">
+                </div>
+                <div class="form-group">
+                  <label>QR Code Label</label>
+                  <input type="text" id="label-scanToVerifyLabel" value="${escapeHtml(labels.scanToVerifyLabel || "SCAN TO VERIFY")}">
+                </div>
               </div>
             </div>
             
@@ -446,7 +524,22 @@
         if (labelInput) fieldsConfig[key].label = labelInput.value.trim();
       });
 
-      const payload = { name, backgroundUrl, textColor, accentColor, fieldsConfig };
+      // Extract dynamic static text labels
+      const labelsConfig = {
+        titleText: document.getElementById("label-titleText").value.trim(),
+        subtitleText: document.getElementById("label-subtitleText").value.trim(),
+        kickerText: document.getElementById("label-kickerText").value.trim(),
+        participationText: document.getElementById("label-participationText").value.trim(),
+        footerParagraph1: document.getElementById("label-footerParagraph1").value.trim(),
+        footerParagraph2: document.getElementById("label-footerParagraph2").value.trim(),
+        footerParagraph3: document.getElementById("label-footerParagraph3").value.trim(),
+        authorizedSignLabel: document.getElementById("label-authorizedSignLabel").value.trim(),
+        certificateIdLabel: document.getElementById("label-certificateIdLabel").value.trim(),
+        dateLabel: document.getElementById("label-dateLabel").value.trim(),
+        scanToVerifyLabel: document.getElementById("label-scanToVerifyLabel").value.trim(),
+      };
+
+      const payload = { name, backgroundUrl, textColor, accentColor, fieldsConfig, labelsConfig };
       const isEdit = !!templateId;
 
       try {
@@ -456,7 +549,7 @@
         });
         
         document.getElementById("temp-editor-modal").remove();
-        if (typeof window.showToast === "function") window.showToast(isEdit ? "Template coordinates saved" : "Template created");
+        if (typeof window.showToast === "function") window.showToast(isEdit ? "Template details saved" : "Template created");
         loadData();
       } catch (err) {
         alert(err.message);

@@ -4838,6 +4838,20 @@ async function getOrCreateDefaultTemplate() {
     signature: { x: 158, y: 182, label: "AUTHORIZED SIGNATURE", fontSize: 11, fontStyle: "normal", align: "center" }
   };
 
+  const labelsConfig = {
+    titleText: "CERTIFICATE",
+    subtitleText: "OF PARTICIPATION",
+    kickerText: "THIS IS TO CERTIFY THAT",
+    participationText: "has successfully participated in the",
+    footerParagraph1: "conducted by YoungMinds Agency,",
+    footerParagraph2: "focused on practical skills and real-world learning.",
+    footerParagraph3: "We appreciate your enthusiasm and commitment to growth.",
+    authorizedSignLabel: "AUTHORIZED SIGNATURE",
+    certificateIdLabel: "CERTIFICATE ID",
+    dateLabel: "DATE",
+    scanToVerifyLabel: "SCAN TO VERIFY"
+  };
+
   let sigTemp = await Template.findOne({ name: "YoungMinds Signature Template" });
   if (!sigTemp) {
     sigTemp = new Template({
@@ -4846,16 +4860,18 @@ async function getOrCreateDefaultTemplate() {
       textColor: "#15130c",
       accentColor: "#a57c1e",
       backgroundUrl: "/assets/certificate-template.jpg",
-      fieldsConfig
+      fieldsConfig,
+      labelsConfig
     });
     await sigTemp.save();
     console.log("Seeded premium 'YoungMinds Signature Template' as default template.");
   } else {
-    // Always align coordinates and background image to exact specifications
+    // Always align coordinates, background image, and text labels to exact specifications
     sigTemp.backgroundUrl = "/assets/certificate-template.jpg";
     sigTemp.textColor = "#15130c";
     sigTemp.accentColor = "#a57c1e";
     sigTemp.fieldsConfig = fieldsConfig;
+    sigTemp.labelsConfig = labelsConfig;
     sigTemp.isDefault = true;
     await sigTemp.save();
     console.log("Aligned and updated 'YoungMinds Signature Template' configuration on startup.");
@@ -5062,7 +5078,7 @@ app.post("/api/admin/templates", async (req, res) => {
     const admin = await requireAdminSession(req, res);
     if (!admin) return;
 
-    const { name, backgroundUrl, textColor, accentColor, fieldsConfig, isDefault } = req.body;
+    const { name, backgroundUrl, textColor, accentColor, fieldsConfig, labelsConfig, isDefault } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Template name is required." });
@@ -5078,6 +5094,7 @@ app.post("/api/admin/templates", async (req, res) => {
       textColor: textColor || "#15130c",
       accentColor: accentColor || "#ffd700",
       fieldsConfig: fieldsConfig || undefined,
+      labelsConfig: labelsConfig || undefined,
       isDefault: !!isDefault
     });
 
@@ -5095,7 +5112,7 @@ app.put("/api/admin/templates/:id", async (req, res) => {
     if (!admin) return;
 
     const { id } = req.params;
-    const { name, backgroundUrl, textColor, accentColor, fieldsConfig, isDefault } = req.body;
+    const { name, backgroundUrl, textColor, accentColor, fieldsConfig, labelsConfig, isDefault } = req.body;
 
     if (isDefault) {
       await Template.updateMany({ _id: { $ne: id } }, { isDefault: false });
@@ -5109,6 +5126,7 @@ app.put("/api/admin/templates/:id", async (req, res) => {
         textColor,
         accentColor,
         fieldsConfig,
+        labelsConfig,
         isDefault: !!isDefault
       },
       { new: true }
