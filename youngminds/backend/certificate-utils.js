@@ -49,9 +49,25 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   const pageWidth = 297;
   const pageHeight = 210;
 
+  // Check if we should render our premium, infinitely sharp custom vector template layout
+  const bgUrl = template ? template.backgroundUrl : "";
+  if (bgUrl && bgUrl.includes("certificate-template.jpg")) {
+    await drawPremiumVectorCertificate(doc, cert, template, verifyUrl);
+    
+    // Save file
+    const filename = `${cert.certificateId}.pdf`;
+    const relativePath = `/uploads/certificates/${filename}`;
+    const absolutePath = path.join(certificatesDir, filename);
+
+    const pdfBuffer = doc.output("arraybuffer");
+    const buffer = Buffer.from(pdfBuffer);
+    fs.writeFileSync(absolutePath, buffer);
+
+    return { relativePath, base64Data: buffer.toString("base64") };
+  }
+
   // 1. Draw Background
   let bgLoaded = false;
-  const bgUrl = template ? template.backgroundUrl : "";
 
   if (bgUrl) {
     try {
@@ -260,6 +276,235 @@ function drawPremiumDefaultBackground(doc, width, height) {
   doc.text("OFFICIAL", 45, 123, { align: "center" });
   doc.text("VERIFIED", 45, 127, { align: "center" });
   doc.text("SEAL", 45, 131, { align: "center" });
+}
+
+/**
+ * Renders the absolute premium vector certificate layout dynamically from scratch
+ */
+async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
+  const W = 297;
+  const H = 210;
+
+  // 1. Premium soft warm Ivory background color
+  doc.setFillColor("#fffcf5");
+  doc.rect(0, 0, W, H, "F");
+
+  // 2. Overlapping Modern Gold and Charcoal Geometric Corners
+  
+  // Top-Left Corner
+  doc.setFillColor("#a57c1e");
+  doc.triangle(0, 0, 65, 0, 0, 65, "F");
+  doc.setFillColor("#15130c");
+  doc.triangle(0, 0, 52, 0, 0, 52, "F");
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(1.2);
+  doc.line(52, 0, 0, 52);
+
+  // Bottom-Right Corner
+  doc.setFillColor("#a57c1e");
+  doc.triangle(W, H, W - 65, H, W, H - 65, "F");
+  doc.setFillColor("#15130c");
+  doc.triangle(W, H, W - 52, H, W, H - 52, "F");
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(1.2);
+  doc.line(W - 52, H, W, H - 52);
+
+  // Bottom-Left Corner
+  doc.setFillColor("#a57c1e");
+  doc.triangle(0, H, 35, H, 0, H - 35, "F");
+  doc.setFillColor("#15130c");
+  doc.triangle(0, H, 28, H, 0, H - 28, "F");
+
+  // Top-Right Corner
+  doc.setFillColor("#a57c1e");
+  doc.triangle(W, 0, W - 35, 0, W, 35, "F");
+  doc.setFillColor("#15130c");
+  doc.triangle(W, 0, W - 28, 0, W, 28, "F");
+
+  // 3. Crisp Symmetrical Borders
+  // Gold thin outer border
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(0.5);
+  doc.rect(8, 8, W - 16, H - 16, "D");
+
+  // Charcoal thicker inner border
+  doc.setDrawColor("#15130c");
+  doc.setLineWidth(1.2);
+  doc.rect(10, 10, W - 20, H - 20, "D");
+
+  // 4. Official Brand Logo
+  const logoPath = path.join(rootDir, "assets", "logo.png");
+  if (fs.existsSync(logoPath)) {
+    try {
+      const logoBuffer = fs.readFileSync(logoPath);
+      doc.addImage(logoBuffer.toString("base64"), "PNG", 140.5, 16, 16, 16, undefined, "NONE");
+    } catch (err) {
+      console.error("Failed to load logo image:", err.message);
+    }
+  }
+
+  // 5. Dynamic High-Resolution Typography Layout
+  
+  // Brand Header
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(15);
+  doc.setTextColor("#a57c1e");
+  doc.text("YOUNGMINDS AGENCY", 148.5, 38, { align: "center" });
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor("#8b8b95");
+  doc.text("CREATIVE MINDS. REAL IMPACT.", 148.5, 42, { align: "center" });
+
+  // Main Titles
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(32);
+  doc.setTextColor("#15130c");
+  doc.text("CERTIFICATE", 148.5, 56, { align: "center" });
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor("#a57c1e");
+  doc.text("OF PARTICIPATION", 148.5, 63, { align: "center" });
+
+  // Gold Diamond Divider
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(0.3);
+  doc.line(90, 68, 138, 68);
+  doc.line(159, 68, 207, 68);
+  
+  doc.setFillColor("#a57c1e");
+  doc.triangle(148.5, 66.5, 146.5, 68, 150.5, 68, "F");
+  doc.triangle(148.5, 69.5, 146.5, 68, 150.5, 68, "F");
+
+  // Recipient Block
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor("#8b8b95");
+  doc.text("THIS IS TO CERTIFY THAT", 148.5, 78, { align: "center" });
+
+  // Recipient Name
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(30);
+  doc.setTextColor("#15130c");
+  doc.text(cert.studentName || "", 148.5, 92, { align: "center" });
+
+  // Underline
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(0.25);
+  doc.line(100, 97, 197, 97);
+
+  // Body Paragraph
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor("#4b4b55");
+  doc.text("has successfully participated in the", 148.5, 105, { align: "center" });
+
+  // Event Name
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor("#a57c1e");
+  doc.text(`"${cert.eventName || ""}"`, 148.5, 116, { align: "center" });
+
+  // Details
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor("#4b4b55");
+  doc.text("conducted by YoungMinds Agency,", 148.5, 125, { align: "center" });
+  doc.text("focused on practical skills and real-world learning.", 148.5, 131, { align: "center" });
+  doc.text("We appreciate your enthusiasm and commitment to growth.", 148.5, 137, { align: "center" });
+
+  // Venue
+  if (cert.venue) {
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor("#15130c");
+    doc.text(`Venue: ${cert.venue}`, 148.5, 147, { align: "center" });
+  }
+
+  // 6. Signature Symmetrical Footer Layout (Left Date, Center Sign, Right ID, QR Code & Seal)
+  const lineY = 176;
+
+  // Left Block: Certificate ID
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(0.3);
+  doc.line(30, lineY, 75, lineY);
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#15130c");
+  doc.text(cert.certificateId || "", 52.5, lineY - 3, { align: "center" });
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor("#a57c1e");
+  doc.text("CERTIFICATE ID", 52.5, lineY + 5, { align: "center" });
+
+  // Center Block: Authorized Signature
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(0.3);
+  doc.line(126, lineY, 171, lineY);
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor("#15130c");
+  doc.text("Kishore", 148.5, lineY - 3, { align: "center" });
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor("#a57c1e");
+  doc.text("AUTHORIZED SIGNATURE", 148.5, lineY + 5, { align: "center" });
+
+  // Right Block: Date
+  doc.setDrawColor("#a57c1e");
+  doc.setLineWidth(0.3);
+  doc.line(222, lineY, 267, lineY);
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor("#15130c");
+  doc.text(cert.date || "", 244.5, lineY - 3, { align: "center" });
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor("#a57c1e");
+  doc.text("DATE", 244.5, lineY + 5, { align: "center" });
+
+  // 7. Dynamic High-Resolution QR Code (placed symmetrically between Center and Right)
+  const qrX = 190;
+  const qrY = 154;
+  const qrSize = 19;
+  
+  const qrBase64 = await generateQrCodeBase64(verifyUrl);
+  doc.addImage(qrBase64, "PNG", qrX, qrY, qrSize, qrSize, undefined, "NONE");
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor("#a57c1e");
+  doc.text("SCAN TO VERIFY", qrX + (qrSize / 2), qrY + qrSize + 4, { align: "center" });
+
+  // 8. Premium Triple-Ring Wax Seal (placed symmetrically between Left and Center)
+  const sealX = 99;
+  const sealY = 171;
+  
+  // Seal Ribbons
+  doc.setFillColor("#a57c1e");
+  doc.triangle(sealX - 4, sealY + 8, sealX - 8, sealY + 22, sealX, sealY + 20, "F");
+  doc.triangle(sealX + 4, sealY + 8, sealX + 8, sealY + 22, sealX, sealY + 20, "F");
+
+  // Triple Ring
+  doc.setFillColor("#a57c1e");
+  doc.circle(sealX, sealY, 10, "F");
+  doc.setFillColor("#15130c");
+  doc.circle(sealX, sealY, 8.8, "F");
+  doc.setFillColor("#a57c1e");
+  doc.circle(sealX, sealY, 8.2, "F");
+
+  // YA Seal Monogram
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor("#15130c");
+  doc.text("YA", sealX, sealY + 2.5, { align: "center" });
 }
 
 module.exports = {
