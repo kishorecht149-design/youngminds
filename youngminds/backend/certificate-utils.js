@@ -299,8 +299,8 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   const dateLabel = labels.dateLabel || "DATE";
   const scanToVerifyLabel = labels.scanToVerifyLabel || "SCAN TO VERIFY";
 
-  // 1. Crisp, clean premium white background color (allows JPG white backgrounds to blend perfectly)
-  doc.setFillColor("#ffffff");
+  // 1. Premium soft warm Ivory background color (for a high-end luxury print feel)
+  doc.setFillColor("#fffcf5");
   doc.rect(0, 0, W, H, "F");
 
   // 2. Overlapping Modern Gold and Charcoal Geometric Corners
@@ -346,23 +346,23 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setLineWidth(1.2);
   doc.rect(10, 10, W - 20, H - 20, "D");
 
-  // 4. Official Brand Logo (3D Metallic YA monogram)
-  const logoPath = path.join(rootDir, "assets", "logo-gold-3d.jpg");
+  // 4. Official Brand Logo (3D Metallic YA monogram - transparent PNG)
+  const logoPath = path.join(rootDir, "assets", "logo-gold-3d.png");
   if (fs.existsSync(logoPath)) {
     try {
       const logoBuffer = fs.readFileSync(logoPath);
-      doc.addImage(logoBuffer.toString("base64"), "JPEG", 133.5, 14, 30, 15, undefined, "NONE");
+      doc.addImage(logoBuffer.toString("base64"), "PNG", 133.5, 14, 30, 15, undefined, "NONE");
     } catch (err) {
       console.error("Failed to load logo image:", err.message);
     }
   }
 
-  // 4b. Official Hanging Banner (laurels "Building Skills Creating Impact")
-  const bannerPath = path.join(rootDir, "assets", "banner-laurels.jpg");
+  // 4b. Official Hanging Banner (laurels "Building Skills Creating Impact" - transparent PNG)
+  const bannerPath = path.join(rootDir, "assets", "banner-laurels.png");
   if (fs.existsSync(bannerPath)) {
     try {
       const bannerBuffer = fs.readFileSync(bannerPath);
-      doc.addImage(bannerBuffer.toString("base64"), "JPEG", 247, 10.5, 36, 36, undefined, "NONE");
+      doc.addImage(bannerBuffer.toString("base64"), "PNG", 247, 10.5, 36, 36, undefined, "NONE");
     } catch (err) {
       console.error("Failed to load banner image:", err.message);
     }
@@ -508,15 +508,15 @@ async function drawPremiumVectorCertificate(doc, cert, template, verifyUrl) {
   doc.setTextColor("#a57c1e");
   doc.text(scanToVerifyLabel, qrX + (qrSize / 2), qrY + qrSize + 4, { align: "center" });
 
-  // 8. Premium Gold Seal Badge Image (placed symmetrically between Left and Center)
-  const sealPath = path.join(rootDir, "assets", "seal-gold-badge.jpg");
+  // 8. Premium Gold Seal Badge Image (placed symmetrically between Left and Center - transparent PNG)
+  const sealPath = path.join(rootDir, "assets", "seal-gold-badge.png");
   const sealX = 85;
   const sealY = 153;
   const sealSize = 28;
   if (fs.existsSync(sealPath)) {
     try {
       const sealBuffer = fs.readFileSync(sealPath);
-      doc.addImage(sealBuffer.toString("base64"), "JPEG", sealX, sealY, sealSize, sealSize, undefined, "NONE");
+      doc.addImage(sealBuffer.toString("base64"), "PNG", sealX, sealY, sealSize, sealSize, undefined, "NONE");
     } catch (err) {
       console.error("Failed to load gold seal image:", err.message);
     }
