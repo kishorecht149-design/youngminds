@@ -60,7 +60,7 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
         const mime = parts[0].match(/:(.*?);/)[1];
         const format = mime.includes("png") ? "PNG" : "JPEG";
         const base64Data = parts[1];
-        doc.addImage(base64Data, format, 0, 0, pageWidth, pageHeight);
+        doc.addImage(base64Data, format, 0, 0, pageWidth, pageHeight, undefined, "NONE");
         bgLoaded = true;
       } else {
         // Resolve local relative paths (e.g. /assets/certificate-template.jpg)
@@ -73,7 +73,7 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
           const imgData = fs.readFileSync(localPath);
           const ext = path.extname(localPath).toLowerCase();
           const format = ext.includes("png") ? "PNG" : "JPEG";
-          doc.addImage(imgData.toString("base64"), format, 0, 0, pageWidth, pageHeight);
+          doc.addImage(imgData.toString("base64"), format, 0, 0, pageWidth, pageHeight, undefined, "NONE");
           bgLoaded = true;
         }
       }
@@ -123,8 +123,8 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
 
   // Mask out the pre-printed "WORKSHOP NAME" text from the custom template background image
   if (template && template.backgroundUrl && template.backgroundUrl.includes("certificate-template.jpg")) {
-    doc.setFillColor("#fdfbf7");
-    doc.rect(80, 133, 137, 9, "F");
+    doc.setFillColor("#f6f3eb");
+    doc.rect(122, 135.5, 53, 5, "F");
   }
 
   doc.text(cert.eventName, eventConf.x, eventConf.y, { align: eventConf.align || "center" });
@@ -164,10 +164,12 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   if (!template || !template.backgroundUrl) {
     doc.text(sigConf.label || "Authorized Signatory", sigConf.x, sigConf.y, { align: sigConf.align || "center" });
   }
-  // Draw organizer name above signature line
-  if (cert.organizerName || sigConf.organizerName) {
-    doc.setFont("Helvetica", "bold");
-    doc.text(cert.organizerName || sigConf.organizerName, sigConf.x, sigConf.y - 8, { align: sigConf.align || "center" });
+  // Draw organizer name above signature line (only on dynamic fallback template, since custom templates have pre-baked signatures)
+  if (!template || !template.backgroundUrl) {
+    if (cert.organizerName || sigConf.organizerName) {
+      doc.setFont("Helvetica", "bold");
+      doc.text(cert.organizerName || sigConf.organizerName, sigConf.x, sigConf.y - 8, { align: sigConf.align || "center" });
+    }
   }
   // Draw a fine signature line only if using fallback default background
   if (!template || !template.backgroundUrl) {
