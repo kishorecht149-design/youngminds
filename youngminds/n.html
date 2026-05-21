@@ -514,6 +514,9 @@ canvas#revChart{max-height:220px}
       <div class="sb-item" id="nav-sales" onclick="nav('sales')">
         <div class="sb-il"><span class="sb-icon">📨</span><span class="sb-label">Sales</span></div>
       </div>
+      <div class="sb-item" id="nav-certificates" onclick="nav('certificates')">
+        <div class="sb-il"><span class="sb-icon">📜</span><span class="sb-label">Certificates</span></div>
+      </div>
       <div class="sb-sec">Hiring</div>
       <div class="sb-item" id="nav-app-new" onclick="nav('app-new')">
         <div class="sb-il"><span class="sb-icon">⚡</span><span class="sb-label">New</span></div><span class="sb-count" id="cnt-app-new">0</span>
@@ -726,6 +729,9 @@ canvas#revChart{max-height:220px}
       </div>
       <div class="view" id="view-sales">
         <div id="sales-admin-content"></div>
+      </div>
+      <div class="view" id="view-certificates">
+        <div id="certificates-admin-content"></div>
       </div>
 
       <!-- HIRING VIEWS -->
@@ -5485,5 +5491,6 @@ async function restoreAdminSession() {
 
 document.addEventListener("DOMContentLoaded", restoreAdminSession);
 </script>
+<script src="/static/youngminds/certificates-admin.js"></script>
 </body>
 </html>

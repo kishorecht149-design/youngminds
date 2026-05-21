@@ -10,6 +10,8 @@ const crypto   = require("crypto");
 const { createAuthToken, verifyAuthToken, DEFAULT_TTL_SECONDS } = require("./auth");
 const { getAiAssistReply, getPasswordCoachReply, gradeDescriptiveAnswer } = require("./ai-assist");
 const { registerSalesPortal } = require("./sales-portal");
+const { Counter, Template, Event, Certificate, getNextCertificateId } = require("./certificate-models");
+const { generateCertificatePdf } = require("./certificate-utils");
 
 const app = express();
 const REMEMBER_ME_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -4819,6 +4821,342 @@ registerSalesPortal(app, {
   emitRealtimeEvent,
   Application
 });
+
+/* ══════════════════════════════════════════
+   CERTIFICATE MANAGEMENT & VERIFICATION SYSTEM
+   ══════════════════════════════════════════ */
+
+// Seeding helper to ensure at least one template exists
+async function getOrCreateDefaultTemplate() {
+  let defaultTemp = await Template.findOne({ isDefault: true });
+  if (!defaultTemp) {
+    defaultTemp = await Template.findOne();
+  }
+  if (!defaultTemp) {
+    defaultTemp = new Template({
+      name: "Premium Default Template",
+      isDefault: true,
+      textColor: "#15130c",
+      accentColor: "#ffd700",
+      backgroundUrl: "" // Will trigger drawing premium default vector background
+    });
+    await defaultTemp.save();
+  }
+  return defaultTemp;
+}
+
+// 1. Get Stats (Admin Protected)
+app.get("/api/admin/certificates/stats", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const totalCertificates = await Certificate.countDocuments();
+    const totalTemplates = await Template.countDocuments();
+    const totalEvents = await Event.countDocuments();
+
+    res.json({
+      totalCertificates,
+      totalTemplates,
+      totalEvents
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. Get Certificate List with search and filtering (Admin Protected)
+app.get("/api/admin/certificates", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const { eventId, search, page = 1, limit = 50 } = req.query;
+    const query = {};
+
+    if (eventId) {
+      query.eventId = eventId;
+    }
+
+    if (search) {
+      const regex = new RegExp(String(search).trim(), "i");
+      query.$or = [
+        { studentName: regex },
+        { certificateId: regex },
+        { email: regex }
+      ];
+    }
+
+    const skipIndex = (Number(page) - 1) * Number(limit);
+    const total = await Certificate.countDocuments(query);
+    const list = await Certificate.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skipIndex)
+      .limit(Number(limit))
+      .populate("eventId")
+      .populate("templateId");
+
+    res.json({
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      certificates: list
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Bulk Generate Certificates (Admin Protected)
+app.post("/api/admin/certificates/generate", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const {
+      eventName,
+      date,
+      venue,
+      organizerName,
+      certificateType = "Participation",
+      templateId,
+      participants
+    } = req.body;
+
+    if (!eventName || !participants || !Array.isArray(participants) || !participants.length) {
+      return res.status(400).json({ error: "Event name and participant list are required." });
+    }
+
+    // Resolve template
+    let activeTemplate = null;
+    if (templateId) {
+      activeTemplate = await Template.findById(templateId);
+    }
+    if (!activeTemplate) {
+      activeTemplate = await getOrCreateDefaultTemplate();
+    }
+
+    // Find or create event
+    let eventObj = await Event.findOne({
+      name: eventName,
+      date: date || "",
+      venue: venue || "",
+      organizerName: organizerName || ""
+    });
+
+    if (!eventObj) {
+      eventObj = new Event({
+        name: eventName,
+        date: date || "",
+        venue: venue || "",
+        organizerName: organizerName || "",
+        certificateType,
+        templateId: activeTemplate._id
+      });
+      await eventObj.save();
+    }
+
+    const currentYear = new Date().getFullYear().toString();
+    const generatedCerts = [];
+
+    // Loop through participants and generate certificates
+    for (const participant of participants) {
+      const name = String(participant.name || "").trim();
+      const email = String(participant.email || "").trim();
+      const college = String(participant.college || participant["college or school"] || participant.school || "").trim();
+
+      if (!name) continue;
+
+      // Generate atomic certificate ID
+      const certId = await getNextCertificateId(currentYear);
+
+      // Construct verification URL
+      const host = process.env.YOUNGMINDS_PUBLIC_URL || `${req.protocol}://${req.get("host")}`;
+      const verifyUrl = `${host}/verify/${certId}`;
+
+      // Create Certificate metadata
+      const newCert = new Certificate({
+        certificateId: certId,
+        studentName: name,
+        email,
+        collegeOrSchool: college,
+        eventName,
+        date: date || "",
+        venue: venue || "",
+        verified: true,
+        eventId: eventObj._id,
+        templateId: activeTemplate._id
+      });
+
+      // Generate A4 dynamic PDF and store path
+      const pdfRelativePath = await generateCertificatePdf(
+        {
+          certificateId: certId,
+          studentName: name,
+          eventName,
+          date: date || "",
+          venue: venue || "",
+          organizerName: organizerName || ""
+        },
+        activeTemplate,
+        verifyUrl
+      );
+
+      newCert.pdfUrl = pdfRelativePath;
+      newCert.qrUrl = `/verify/${certId}`;
+      await newCert.save();
+
+      generatedCerts.push(newCert);
+    }
+
+    res.json({
+      success: true,
+      count: generatedCerts.length,
+      certificates: generatedCerts
+    });
+  } catch (err) {
+    console.error("Certificate bulk generation failed:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Get Templates (Admin Protected)
+app.get("/api/admin/templates", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    await getOrCreateDefaultTemplate(); // Seed if empty
+    const list = await Template.find().sort({ createdAt: -1 });
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Create Template (Admin Protected)
+app.post("/api/admin/templates", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const { name, backgroundUrl, textColor, accentColor, fieldsConfig, isDefault } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: "Template name is required." });
+    }
+
+    if (isDefault) {
+      await Template.updateMany({}, { isDefault: false });
+    }
+
+    const newTemplate = new Template({
+      name,
+      backgroundUrl: backgroundUrl || "",
+      textColor: textColor || "#15130c",
+      accentColor: accentColor || "#ffd700",
+      fieldsConfig: fieldsConfig || undefined,
+      isDefault: !!isDefault
+    });
+
+    await newTemplate.save();
+    res.json(newTemplate);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. Update Template (Admin Protected)
+app.put("/api/admin/templates/:id", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const { id } = req.params;
+    const { name, backgroundUrl, textColor, accentColor, fieldsConfig, isDefault } = req.body;
+
+    if (isDefault) {
+      await Template.updateMany({ _id: { $ne: id } }, { isDefault: false });
+    }
+
+    const updated = await Template.findByIdAndUpdate(
+      id,
+      {
+        name,
+        backgroundUrl,
+        textColor,
+        accentColor,
+        fieldsConfig,
+        isDefault: !!isDefault
+      },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7. Delete Template (Admin Protected)
+app.delete("/api/admin/templates/:id", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const { id } = req.params;
+    const count = await Template.countDocuments();
+    if (count <= 1) {
+      return res.status(400).json({ error: "Cannot delete the last remaining template." });
+    }
+
+    const deleted = await Template.findByIdAndDelete(id);
+    // If we deleted the default, set another default
+    if (deleted?.isDefault) {
+      await Template.findOneAndUpdate({}, { isDefault: true });
+    }
+
+    res.json({ success: true, message: "Template deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 8. Get Events List (Admin Protected)
+app.get("/api/admin/events-list", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const list = await Event.find().sort({ name: 1 });
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 9. Verify Certificate (Public Route)
+app.get("/api/certificates/verify/:certificateId", async (req, res) => {
+  try {
+    const certId = String(req.params.certificateId).trim().toUpperCase();
+    const cert = await Certificate.findOne({ certificateId: certId })
+      .populate("eventId")
+      .populate("templateId");
+
+    if (!cert) {
+      return res.status(404).json({ error: "Certificate Not Found" });
+    }
+
+    res.json(cert);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 10. Serve Certificate Public Pages
+app.get("/verify", (req, res) => sendShellFile(res, "youngminds/verify.html"));
+app.get("/verify/:certificateId", (req, res) => sendShellFile(res, "youngminds/verify.html"));
+
 
 /* ══════════════════════════════════════════
    404 CATCH-ALL
