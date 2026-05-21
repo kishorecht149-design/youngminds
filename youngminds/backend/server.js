@@ -4828,21 +4828,42 @@ registerSalesPortal(app, {
 
 // Seeding helper to ensure at least one template exists
 async function getOrCreateDefaultTemplate() {
-  let defaultTemp = await Template.findOne({ isDefault: true });
-  if (!defaultTemp) {
-    defaultTemp = await Template.findOne();
-  }
-  if (!defaultTemp) {
-    defaultTemp = new Template({
-      name: "Premium Default Template",
+  const fieldsConfig = {
+    studentName: { x: 148.5, y: 118, fontSize: 32, fontStyle: "bold", align: "center" },
+    eventName: { x: 148.5, y: 139, fontSize: 20, fontStyle: "bold", align: "center" },
+    date: { x: 95, y: 182, fontSize: 12, fontStyle: "normal", align: "center" },
+    venue: { x: 148.5, y: 150, fontSize: 12, fontStyle: "normal", align: "center" },
+    certificateId: { x: 40, y: 182, fontSize: 10, fontStyle: "italic", align: "center" },
+    qrCode: { x: 227, y: 157, width: 26, height: 26 },
+    signature: { x: 170, y: 182, label: "AUTHORIZED SIGNATURE", fontSize: 11, fontStyle: "normal", align: "center" }
+  };
+
+  let sigTemp = await Template.findOne({ name: "YoungMinds Signature Template" });
+  if (!sigTemp) {
+    sigTemp = new Template({
+      name: "YoungMinds Signature Template",
       isDefault: true,
       textColor: "#15130c",
-      accentColor: "#ffd700",
-      backgroundUrl: "" // Will trigger drawing premium default vector background
+      accentColor: "#a57c1e",
+      backgroundUrl: "/assets/certificate-template.jpg",
+      fieldsConfig
     });
-    await defaultTemp.save();
+    await sigTemp.save();
+    console.log("Seeded premium 'YoungMinds Signature Template' as default template.");
+  } else {
+    // Always align coordinates and background image to exact specifications
+    sigTemp.backgroundUrl = "/assets/certificate-template.jpg";
+    sigTemp.textColor = "#15130c";
+    sigTemp.accentColor = "#a57c1e";
+    sigTemp.fieldsConfig = fieldsConfig;
+    sigTemp.isDefault = true;
+    await sigTemp.save();
+    console.log("Aligned and updated 'YoungMinds Signature Template' configuration on startup.");
   }
-  return defaultTemp;
+
+  // De-promote other defaults
+  await Template.updateMany({ _id: { $ne: sigTemp._id } }, { $set: { isDefault: false } });
+  return sigTemp;
 }
 
 // 1. Get Stats (Admin Protected)
@@ -5173,6 +5194,11 @@ let serverInstance = null;
 
 async function startServer() {
   await connectToDatabase();
+  try {
+    await getOrCreateDefaultTemplate();
+  } catch (err) {
+    console.error("Failed to seed/align default template on boot:", err.message);
+  }
   const server = http.createServer(app);
   attachInterviewSockets(server);
   serverInstance = server.listen(PORT, () => {

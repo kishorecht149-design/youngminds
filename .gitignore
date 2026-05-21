@@ -1,3 +1,5 @@
 youngminds/backend/.env
 youngminds/backend/node_modules
 .DS_Store
+uploads/
+youngminds/uploads/

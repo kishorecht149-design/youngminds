@@ -4,6 +4,10 @@
     {
       "source": "/members/:slug*",
       "destination": "/members/"
+    },
+    {
+      "source": "/verify/:slug*",
+      "destination": "/verify.html"
     }
   ]
 }

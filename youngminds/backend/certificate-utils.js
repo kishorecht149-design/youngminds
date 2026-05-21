@@ -50,19 +50,39 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   const pageHeight = 210;
 
   // 1. Draw Background
-  if (template && template.backgroundUrl && template.backgroundUrl.includes("base64,")) {
+  let bgLoaded = false;
+  const bgUrl = template ? template.backgroundUrl : "";
+
+  if (bgUrl) {
     try {
-      const parts = template.backgroundUrl.split(",");
-      const mime = parts[0].match(/:(.*?);/)[1];
-      const format = mime.includes("png") ? "PNG" : "JPEG";
-      const base64Data = parts[1];
-      doc.addImage(base64Data, format, 0, 0, pageWidth, pageHeight);
+      if (bgUrl.includes("base64,")) {
+        const parts = bgUrl.split(",");
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const format = mime.includes("png") ? "PNG" : "JPEG";
+        const base64Data = parts[1];
+        doc.addImage(base64Data, format, 0, 0, pageWidth, pageHeight);
+        bgLoaded = true;
+      } else {
+        // Resolve local relative paths (e.g. /assets/certificate-template.jpg)
+        let cleanPath = bgUrl;
+        if (cleanPath.startsWith("/")) {
+          cleanPath = cleanPath.slice(1);
+        }
+        const localPath = path.join(rootDir, cleanPath);
+        if (fs.existsSync(localPath)) {
+          const imgData = fs.readFileSync(localPath);
+          const ext = path.extname(localPath).toLowerCase();
+          const format = ext.includes("png") ? "PNG" : "JPEG";
+          doc.addImage(imgData, format, 0, 0, pageWidth, pageHeight);
+          bgLoaded = true;
+        }
+      }
     } catch (err) {
       console.error("Failed to load template background image:", err.message);
-      drawPremiumDefaultBackground(doc, pageWidth, pageHeight);
     }
-  } else {
-    // If no background uploaded, render the premium default design
+  }
+
+  if (!bgLoaded) {
     drawPremiumDefaultBackground(doc, pageWidth, pageHeight);
   }
 
@@ -79,10 +99,12 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   doc.addImage(qrBase64, "PNG", qrConfig.x, qrConfig.y, qrConfig.width, qrConfig.height);
   
   // Subtext for QR
-  doc.setFont("Helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor("#8b8b95");
-  doc.text("Scan to Verify", qrConfig.x + (qrConfig.width / 2), qrConfig.y + qrConfig.height + 4, { align: "center" });
+  if (!template || !template.backgroundUrl) {
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor("#8b8b95");
+    doc.text("Scan to Verify", qrConfig.x + (qrConfig.width / 2), qrConfig.y + qrConfig.height + 4, { align: "center" });
+  }
 
   // 3. Draw Dynamic Text Fields
   
@@ -105,7 +127,7 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   doc.setFont("Helvetica", dateConf.fontStyle || "normal");
   doc.setFontSize(dateConf.fontSize || 12);
   doc.setTextColor("#5f5845");
-  const dateStr = cert.date ? `Date: ${cert.date}` : "";
+  const dateStr = template && template.backgroundUrl ? (cert.date || "") : (cert.date ? `Date: ${cert.date}` : "");
   doc.text(dateStr, dateConf.x, dateConf.y, { align: dateConf.align || "center" });
 
   // Venue
@@ -113,32 +135,39 @@ async function generateCertificatePdf(cert, template, verifyUrl) {
   doc.setFont("Helvetica", venueConf.fontStyle || "normal");
   doc.setFontSize(venueConf.fontSize || 12);
   doc.setTextColor("#5f5845");
-  const venueStr = cert.venue ? `Venue: ${cert.venue}` : "";
-  doc.text(venueStr, venueConf.x, venueConf.y, { align: venueConf.align || "center" });
+  const venueStr = template && template.backgroundUrl ? (cert.venue || "") : (cert.venue ? `Venue: ${cert.venue}` : "");
+  if (venueStr) {
+    doc.text(venueStr, venueConf.x, venueConf.y, { align: venueConf.align || "center" });
+  }
 
   // Certificate ID
   const idConf = fields.certificateId || { x: 80, y: 170, fontSize: 10, fontStyle: "italic", align: "center" };
   doc.setFont("Helvetica", idConf.fontStyle || "italic");
   doc.setFontSize(idConf.fontSize || 10);
   doc.setTextColor("#8b8b95");
-  doc.text(`Certificate ID: ${cert.certificateId}`, idConf.x, idConf.y, { align: idConf.align || "center" });
+  const idStr = template && template.backgroundUrl ? cert.certificateId : `Certificate ID: ${cert.certificateId}`;
+  doc.text(idStr, idConf.x, idConf.y, { align: idConf.align || "center" });
 
   // Signature / Organizer
   const sigConf = fields.signature || { x: 165, y: 155, label: "Authorized Signatory", fontSize: 12, fontStyle: "normal", align: "center" };
   doc.setFont("Helvetica", sigConf.fontStyle || "normal");
   doc.setFontSize(sigConf.fontSize || 12);
   doc.setTextColor(textColor);
-  // Draw signature label
-  doc.text(sigConf.label || "Authorized Signatory", sigConf.x, sigConf.y, { align: sigConf.align || "center" });
-  // Draw organizer name above it if defined
+  // Draw signature label (only if default fallback background is active)
+  if (!template || !template.backgroundUrl) {
+    doc.text(sigConf.label || "Authorized Signatory", sigConf.x, sigConf.y, { align: sigConf.align || "center" });
+  }
+  // Draw organizer name above signature line
   if (cert.organizerName || sigConf.organizerName) {
     doc.setFont("Helvetica", "bold");
     doc.text(cert.organizerName || sigConf.organizerName, sigConf.x, sigConf.y - 8, { align: sigConf.align || "center" });
   }
-  // Draw a fine signature line
-  doc.setDrawColor("#d0d0d8");
-  doc.setLineWidth(0.3);
-  doc.line(sigConf.x - 30, sigConf.y - 14, sigConf.x + 30, sigConf.y - 14);
+  // Draw a fine signature line only if using fallback default background
+  if (!template || !template.backgroundUrl) {
+    doc.setDrawColor("#d0d0d8");
+    doc.setLineWidth(0.3);
+    doc.line(sigConf.x - 30, sigConf.y - 14, sigConf.x + 30, sigConf.y - 14);
+  }
 
   // 4. Save file
   const filename = `${cert.certificateId}.pdf`;
