@@ -2,11 +2,11 @@
   "trailingSlash": true,
   "rewrites": [
     {
-      "source": "/members/:slug*",
+      "source": "/members/:path*",
       "destination": "/members/index.html"
     },
     {
-      "source": "/verify/:slug*",
+      "source": "/verify/:path*",
       "destination": "/verify/index.html"
     }
   ]
