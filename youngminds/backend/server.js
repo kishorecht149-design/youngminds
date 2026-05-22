@@ -4927,6 +4927,7 @@ app.get("/api/admin/certificates", async (req, res) => {
     const skipIndex = (Number(page) - 1) * Number(limit);
     const total = await Certificate.countDocuments(query);
     const list = await Certificate.find(query)
+      .select("-pdfData")
       .sort({ createdAt: -1 })
       .skip(skipIndex)
       .limit(Number(limit))

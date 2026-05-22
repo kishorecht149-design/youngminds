@@ -75,6 +75,8 @@ const certificateSchema = new mongoose.Schema({
   templateId: { type: mongoose.Schema.Types.ObjectId, ref: "Template" }
 }, { timestamps: true });
 
+certificateSchema.index({ createdAt: -1 });
+
 const Certificate = mongoose.model("Certificate", certificateSchema);
 
 // Atomic sequence generator helper
