@@ -442,22 +442,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Temporary Database Debug Endpoint
-app.get("/api/admin/debug-db", async (req, res) => {
-  try {
-    const count = await Certificate.countDocuments();
-    const list = await Certificate.find({}).select("certificateId studentName eventName").limit(10);
-    res.json({
-      database: mongoose.connection.name,
-      host: mongoose.connection.host,
-      count,
-      list
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 /* ══════════════════════════════════════════
    MONGODB CONNECTION
 ══════════════════════════════════════════ */
