@@ -5009,7 +5009,9 @@ app.post("/api/admin/certificates/generate", async (req, res) => {
       const certId = await getNextCertificateId(currentYear);
 
       // Construct verification URL
-      const host = process.env.YOUNGMINDS_PUBLIC_URL || `${req.protocol}://${req.get("host")}`;
+      const host = process.env.YOUNGMINDS_PUBLIC_URL || (req.get("host").includes("localhost") || req.get("host").includes("127.0.0.1")
+        ? `${req.protocol}://${req.get("host")}`
+        : "https://youngmindsagency.vercel.app");
       const verifyUrl = `${host}/verify/${certId}`;
 
       // Create Certificate metadata
