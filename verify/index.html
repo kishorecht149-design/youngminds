@@ -521,6 +521,10 @@
       input.scrollIntoView({ behavior: "smooth" });
     }
 
+    const BACKEND = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      ? ""
+      : "https://youngminds-3rk5.onrender.com";
+
     // API query
     async function verifyCertificate(id) {
       if (!id) return;
@@ -531,7 +535,7 @@
       document.getElementById("spinner").style.display = "flex";
       
       try {
-        const response = await fetch(`/api/certificates/verify/${encodeURIComponent(id)}`);
+        const response = await fetch(`${BACKEND}/api/certificates/verify/${encodeURIComponent(id)}`);
         const data = await response.json();
         
         document.getElementById("spinner").style.display = "none";
@@ -546,7 +550,7 @@
           
           // PDF Link
           const downloadBtn = document.getElementById("downloadBtn");
-          downloadBtn.href = data.pdfUrl || "#";
+          downloadBtn.href = data.pdfUrl ? `${BACKEND}${data.pdfUrl}` : "#";
           
           document.getElementById("certCard").style.display = "block";
         } else {
