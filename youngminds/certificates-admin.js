@@ -191,7 +191,8 @@
             <td><span class="pill-badge" style="background:var(--green2);color:var(--green);font-size:10px;font-weight:700">VERIFIED</span></td>
             <td style="text-align:right">
               <a href="/verify/${c.certificateId}" target="_blank" class="btn-sm" style="display:inline-block;padding:4px 8px;margin-right:4px">Verify Page</a>
-              <a href="${c.pdfUrl}" target="_blank" class="btn-sm primary" style="display:inline-block;padding:4px 8px">PDF</a>
+              <a href="${c.pdfUrl}" target="_blank" class="btn-sm primary" style="display:inline-block;padding:4px 8px;margin-right:4px">PDF</a>
+              <button class="btn-sm" style="display:inline-block;padding:4px 8px;color:var(--red);border-color:var(--red2)" onclick="window.__ymCertificatesAdmin.deleteCertificate('${c._id}')">✕</button>
             </td>
           </tr>
         `).join("")
@@ -297,6 +298,17 @@
       try {
         await apiRequest(`/api/admin/templates/${id}`, { method: "DELETE" });
         if (typeof window.showToast === "function") window.showToast("Template deleted");
+        loadData();
+      } catch (err) {
+        alert(err.message);
+      }
+    },
+
+    deleteCertificate: async function (id) {
+      if (!confirm("Are you sure you want to delete this certificate? This cannot be undone.")) return;
+      try {
+        await apiRequest(`/api/admin/certificates/${id}`, { method: "DELETE" });
+        if (typeof window.showToast === "function") window.showToast("Certificate deleted");
         loadData();
       } catch (err) {
         alert(err.message);

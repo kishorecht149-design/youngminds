@@ -5176,6 +5176,38 @@ app.get("/api/admin/events-list", async (req, res) => {
   }
 });
 
+// Delete Certificate (Admin Protected)
+app.delete("/api/admin/certificates/:id", async (req, res) => {
+  try {
+    const admin = await requireAdminSession(req, res);
+    if (!admin) return;
+
+    const { id } = req.params;
+    const cert = await Certificate.findById(id);
+    if (!cert) {
+      return res.status(404).json({ error: "Certificate not found." });
+    }
+
+    // Try to delete local PDF file on disk if it exists
+    if (cert.pdfUrl) {
+      const filename = path.basename(cert.pdfUrl);
+      const localPath = path.join(rootDir, "uploads", "certificates", filename);
+      if (fs.existsSync(localPath)) {
+        try {
+          fs.unlinkSync(localPath);
+        } catch (fileErr) {
+          console.warn("Could not delete physical certificate PDF file:", fileErr.message);
+        }
+      }
+    }
+
+    await Certificate.findByIdAndDelete(id);
+    res.json({ success: true, message: "Certificate deleted successfully." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 9. Verify Certificate (Public Route)
 app.get("/api/certificates/verify/:certificateId", async (req, res) => {
   try {
