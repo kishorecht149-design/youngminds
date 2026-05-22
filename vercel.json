@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/members/:slug*",
-      "destination": "/members/"
+      "destination": "/members/index.html"
     },
     {
       "source": "/verify/:slug*",
-      "destination": "/verify/"
+      "destination": "/verify/index.html"
     }
   ]
 }
