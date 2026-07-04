@@ -697,7 +697,7 @@ html[data-theme="light"] .board-progress-fill{
 }
 </style>
 <link rel="stylesheet" href="chatbot.css">
-  <link rel="preload" as="video" href="https://res.cloudinary.com/dhbawoyak/video/upload/q_auto,f_auto/v1777647322/1777646789530825_qesh8x.mp4" type="video/mp4">
+  <link rel="preload" as="video" href="https://res.cloudinary.com/dhbawoyak/video/upload/q_auto,f_mp4/v1777647322/1777646789530825_qesh8x.mp4" type="video/mp4">
 </head>
 <body>
 
@@ -731,8 +731,8 @@ html[data-theme="light"] .board-progress-fill{
 
 <section class="hero">
   <div class="hero-video-bg" aria-hidden="true">
-    <video class="hero-bg-video" autoplay muted loop playsinline preload="auto">
-      <source src="https://res.cloudinary.com/dhbawoyak/video/upload/q_auto,f_auto/v1777647322/1777646789530825_qesh8x.mp4" type="video/mp4">
+    <video class="hero-bg-video" autoplay="autoplay" loop="loop" muted="muted" playsinline="playsinline" webkit-playsinline="webkit-playsinline" preload="auto">
+      <source src="https://res.cloudinary.com/dhbawoyak/video/upload/q_auto,f_mp4/v1777647322/1777646789530825_qesh8x.mp4" type="video/mp4">
     </video>
     <div class="hero-video-overlay"></div>
   </div>
@@ -1712,6 +1712,9 @@ loadServices();
   const heroVideo = document.querySelector('.hero-bg-video');
   if (heroVideo) {
     const playVideo = () => {
+      heroVideo.muted = true;
+      heroVideo.defaultMuted = true;
+      heroVideo.playsInline = true;
       heroVideo.play().catch(() => {});
     };
     playVideo();
