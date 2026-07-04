@@ -62,6 +62,12 @@ html[data-theme="light"] .theme-moon{opacity:0;transform:scale(.45) rotate(80deg
 html[data-theme="light"] .hero{background:linear-gradient(180deg,rgba(255,215,0,0.14) 0%,rgba(255,253,242,0) 55%)}
 .hero-video-bg{position:absolute;top:0;left:0;right:0;height:85vh;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(circle at 70% 20%,rgba(255,215,0,.14),transparent 38%),linear-gradient(135deg,var(--bg),var(--bg2));-webkit-mask-image:linear-gradient(to bottom, black 75%, transparent 100%);mask-image:linear-gradient(to bottom, black 75%, transparent 100%)}
 .hero-bg-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;opacity:1;filter:saturate(1.05) contrast(1.02)}
+.hero-bg-video::-webkit-media-controls-start-playback-button,
+.hero-bg-video::-webkit-media-controls-play-button,
+.hero-bg-video::-webkit-media-controls {
+  display: none !important;
+  -webkit-appearance: none !important;
+}
 .hero-video-overlay{position:absolute;inset:0;background:transparent;transition:background .42s ease}
 html[data-theme="light"] .hero-bg-video{opacity:1;filter:saturate(1.05) contrast(1.1)}
 html[data-theme="light"] .hero-video-overlay{background:transparent}
@@ -1701,7 +1707,19 @@ loadBoardMembers();
 initHeroHeadline();
 loadServices();
 
-
+// Force autoplay on load & interaction to bypass browser policies
+(function() {
+  const heroVideo = document.querySelector('.hero-bg-video');
+  if (heroVideo) {
+    const playVideo = () => {
+      heroVideo.play().catch(() => {});
+    };
+    playVideo();
+    ['click', 'touchstart', 'scroll', 'mousemove'].forEach(evt => {
+      document.addEventListener(evt, playVideo, { once: true, passive: true });
+    });
+  }
+})();
 </script>
 </body>
 </html>
